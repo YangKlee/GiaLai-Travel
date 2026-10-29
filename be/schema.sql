@@ -1,4 +1,4 @@
--- GiaLaiGo | MariaDB 10.5.26 / MySQL 8.0.16+ | utf8mb4 | InnoDB
+-- GiaLaiTravel | MariaDB 10.5.26 / MySQL 8.0.16+ | utf8mb4 | InnoDB
 -- Pham vi: ca GĐ1 va GĐ2 cua docs/srs. Khong thu/chuyen/hoan tien that.
 -- Chon CSDL rong da tao tren cPanel/phpMyAdmin truoc khi Import file nay.
 -- CLI: mysql --default-character-set=utf8mb4 -u USER -p TEN_DATABASE < be/schema.sql

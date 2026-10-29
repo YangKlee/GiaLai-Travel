@@ -40,7 +40,7 @@ actor "Dịch vụ AI" as AI
 actor "Dịch vụ bản đồ/tuyến" as Maps
 actor "Dịch vụ thư tài khoản" as Mail
 Tourist --|> Guest
-rectangle "GiaLaiGo - Web - GĐ1" {
+rectangle "GiaLaiTravel - Web - GĐ1" {
   usecase "UC-01\nTài khoản" as U1
   usecase "UC-02\nKhám phá" as U2
   usecase "UC-03\nTạo lịch AI" as U3
@@ -95,7 +95,7 @@ actor "Người xem báo cáo B2G" as Agency
 actor "Dịch vụ AI" as AI
 actor "Nguồn thời tiết" as Weather
 actor "Nguồn sự kiện" as Events
-rectangle "GiaLaiGo - Web - GĐ2" {
+rectangle "GiaLaiTravel - Web - GĐ2" {
   usecase "UC-15\nPremium và gói offline" as U15
   usecase "UC-16\nChatbot, cá nhân hóa" as U16
   usecase "UC-17\nTình hình và đổi lịch" as U17

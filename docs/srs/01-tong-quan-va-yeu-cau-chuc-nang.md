@@ -2,7 +2,7 @@
 
 ## 1. Mục tiêu và phạm vi
 
-GiaLaiGo giúp du khách khám phá Gia Lai, lập và tự điều chỉnh lịch trình có căn cứ, tiếp cận nội dung văn hóa, sử dụng thông tin đã tải khi mất mạng và đặt dịch vụ địa phương. SRS bao quát tầm nhìn trong PDF, triển khai dưới dạng **web responsive**, gồm hai giai đoạn chức năng.
+GiaLaiTravel giúp du khách khám phá Gia Lai, lập và tự điều chỉnh lịch trình có căn cứ, tiếp cận nội dung văn hóa, sử dụng thông tin đã tải khi mất mạng và đặt dịch vụ địa phương. SRS bao quát tầm nhìn trong PDF, triển khai dưới dạng **web responsive**, gồm hai giai đoạn chức năng.
 
 | Giai đoạn | Phạm vi |
 | --- | --- |

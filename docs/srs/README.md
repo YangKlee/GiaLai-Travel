@@ -1,11 +1,11 @@
-# SRS - GiaLaiGo
+# SRS - GiaLaiTravel
 
 **Phiên bản:** 1.4 - ID dạng string GUID, tương thích hosting MariaDB 10.5.26.<br>
 **Ngày soạn:** 29/10/2026.<br>
 **Ngôn ngữ:** Tiếng Việt.<br>
 **Nguồn chính:** [Đề cương ý tưởng, dự án khởi nghiệp](../Phụ%20LỤC.pdf), 12 trang.
 
-Tài liệu đặc tả yêu cầu phần mềm (SRS) chuyển ý tưởng GiaLaiGo thành yêu cầu có thể triển khai và nghiệm thu. GiaLaiGo là nền tảng đồng hành du lịch, lấy lịch trình linh hoạt, nội dung địa phương và kết nối cộng đồng làm trọng tâm.
+Tài liệu đặc tả yêu cầu phần mềm (SRS) chuyển ý tưởng GiaLaiTravel thành yêu cầu có thể triển khai và nghiệm thu. GiaLaiTravel là nền tảng đồng hành du lịch, lấy lịch trình linh hoạt, nội dung địa phương và kết nối cộng đồng làm trọng tâm.
 
 Phạm vi và các quy tắc chính đã được chủ sản phẩm xác nhận qua trao đổi ngày 29/10/2026: **web, AI thật tạo lịch, thanh toán giả lập**, đặc tả toàn bộ tầm nhìn theo hai giai đoạn chức năng. GĐ1 tiếng Việt, có offline cơ bản miễn phí; GĐ2 bổ sung premium, đa ngôn ngữ và các chức năng nâng cao. Quyết định được ghi trong [sổ quyết định](06-cau-hoi-va-quyet-dinh.md).
 

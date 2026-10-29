@@ -1,4 +1,4 @@
-# Cơ sở dữ liệu GiaLaiGo
+# Cơ sở dữ liệu GiaLaiTravel
 
 ## 1. Tệp và điều kiện
 
@@ -23,9 +23,9 @@ mysql --host=127.0.0.1 --port=3306 --user=TEN_USER --password --default-characte
 
 Trên hosting cPanel/phpMyAdmin:
 
-1. Tạo database và user trong cPanel, cấp quyền cho user trên database đó. Tên thực tế có thể có tiền tố tài khoản, ví dụ `taikhoan_gialaigo`.
+1. Tạo database và user trong cPanel, cấp quyền cho user trên database đó. Tên thực tế có thể có tiền tố tài khoản, ví dụ `taikhoan_gialaitravel`.
 2. Mở phpMyAdmin, chọn đúng database **rỗng** ở cột bên trái.
-3. Chọn Import/Nhập, tải `schema.sql` bản mới và thực thi. File sử dụng database đã chọn, không có `CREATE DATABASE` hoặc `USE gialaigo`.
+3. Chọn Import/Nhập, tải `schema.sql` bản mới và thực thi. File sử dụng database đã chọn, không có `CREATE DATABASE` hoặc `USE gialaitravel`.
 4. Không import lại vào một database đã có một phần bảng; nếu lần trước đã chạy tới các lệnh CREATE TABLE, kiểm tra cấu trúc hiện có trước khi xử lý tiếp. Không xóa dữ liệu thật để thử import.
 
 Với lỗi `#1273` dừng ngay tại lệnh `SET NAMES` đầu file, lần import đó chưa thực hiện lệnh tạo bảng nào. Hãy tải lại file đã sửa trước khi import.
@@ -136,6 +136,10 @@ Tách tài khoản migration khỏi tài khoản chạy ứng dụng. Khi triể
 NFR về sao lưu, thu hồi phiên, giới hạn đăng nhập/AI, thời hạn lưu dữ liệu và mã hóa đường truyền cần được triển khai ngoài DDL. Chạy schema thành công chưa đồng nghĩa toàn bộ SRS đã được thực hiện.
 
 ## 6. Kết quả kiểm tra thiết kế
+
+**Bản hiện tại dùng GUID:** đã nạp thành công trên MariaDB 10.5.26 và MySQL 8.0.46; đạt 43 ca kiểm tra trên mỗi hệ. Cả hai có 58 bảng, 113 khóa ngoại và 166 cột ID/tham chiếu dạng CHAR(36); CHECK là 142 trên MariaDB (gồm kiểm tra JSON tự sinh) và 124 trên MySQL. Đã kiểm tra thêm GUID sai định dạng, GUID viết hoa, trùng GUID, FK GUID không tồn tại, thiếu ID do backend chưa cấp, kiểu string khi đọc lại và thứ tự consent độc lập với GUID. Dữ liệu thử đã rollback; 7 khối class diagram hợp lệ.
+
+Các đoạn sau ghi lịch sử kiểm tra của các bản trước khi chuyển ID sang GUID:
 
 Ngày 29/10/2026, schema đã được nạp thành công trên MySQL Community Server 8.0.46 trong môi trường tạm riêng: 58 bảng, 113 khóa ngoại, 71 CHECK và một view. Đã chạy đạt 35 ca kiểm tra dữ liệu, gồm email trùng, khóa ngoại sai, tồn vượt sức chứa, sai tổng tiền, thanh toán trùng/đích sai, hoàn lặp, con trỏ revision sai chủ, tuyến khác ngày, tự giới thiệu, gia hạn tự động và lọc báo cáo nhóm nhỏ. Dữ liệu thử đã rollback.
 
