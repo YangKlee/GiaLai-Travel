@@ -1,6 +1,6 @@
 # Class diagram và mô hình dữ liệu
 
-**Phiên bản:** 1.1. **Ngày:** 29/10/2026. **SQL đích:** MariaDB 10.5.26 trên hosting; cú pháp dùng chung MySQL 8.0.16+.<br>
+**Phiên bản:** 1.2. **Ngày:** 29/10/2026. **SQL đích:** MariaDB 10.5.26 trên hosting; cú pháp dùng chung MySQL 8.0.16+.<br>
 **Tệp triển khai:** [be/schema.sql](../../be/schema.sql). **Hướng dẫn:** [be/README.md](../../be/README.md).
 
 ## 1. Phạm vi và quy ước
@@ -8,6 +8,8 @@
 Mô hình bao quát GĐ1 và GĐ2 theo SRS. Các lớp thể hiện thực thể miền nghiệp vụ, thuộc tính chính, quan hệ và một số hành vi dự kiến; đây không phải mã backend đã triển khai. Schema có 58 bảng, không thu/chuyển tiền thật và không chứa tài khoản có mật khẩu mặc định.
 
 Schema dùng collation `utf8mb4_unicode_ci` cho bảng; khóa email được chuẩn hóa ở cột sinh `email_key` dùng binary để giữ quy tắc không phân biệt hoa/thường mà vẫn phân biệt dấu. File SQL chạy trong database đang chọn trên phpMyAdmin, không tự tạo/chuyển database.
+
+Mọi thuộc tính ID và tham chiếu ID là **string GUID**, lưu `CHAR(36)` ASCII binary, do backend sinh trước INSERT. Các số tiền và bộ đếm vẫn là kiểu số. Các khóa ghép của bảng liên kết dùng GUID từ thực thể cha; mã danh mục nghiệp vụ không đổi thành GUID.
 
 - Dùng Mermaid `classDiagram`; cần trình xem hỗ trợ Mermaid.
 - `1`, `0..1`, `0..*` là bội số. Quan hệ giữa các lớp là liên kết miền nghiệp vụ; khóa ngoại cụ thể nằm trong SQL.
@@ -56,7 +58,7 @@ Hai đích của `PaymentAttempt` là loại trừ nhau: mỗi lần thử thanh
 classDiagram
 direction LR
 class User {
-    +id: bigint
+    +id: string
     +email: string?
     +status: UserStatus
     +preferences: JSON
@@ -68,18 +70,18 @@ class Role {
     +name: string
 }
 class UserRole {
-    +userId: bigint
+    +userId: string
     +roleCode: string
 }
 class Region {
-    +id: bigint
-    +parentId: bigint?
+    +id: string
+    +parentId: string?
     +name: string
     +phase: int
 }
 class UserRegionScope {
-    +userId: bigint
-    +regionId: bigint
+    +userId: string
+    +regionId: string
 }
 class AuthSession {
     +tokenHash: binary
@@ -95,6 +97,7 @@ class PasswordResetToken {
 }
 class Consent {
     +purpose: ConsentPurpose
+    +decisionNo: int
     +granted: bool
     +policyVersion: string
     +createdAt: datetime
@@ -122,15 +125,15 @@ Region "0..1" --> "0..*" Region : vùng cha
 classDiagram
 direction LR
 class ContentItem {
-    +id: bigint
+    +id: string
     +kind: ContentKind
     +visibility: Visibility
-    +publishedRevisionId: bigint?
+    +publishedRevisionId: string?
     +publish()
     +hide()
 }
 class ContentRevision {
-    +id: bigint
+    +id: string
     +revisionNo: int
     +status: ReviewStatus
     +payload: JSON
@@ -150,15 +153,15 @@ class ContentTranslation {
     +title: string
     +body: text
     +transcript: text?
-    +audioAssetId: bigint?
+    +audioAssetId: string?
 }
 class ContentMedia {
-    +revisionId: bigint
-    +assetId: bigint
+    +revisionId: string
+    +assetId: string
     +sortOrder: int
 }
 class Place {
-    +id: bigint
+    +id: string
     +category: PlaceCategory
     +latitude: decimal
     +longitude: decimal
@@ -177,38 +180,38 @@ class PlaceClosure {
     +sourceReference: string
 }
 class Partner {
-    +id: bigint
+    +id: string
     +status: PartnerStatus
     +contactEmail: string?
 }
 class PartnerMember {
-    +partnerId: bigint
-    +userId: bigint
+    +partnerId: string
+    +userId: string
     +membershipRole: MemberRole
 }
 class Service {
-    +id: bigint
+    +id: string
     +serviceType: ServiceType
     +priceUnit: string
     +unitPriceVnd: bigint
     +active: bool
 }
 class ExternalSource {
-    +id: bigint
+    +id: string
     +sourceType: SourceType
     +endpointUrl: string
     +enabled: bool
 }
 class TourismEvent {
-    +id: bigint
+    +id: string
     +startsAt: datetime
     +endsAt: datetime
     +eventStatus: EventStatus
     +externalKey: string?
 }
 class AudioGuide {
-    +id: bigint
-    +placeId: bigint
+    +id: string
+    +placeId: string
     +premiumOnly: bool
 }
 ContentItem "1" --> "0..*" ContentRevision : có phiên bản
@@ -238,7 +241,7 @@ ExternalSource "0..1" --> "0..*" TourismEvent : đồng bộ
 classDiagram
 direction LR
 class ServiceSlot {
-    +id: bigint
+    +id: string
     +startsAt: datetime
     +endsAt: datetime
     +capacity: int
@@ -248,7 +251,7 @@ class ServiceSlot {
     +release()
 }
 class Booking {
-    +id: bigint
+    +id: string
     +status: BookingStatus
     +quantity: int
     +totalVnd: bigint
@@ -262,13 +265,13 @@ class Booking {
 class BookingStatusHistory {
     +fromStatus: string?
     +toStatus: string
-    +actorId: bigint?
+    +actorId: string?
     +createdAt: datetime
 }
 class PaymentAttempt {
-    +id: bigint
-    +bookingId: bigint?
-    +purchaseOrderId: bigint?
+    +id: string
+    +bookingId: string?
+    +purchaseOrderId: string?
     +amountVnd: bigint
     +status: PaymentStatus
     +isMock: bool
@@ -276,8 +279,8 @@ class PaymentAttempt {
     +simulate()
 }
 class Refund {
-    +paymentAttemptId: bigint
-    +bookingId: bigint
+    +paymentAttemptId: string
+    +bookingId: string
     +amountVnd: bigint
     +isMock: bool
 }
@@ -294,16 +297,16 @@ Booking "1" --> "0..1" Refund
 classDiagram
 direction LR
 class Itinerary {
-    +id: bigint
-    +ownerId: bigint
-    +currentRevisionId: bigint?
+    +id: string
+    +ownerId: string
+    +currentRevisionId: string?
     +lockVersion: int
     +deletedAt: datetime?
     +saveRevision()
     +duplicate()
 }
 class AIRequest {
-    +id: bigint
+    +id: string
     +purpose: AIPurpose
     +provider: string
     +modelName: string
@@ -311,11 +314,11 @@ class AIRequest {
     +costVnd: decimal?
 }
 class AIRequestSource {
-    +aiRequestId: bigint
-    +contentRevisionId: bigint
+    +aiRequestId: string
+    +contentRevisionId: string
 }
 class ItineraryRevision {
-    +id: bigint
+    +id: string
     +revisionNo: int
     +startDate: date
     +dayCount: int
@@ -325,37 +328,37 @@ class ItineraryRevision {
     +validatedAt: datetime
 }
 class ItineraryDay {
-    +id: bigint
+    +id: string
     +dayNumber: int
     +travelDate: date
 }
 class ItineraryStop {
-    +id: bigint
+    +id: string
     +sequenceNo: int
     +arrivesAt: datetime
     +departsAt: datetime
     +estimatedCostVnd: bigint
 }
 class ItineraryLeg {
-    +fromStopId: bigint?
-    +toStopId: bigint
+    +fromStopId: string?
+    +toStopId: string
     +distanceMeters: int
     +durationSeconds: int
     +verifiedAt: datetime
 }
 class OfflinePackage {
-    +id: bigint
+    +id: string
     +versionNo: int
     +tier: PackageTier
     +manifest: JSON
     +sha256: binary
 }
 class OfflinePackageAsset {
-    +packageId: bigint
-    +assetId: bigint
+    +packageId: string
+    +assetId: string
 }
 class OfflineDownload {
-    +userId: bigint
+    +userId: string
     +deviceKey: string
     +status: DownloadStatus
     +completedAt: datetime?
@@ -381,59 +384,59 @@ ItineraryRevision "0..1" --> "0..*" OfflineDownload
 classDiagram
 direction LR
 class Plan {
-    +id: bigint
+    +id: string
     +code: string
     +audience: PlanAudience
     +active: bool
 }
 class PlanVersion {
-    +id: bigint
+    +id: string
     +versionNo: int
     +priceVnd: bigint?
     +periodMonths: int
     +features: JSON
 }
 class PurchaseOrder {
-    +id: bigint
-    +buyerId: bigint
-    +partnerId: bigint?
+    +id: string
+    +buyerId: string
+    +partnerId: string?
     +amountVnd: bigint
     +status: PurchaseStatus
     +idempotencyKey: string
 }
 class Commission {
-    +bookingId: bigint
+    +bookingId: string
     +ratePercent: decimal
     +amountVnd: bigint
     +isMock: bool
 }
 class RewardProgram {
-    +id: bigint
+    +id: string
     +versionNo: int
     +programType: RewardType
     +conditions: JSON
     +benefits: JSON
 }
 class Referral {
-    +referrerId: bigint
-    +referredId: bigint
+    +referrerId: string
+    +referredId: string
     +qualifiedAt: datetime?
 }
 class RewardGrant {
-    +beneficiaryId: bigint
+    +beneficiaryId: string
     +sourceKey: string
     +benefitSnapshot: JSON
 }
 class Entitlement {
-    +userId: bigint
-    +partnerId: bigint?
+    +userId: string
+    +partnerId: string?
     +startsAt: datetime
     +endsAt: datetime
     +autoRenew: bool
     +isEffectiveAt()
 }
 class AdCampaign {
-    +id: bigint
+    +id: string
     +placement: string
     +budgetVnd: bigint
     +spentVnd: bigint
@@ -441,8 +444,8 @@ class AdCampaign {
     +endsAt: datetime
 }
 class AdImpression {
-    +campaignId: bigint
-    +userId: bigint?
+    +campaignId: string
+    +userId: string?
     +personalized: bool
     +chargeVnd: bigint
 }
@@ -469,21 +472,21 @@ class ConfigurationVersion {
     +payload: JSON
 }
 class IssueReport {
-    +id: bigint
+    +id: string
     +category: string
     +status: IssueStatus
-    +duplicateOf: bigint?
+    +duplicateOf: string?
     +response: text?
     +resolve()
 }
 class ChatConversation {
-    +id: bigint
-    +userId: bigint
+    +id: string
+    +userId: string
 }
 class ChatMessage {
     +speaker: Speaker
     +body: text
-    +aiRequestId: bigint?
+    +aiRequestId: string?
 }
 class ConditionObservation {
     +kind: ObservationKind
@@ -499,13 +502,13 @@ class ExternalSyncRun {
     +errorCode: string?
 }
 class BehaviorEvent {
-    +userId: bigint
-    +consentId: bigint
+    +userId: string
+    +consentId: string
     +eventKind: string
     +createdAt: datetime
 }
 class AggregateMetric {
-    +regionId: bigint
+    +regionId: string
     +metricDate: date
     +metricCode: string
     +metricValue: decimal
@@ -513,15 +516,15 @@ class AggregateMetric {
     +complementSafe: bool
 }
 class Notification {
-    +userId: bigint
+    +userId: string
     +eventKey: string
     +targetType: string?
-    +targetId: bigint?
+    +targetId: string?
     +readAt: datetime?
     +markRead()
 }
 class AuditLog {
-    +actorId: bigint?
+    +actorId: string?
     +action: string
     +targetType: string
     +result: AuditResult
@@ -632,7 +635,7 @@ Các quan hệ xuyên nhóm được thực thi qua khóa ngoại: người dùn
 - CSDL lưu manifest và metadata tải. App shell, nội dung lịch/audio/bản đồ offline thật nằm ở Cache API/IndexedDB trên trình duyệt, không nằm trong MySQL. Gói cơ bản có đích là revision lịch; gói nâng cao có đích là package.
 - Tải premium phải có quyền hợp lệ, asset được phép lưu offline và bằng chứng quyền có hạn. CSDL không thể xác minh thời gian/khả năng lưu của thiết bị đang mất mạng.
 - AI lưu provider/model, phiên bản prompt, trạng thái, chi phí và revision nguồn. Không gửi/lưu email, mật khẩu hoặc liên hệ đặt dịch vụ trong context AI; kiểm tra output là trách nhiệm backend.
-- Đồng ý là lịch sử theo purpose; backend lấy bản mới nhất và kiểm tra đúng chủ, mục đích trước ghi/đọc hành vi. Chỉ có FK tới consent chưa đủ chứng minh người dùng đang đồng ý.
+- Đồng ý là lịch sử theo purpose; backend cấp `decision_no` tăng theo tài khoản/mục đích trong giao dịch có khóa, lấy bản mới nhất theo số này và kiểm tra đúng chủ, mục đích trước ghi/đọc hành vi. GUID không được dùng để suy ra thứ tự. Chỉ có FK tới consent chưa đủ chứng minh người dùng đang đồng ý.
 - `aggregate_metrics` là dữ liệu nội bộ. View `b2g_released_metrics` chỉ đưa nhóm ≥10 tài khoản và đã qua đánh giá suy ngược `complement_safe`. API còn phải áp scope vùng và kiểm tra bộ lọc; không cấp B2G quyền SELECT bảng gốc.
 - Đặt `complement_safe = TRUE` chỉ sau pipeline kiểm tra tổng/chênh lệch giữa nhóm, không tự bật chỉ vì đủ 10 người.
 

@@ -28,6 +28,7 @@
 | D-18 | Nguồn sự kiện và thông báo? | GĐ1 quản trị nhập/cập nhật; tự động đồng bộ khi có API ở GĐ2. Thông báo nghiệp vụ trong web, chưa cần SMS/email/push | FR-10,15,25 |
 | D-19 | Chỉ tiêu kỹ thuật ngoài PDF? | Cho phép người soạn đề xuất, thông số có thể cấu hình/điều chỉnh | Tệp 02 và chi tiết kỹ thuật BR |
 | D-20 | Hệ quản trị cho schema backend? | Ban đầu chọn MySQL 8; sau lỗi import, chủ sản phẩm xác nhận hosting thực tế là MariaDB 10.5.26. Điều chỉnh schema theo môi trường hosting, giữ file tại `be/schema.sql` | Tệp 07; schema và hướng dẫn backend |
+| D-21 | Kiểu và cách sinh ID? | Tất cả ID/tham chiếu ID là string GUID do backend sinh, lưu CHAR(36); bỏ AUTO_INCREMENT. Giữ kiểu số cho tiền, dung lượng, bộ đếm và số phiên bản | Tệp 07; schema và hướng dẫn backend |
 
 Email khôi phục tài khoản trong UC-01 là giao tiếp phục vụ bảo mật tài khoản, tách với thông báo nghiệp vụ đơn đặt/sự kiện ở D-18. Không suy ra yêu cầu gửi email marketing.
 

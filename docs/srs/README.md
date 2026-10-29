@@ -1,6 +1,6 @@
 # SRS - GiaLaiGo
 
-**Phiên bản:** 1.3 - điều chỉnh schema cho hosting MariaDB 10.5.26.<br>
+**Phiên bản:** 1.4 - ID dạng string GUID, tương thích hosting MariaDB 10.5.26.<br>
 **Ngày soạn:** 29/10/2026.<br>
 **Ngôn ngữ:** Tiếng Việt.<br>
 **Nguồn chính:** [Đề cương ý tưởng, dự án khởi nghiệp](../Phụ%20LỤC.pdf), 12 trang.

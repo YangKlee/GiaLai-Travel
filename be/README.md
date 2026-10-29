@@ -49,6 +49,7 @@ Kết quả mong đợi: 58 bảng và view `b2g_released_metrics`. Khởi tạo
 
 | Quy ước | Cách dùng |
 | --- | --- |
+| ID | `CHAR(36) CHARACTER SET ascii COLLATE ascii_bin`, dạng GUID chuẩn `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, chữ thường. Backend sinh GUID v4 trước INSERT và truyền cùng FK; không có AUTO_INCREMENT hoặc default UUID ở CSDL. Các mã danh mục như role code vẫn là chuỗi nghiệp vụ. |
 | Thời gian | `DATETIME(6)` lưu UTC; mỗi kết nối backend đặt `SET time_zone = '+00:00'`. Chỉ chuyển sang Asia/Ho_Chi_Minh khi trình bày. Giờ mở cửa địa điểm là TIME theo giờ Việt Nam. |
 | Tiền | Số nguyên VND bằng `BIGINT UNSIGNED`; chi phí nhà cung cấp AI có thể dùng phần lẻ trong số liệu nội bộ. Không dùng FLOAT cho tiền. |
 | Mã trạng thái | Booking giữ tên trạng thái trong SRS; các miền khác có ENUM riêng, không dùng lẫn trạng thái. |
@@ -59,6 +60,22 @@ Kết quả mong đợi: 58 bảng và view `b2g_released_metrics`. Khởi tạo
 | Phiên bản | Revision nội dung/lịch đã dùng phải bất biến; kiểm soát cập nhật qua tầng nghiệp vụ và quyền CSDL. |
 | Xóa dữ liệu | Các FK mặc định RESTRICT, không xóa dây chuyền giao dịch. Backend xử lý ẩn/xóa mềm, thu hồi, ẩn danh và dọn dữ liệu theo chính sách. |
 | GĐ2 | Bảng có sẵn không có nghĩa tính năng đã được bật. Việc mở tính năng và quyền theo giai đoạn nằm ở ứng dụng. |
+
+Ví dụ sinh ID trong backend JavaScript:
+
+```js
+import { randomUUID } from 'node:crypto';
+
+const userId = randomUUID();
+// INSERT INTO users (id, email, password_hash, display_name) VALUES (?, ?, ?, ?)
+// Truyền userId cùng dữ liệu đã kiểm tra qua tham số truy vấn.
+```
+
+Mọi ID được trả về JSON dưới dạng string; không ép sang số và không dùng `LAST_INSERT_ID()` để lấy ID mới. Các cột sinh như `successful_booking_id` được CSDL sao chép từ GUID của đơn, không sinh GUID độc lập. Tiền VND và dung lượng vẫn dùng kiểu số.
+
+GUID không biểu thị thứ tự thời gian. Lịch sử đồng ý dùng `decision_no` tăng theo từng cặp tài khoản/mục đích; backend khóa dòng tài khoản khi cấp số tiếp theo để tránh trùng. Trạng thái hiện tại lấy theo `decision_no DESC`, không dùng `MAX(id)` hoặc sắp xếp GUID.
+
+Đây là schema khởi tạo cho CSDL mới. Nếu database đã được import bản ID số, file này không tự chuyển dữ liệu cũ; cần migration có bảng ánh xạ số → GUID và cập nhật đầy đủ khóa ngoại trước khi đổi kiểu trên database đang sử dụng.
 
 ## 4. Hợp đồng giao dịch cần triển khai trong backend
 
@@ -123,5 +140,7 @@ NFR về sao lưu, thu hồi phiên, giới hạn đăng nhập/AI, thời hạn
 Ngày 29/10/2026, schema đã được nạp thành công trên MySQL Community Server 8.0.46 trong môi trường tạm riêng: 58 bảng, 113 khóa ngoại, 71 CHECK và một view. Đã chạy đạt 35 ca kiểm tra dữ liệu, gồm email trùng, khóa ngoại sai, tồn vượt sức chứa, sai tổng tiền, thanh toán trùng/đích sai, hoàn lặp, con trỏ revision sai chủ, tuyến khác ngày, tự giới thiệu, gia hạn tự động và lọc báo cáo nhóm nhỏ. Dữ liệu thử đã rollback.
 
 Sau khi xác nhận hosting dùng MariaDB, bản collation tương thích đã được nạp thành công trên **MariaDB 10.5.26** trong môi trường thử riêng: vẫn đủ 58 bảng, 113 khóa ngoại và một view. MariaDB ghi nhận 89 CHECK, gồm cả kiểm tra JSON do hệ quản trị sinh thêm. Đã chạy đạt 36 ca kiểm tra, bổ sung trường hợp email phân biệt có dấu/không dấu mà vẫn chặn trùng hoa/thường; toàn bộ fixture đã rollback. Đây là kiểm tra trên cùng phiên bản máy chủ với hosting, không phải thao tác trực tiếp trên database hosting.
+
+Bản cập nhật cũng đã được nạp vào một CSDL thử mới trên MySQL 8.0.46 và chạy đạt cùng 36 ca kiểm tra, xác nhận thay đổi collation và khóa email không phá các ràng buộc đã có.
 
 Đã kiểm tra cú pháp 7 khối class diagram và ánh xạ đủ 58 bảng. Đây là kiểm tra DDL và bất biến dữ liệu, chưa phải kiểm thử tích hợp backend, phân quyền API, tải đồng thời hoặc toàn bộ NFR.
