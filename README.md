@@ -21,10 +21,12 @@ Copy-Item fe/.env.example fe/.env
 npm run dev
 ```
 
-Chỉ copy `.env.example` lần đầu, tránh ghi đè cấu hình đã có. Các giá trị mặc định cho phép chạy local ngay cả khi chưa tạo `.env`.
+Chỉ copy `.env.example` lần đầu, tránh ghi đè cấu hình đã có. Backend yêu cầu cấu hình `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` hợp lệ trong `be/.env`; file mẫu chỉ chứa giá trị minh họa. Xem [hướng dẫn backend](be/DEVELOPMENT.md).
 
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3000/api/health
+- Kiểm tra DB qua HTTP: http://localhost:3000/api/ready (503 nếu không kết nối được).
+- Kiểm tra kết nối và tên bảng/view: `npm run db:check -w be` (chỉ đọc).
 - Chạy riêng: `npm run dev:be` hoặc `npm run dev:fe`.
 - Thay đổi `PORT` của backend thì cập nhật `API_PROXY_TARGET` tương ứng ở frontend.
 
@@ -56,5 +58,6 @@ fe/
 docs/             # Tài liệu nghiệp vụ hiện có
 ```
 
-API khởi tạo hiện có `GET /api/health`, phản ánh trạng thái HTTP server.
-Chưa kết nối CSDL hoặc triển khai các chức năng nghiệp vụ; xem [tài liệu CSDL](be/README.md).
+Scaffold BE đã có config, logger, middleware, health/readiness, pool MariaDB UTC và helper transaction.
+Kết nối hosting hiện chưa xác minh được do timeout cổng 3306; chưa triển khai chức năng nghiệp vụ.
+Xem [hướng dẫn backend](be/DEVELOPMENT.md) và [tài liệu CSDL](be/README.md).

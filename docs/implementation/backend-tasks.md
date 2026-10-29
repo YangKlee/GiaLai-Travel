@@ -16,6 +16,7 @@
 - [ ] Tạo pool, timeout, truy vấn tham số hóa, helper transaction/retry có giới hạn; mỗi connection dùng UTC; GUID từ BE; serializer tiền BIGINT chính xác và timestamp ISO.
 - Phụ thuộc: BE-01, X-02. Truy vết: BR-01, D-20, D-21; NFR-05, NFR-07.
 - Nghiệm thu: test DB MariaDB 10.5.26 đọc/ghi GUID, JSON, Unicode và tiền lớn không mất chính xác; lỗi transaction rollback và trả connection; không dựa tính năng riêng MySQL 8.
+- Tiến độ: code pool/transaction, serializer tiền/GUID, CLI `db:check` và nối readiness đã có; test tự động Node 20.20.2 đạt. Kiểm tra hosting `yangkleeserver.io.vn:3306` trả `ETIMEDOUT`; Docker daemon cục bộ chưa chạy. Chưa đánh dấu hoàn thành BE-02 vì chưa chạy integration trên MariaDB thật; cần Remote MySQL/host-port hợp lệ hoặc môi trường DB test trước nghiệm thu. Không có thao tác ghi/import lên hosting.
 
 ### BE-03 - Migration, fixture và bootstrap quản trị (M)
 

@@ -2,6 +2,8 @@ import mysql from 'mysql2/promise';
 import { readFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 
+const isUnusable = (error) => error.fatal || ['PROTOCOL_SEQUENCE_TIMEOUT', 'PROTOCOL_CONNECTION_LOST', 'ECONNRESET'].includes(error.code);
+
 export function buildPoolOptions(config) {
   return {
     host: config.host, port: config.port, database: config.database,
@@ -28,10 +30,14 @@ export function createDatabase(config, { pool = mysql.createPool(buildPoolOption
   }
   async function execute(sql, parameters = []) {
     const connection = await getConnection();
+    let reusable = true;
     try {
       const [rows] = await connection.execute({ sql, timeout: queryTimeout }, parameters);
       return rows;
-    } finally { connection.release(); }
+    } catch (error) {
+      reusable = !isUnusable(error);
+      throw error;
+    } finally { if (reusable) connection.release(); else connection.destroy(); }
   }
   // Only retry DB-only callbacks; no outbound calls or other side effects.
   async function transaction(work, { maxRetries = 0 } = {}) {
@@ -54,6 +60,7 @@ export function createDatabase(config, { pool = mysql.createPool(buildPoolOption
         committed = true;
         return result;
       } catch (error) {
+        reusable = !commitAttempted && !isUnusable(error);
         if (began && !committed) {
           try { await connection.rollback(); } catch { reusable = false; }
         }

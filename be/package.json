@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/server.js",
     "start": "node --env-file-if-exists=.env src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "db:check": "node --env-file-if-exists=.env scripts/check-database.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -45,3 +45,22 @@ HTTP. Production cần HTTPS tại reverse proxy và secret riêng theo môi tr�
 `npm test` chạy toàn bộ test BE. Dùng đúng Node.js 20.20.2 khi kiểm tra/phát triển.
 Phần auth/CSRF/session, audit nghiệp vụ, migration runner và chức năng FR vẫn
 triển khai theo backlog; scaffold không mở CRUD mẫu hay tự import CSDL.
+
+## CSDL
+
+`npm run db:check -w be` kết nối bằng env, đọc version/UTC/danh sách bảng và view,
+đối chiếu tên với `schema.sql`. Lệnh chỉ đọc; không tự import hoặc sửa DB.
+`DB_SSL=true` bật xác minh TLS; `DB_SSL_CA` tùy chọn trỏ tới CA PEM khi hosting yêu cầu.
+
+Pool dùng UTF-8, UTC, `BIGINT`/`DECIMAL` dạng string và tắt multiple statements.
+Mỗi lần mượn connection đặt `time_zone='+00:00'`. Repository dùng `database.execute`
+và tham số `?`; nghiệp vụ nhiều bảng dùng `database.transaction(async (tx) => ...)`.
+Deadlock/lock timeout chỉ retry khi gọi rõ `maxRetries` (0–3) và callback chỉ chứa
+thao tác DB an toàn khi lặp. Mất phản hồi COMMIT có kết quả chưa xác định nên helper
+không tự replay; module nghiệp vụ phải hòa giải bằng khóa idempotency.
+
+Kiểm tra hosting hiện trả `ETIMEDOUT` trên cổng 3306 từ máy phát triển. Chưa xác
+minh tài khoản, quyền truy cập hoặc schema thực tế. Cần phía hosting cho phép
+Remote MySQL từ IP máy phát triển và xác nhận đúng host/port; nếu BE chạy cùng
+hosting, dùng địa chỉ MySQL nội bộ do nhà cung cấp cấp. Không tự đổi sang localhost
+trên máy phát triển. Readiness trả 503 trong lúc DB không kết nối được.
