@@ -1,49 +1,67 @@
 # Câu hỏi và sổ quyết định
 
-**Trạng thái:** đang chờ chủ sản phẩm trả lời. Không coi việc chưa có phản hồi là đồng ý với đề xuất.
+**Ngày xác nhận:** 29/10/2026.<br>
+**Nguồn quyết định:** câu trả lời của chủ sản phẩm trong cuộc trò chuyện.<br>
+**Trạng thái:** đã giải quyết các câu hỏi ảnh hưởng đến phạm vi và luồng nghiệp vụ chính. Các ngưỡng kỹ thuật và cấu hình thương mại được phân biệt ở mục 3.
 
-## 1. Các câu hỏi cần chốt trước
+## 1. Quyết định đã thống nhất
 
-| Mã | Nội dung cần làm rõ | Căn cứ / điểm chưa rõ | Ảnh hưởng |
+| Mã | Điểm cần làm rõ từ PDF | Quyết định đã xác nhận | Tài liệu bị ảnh hưởng |
 | --- | --- | --- | --- |
-| Q-01 | SRS cho toàn bộ tầm nhìn hay MVP? Những tính năng nào thuộc lần bàn giao đầu? | PDF vừa nêu tính năng cốt lõi, vừa nêu nhiều nguồn doanh thu và mở rộng 5 năm | Toàn bộ phạm vi và ưu tiên |
-| Q-02 | Làm web, Android, iOS hay cả ba? Có giao diện riêng cho đối tác, cộng tác viên, kiểm duyệt viên, quản trị và B2G không? | Trang 9 có mobile và web; chưa mô tả cổng vận hành | Tác nhân, giao diện, offline, kiểm thử |
-| Q-03 | Kết nối dịch vụ chỉ là xem liên hệ, gửi yêu cầu chờ xác nhận hay đặt tức thời? Loại dịch vụ nào được đặt? | Trang 6 ghi “đặt trực tiếp”, chưa có quy trình | Đơn đặt, lịch trống, xác nhận, tránh trùng |
-| Q-04 | Có thanh toán trong bản đầu không? Cổng nào, thanh toán toàn bộ hay đặt cọc? Hạn thanh toán và chính sách hủy/hoàn tiền thế nào? | Trang 10 liệt kê nhiều cổng, chưa lựa chọn | Tích hợp, trạng thái giao dịch, hoàn tiền |
-| Q-05 | Hoa hồng 10-15% áp dụng khi nào, ai trả, đối soát và trả tiền cho đối tác thế nào? | Trang 8 chỉ có khoảng tỷ lệ | Giá, doanh thu, báo cáo và đối soát |
-| Q-06 | Măng Đen có nằm trong bộ dữ liệu giai đoạn đầu không? Phạm vi giới hạn theo địa giới hay tuyến du lịch liên vùng? | Trang 2, 5 giới hạn Gia Lai; trang 6, 10 nhiều lần đưa Măng Đen vào danh sách | Bộ dữ liệu và kiểm tra phạm vi AI |
-| Q-07 | Offline miễn phí gồm gì? Premium bổ sung bản đồ, audio, dung lượng hay số chuyến? Hết hạn premium có được mở gói đã tải không? | Trang 6 coi offline là cốt lõi; trang 8 bán “offline đầy đủ” | Phân quyền nội dung và trải nghiệm mất mạng |
-| Q-08 | AI thật hay lịch trình mẫu trong bản đầu? Có chatbot, cá nhân hóa theo hành vi, gợi ý đổi lịch do mưa/đóng cửa và dự báo mật độ khách không? | Trang 6 liệt kê nhiều mức AI, chưa chia giai đoạn | Tích hợp, dữ liệu, chi phí, nghiệm thu |
-| Q-09 | Giao diện, bài viết và audio hỗ trợ ngôn ngữ nào ngay? Tiếng Jrai chỉ là cụm từ hay có cả thuyết minh? | Trang 6 nói Việt/Anh/Hàn/Trung và cụm từ Jrai; trang 10-11 mô tả khác nhau | Biên dịch, nội dung, kiểm thử |
-| Q-10 | Có thể dùng các mục tiêu kỹ thuật đề xuất trong tệp 02 để bạn duyệt không? Quy mô pilot dự kiến bao nhiêu người dùng đồng thời? | Chỉ có mốc tạo lịch 30 giây ở trang 8 | Hiệu năng, hạ tầng, chi phí |
+| D-01 | Toàn bộ tầm nhìn hay MVP? | Đặc tả toàn bộ tính năng trong PDF, chia giai đoạn chức năng để triển khai | Tệp 01, phạm vi GĐ1/GĐ2 |
+| D-02 | Mobile hay web? | Chỉ triển khai web, dùng được trên điện thoại; không làm ứng dụng native trong phạm vi này | FR-01 đến FR-30, NFR-15 |
+| D-03 | Thanh toán thật hay giả? | Mọi thanh toán/hoàn tiền/gói/hoa hồng đều mô phỏng, không thu/chuyển tiền thật | FR-13,14,20,27 |
+| D-04 | Đặt tức thời hay chờ xác nhận? | Khách gửi yêu cầu, quản trị duyệt, khách trả tiền giả lập, đơn mới được xác nhận; GĐ2 đối tác xử lý đơn của mình | FR-11 đến FR-14,26 |
+| D-05 | Giới hạn địa lý và Măng Đen? | GĐ1 chưa đưa Măng Đen vào dữ liệu; giữ phạm vi Gia Lai, liên vùng để sau | FR-03 đến FR-05 |
+| D-06 | Offline miễn phí hay premium? | Miễn phí xem lịch đã lưu và POI trong chuyến; GĐ1 chỉ đọc, sửa cần mạng. Bản đồ/audio tải trước thuộc premium GĐ2 | FR-08,20,21 |
+| D-07 | AI thật hay lịch mẫu? | GĐ1 có AI thật tạo lịch. Chatbot, cá nhân hóa theo hành vi, thời tiết và dự báo mật độ để giai đoạn sau | FR-05,22-24 |
+| D-08 | Giao diện và audio ngôn ngữ nào? | GĐ1 tiếng Việt; GĐ2 bổ sung Anh/Hàn/Trung và cụm từ giao tiếp Jrai | FR-09,19 |
+| D-09 | Đầu vào và đơn vị ngân sách? | Ngày bắt đầu, số ngày, số người, ngân sách cả đoàn gồm ăn/ở/vé/di chuyển nội tỉnh, xuất phát, phương tiện và sở thích; không tự tăng ngân sách | FR-05; BR-02 đến BR-04 |
+| D-10 | Quyền khách chưa đăng nhập? | Được xem/tìm địa điểm, sự kiện và nghe audio miễn phí. Tạo/lưu lịch và đặt dịch vụ cần đăng nhập | FR-01,03,05,07,09-11 |
+| D-11 | Đăng nhập và cổng vận hành? | Email + mật khẩu. GĐ1 quản trị nhập/duyệt nội dung, quản lý đối tác và đơn; cổng đối tác/cộng tác viên riêng ở GĐ2 | FR-01,17,18,26 |
+| D-12 | Hạn xử lý đơn? | Duyệt trong 24 giờ, trả tiền trong 30 phút sau duyệt; nhận yêu cầu phải còn đủ cửa sổ này trước giờ dùng; mốc có thể cấu hình | BR-06,07 |
+| D-13 | Hủy và hoàn tiền? | Trước giờ bắt đầu được hủy miễn phí, hoàn giả lập toàn bộ nếu đã thanh toán; không tự hủy từ lúc bắt đầu sử dụng | FR-14; BR-08 |
+| D-14 | Giá và gia hạn premium? | 49.000đ/tháng hoặc 199.000đ/năm, không tự gia hạn; thêm bản đồ/audio offline, bỏ quảng cáo; hết hạn vẫn giữ lịch và offline cơ bản | FR-20,21 |
+| D-15 | Cổng đối tác/cộng tác viên/B2G? | Đối tác tự quản lý dịch vụ/đơn thuộc mình; cộng tác viên gửi quản trị duyệt; B2G chỉ xem/xuất CSV tổng hợp | FR-26,30 |
+| D-16 | Gói đối tác, quảng cáo, thưởng? | Quyền lợi/giá/điều kiện do quản trị cấu hình. Hoa hồng mặc định 10%, ghi nhận mô phỏng khi dịch vụ hoàn thành, không chuyển tiền | FR-27 đến FR-29 |
+| D-17 | Giới hạn của AI nâng cao? | Chatbot dựa nội dung duyệt; hành vi chỉ dùng khi có đồng ý; đổi lịch do thời tiết/đóng cửa phải cho khách xác nhận; mật độ thiếu dữ liệu thì báo chưa đủ | FR-22 đến FR-24 |
+| D-18 | Nguồn sự kiện và thông báo? | GĐ1 quản trị nhập/cập nhật; tự động đồng bộ khi có API ở GĐ2. Thông báo nghiệp vụ trong web, chưa cần SMS/email/push | FR-10,15,25 |
+| D-19 | Chỉ tiêu kỹ thuật ngoài PDF? | Cho phép người soạn đề xuất, thông số có thể cấu hình/điều chỉnh | Tệp 02 và chi tiết kỹ thuật BR |
+| D-20 | Hệ quản trị cho schema backend? | Ban đầu chọn MySQL 8; sau lỗi import, chủ sản phẩm xác nhận hosting thực tế là MariaDB 10.5.26. Điều chỉnh schema theo môi trường hosting, giữ file tại `be/schema.sql` | Tệp 07; schema và hướng dẫn backend |
 
-Các câu Q-01 đến Q-10 được gom thành 5 câu hỏi trong cuộc trò chuyện để tiện trả lời. Sau khi nhận câu trả lời sẽ hỏi tiếp các chi tiết còn ảnh hưởng tới đặc tả, thay vì tự suy diễn.
+Email khôi phục tài khoản trong UC-01 là giao tiếp phục vụ bảo mật tài khoản, tách với thông báo nghiệp vụ đơn đặt/sự kiện ở D-18. Không suy ra yêu cầu gửi email marketing.
 
-## 2. Câu hỏi nghiệp vụ tiếp theo
+## 2. Diễn giải bổ sung để đặc tả nhất quán
 
-Chỉ cần chốt những câu thuộc tính năng được chọn trong Q-01.
+Các chi tiết sau là thiết kế yêu cầu do người soạn cụ thể hóa, không ghi thành câu trả lời nguyên văn của chủ sản phẩm:
 
-| Mã | Câu hỏi | Đề xuất để thảo luận, chưa phải quyết định |
-| --- | --- | --- |
-| Q-11 | Khách chưa đăng nhập được làm gì? Đăng nhập bằng email, số điện thoại hay tài khoản mạng xã hội? | Cho xem nội dung công khai; chốt sau quyền tạo/lưu lịch |
-| Q-12 | Ngân sách tính theo người hay cả đoàn? Có bao gồm di chuyển đến Gia Lai, ăn, ở và vé? Số người, ngày đi, phương tiện có bắt buộc không? | Tách chi phí ước tính theo hạng mục, ghi rõ đơn vị |
-| Q-13 | Khi AI không tìm được lịch thỏa ngân sách/giờ mở cửa, cho phép lịch có cảnh báo hay bắt buộc người dùng sửa đầu vào? | Không tự nới ngân sách; đề nghị người dùng đổi ràng buộc |
-| Q-14 | Offline cho phép chỉ xem hay cả sửa lịch? Có định tuyến offline không? Đồng bộ nhiều thiết bị giải quyết xung đột thế nào? | Phân biệt xem bản đồ với tính tuyến; không hứa định tuyến offline khi chưa có dữ liệu |
-| Q-15 | Ai nhập và kiểm duyệt địa điểm, bài viết, audio, hồ sơ đối tác và sự kiện? Có quy trình xác minh đối tác không? | Nội dung công khai đi qua trạng thái chờ duyệt |
-| Q-16 | Sự kiện và thời tiết lấy từ API nào hay nhập thủ công? Bao lâu cập nhật? Có quyền sử dụng dữ liệu bản đồ để tải offline không? | Lưu nguồn và thời điểm cập nhật; hiển thị khi dữ liệu cũ |
-| Q-17 | Có gói premium, gói đối tác, quảng cáo, giới thiệu bạn bè và thưởng báo lỗi trong bản đầu không? Quyền lợi và mức giá chính thức là gì? | Không hard-code mức giá dự kiến trong PDF |
-| Q-18 | Báo cáo B2G cần chỉ số gì, ai được xem, có xuất tệp không? Mức tổng hợp tối thiểu và thời gian lưu dữ liệu là bao nhiêu? | Chỉ cung cấp số liệu tổng hợp; chưa thiết kế xuất dữ liệu cá nhân |
-| Q-19 | Có thông báo trong ứng dụng, email, push hay SMS? Có đánh giá dịch vụ hoặc chỉ báo lỗi nội dung? | Không suy ra chức năng đánh giá từ hoạt động review marketing |
-| Q-20 | Thời gian lưu tài khoản, lịch sử AI, vị trí, báo cáo lỗi, giao dịch và yêu cầu xóa dữ liệu? | Chốt theo nhu cầu thực tế và chính sách được phê duyệt |
+- Đơn chờ duyệt chưa giữ tồn; khi duyệt giữ nguyên tử; hết hạn hoặc hủy nhả tồn để tránh duyệt trùng.
+- Một đơn đặt một dịch vụ/khoảng sử dụng; nhiều dịch vụ tạo các đơn độc lập; lịch trình và đơn không tự sửa lẫn nhau.
+- Giá và chính sách chụp theo đơn; đổi giá sau đặt không hồi tố.
+- Tại đúng giờ bắt đầu không còn quyền tự hủy; tại đúng thời điểm hết hạn không được tiếp tục thanh toán.
+- Lịch sửa có phiên bản, dữ liệu offline tải theo manifest và chỉ công bố bản tải hoàn chỉnh.
+- Premium mua thêm nối hạn; tháng/năm theo lịch và xử lý ngày cuối tháng; quyền offline có hạn, phải xác minh khi không đáng tin.
+- Chính sách quà tặng/gói đối tác/quảng cáo là cấu hình có phiên bản thay vì giả định đã có mức giá hoặc định mức chính thức.
 
-## 3. Nhật ký quyết định
+Đây là các lựa chọn để tài liệu triển khai được; nếu thay đổi phải cập nhật đồng thời BR, use case và sequence liên quan.
 
-| Mã quyết định | Ngày | Câu hỏi liên quan | Quyết định của chủ sản phẩm | Trạng thái |
-| --- | --- | --- | --- | --- |
-| - | 29/10/2026 | Q-01 đến Q-20 | Chưa nhận câu trả lời | Chờ xác nhận |
+## 3. Các giá trị và phụ thuộc cần hiệu chỉnh khi triển khai
 
-## 4. Lưu ý về nguồn
+Không có câu hỏi phạm vi chính đang bỏ ngỏ. Các mục sau là đầu vào cấu hình/thiết kế, chưa được trình bày như cam kết vận hành đã đo:
 
-- Không có ảnh/clip sản phẩm bổ sung trong thư mục dự án, dù mục 2.2 của PDF nhắc đến tệp đính kèm.
-- Chưa có mã nguồn hoặc tài liệu kỹ thuật trong `be` và `fe` tại thời điểm đọc, nên chưa xác định stack, API hoặc khả năng đã có.
-- Tài liệu ghi lại các mục tiêu bảo vệ dữ liệu từ ý tưởng; không xác nhận tính đầy đủ hay hiệu lực hiện tại của các văn bản pháp luật được PDF viện dẫn. Việc chốt nghĩa vụ pháp lý cần bước đối chiếu riêng nếu tính năng xử lý dữ liệu/thu tiền được chọn.
+| Mục | Trạng thái / cách xử lý |
+| --- | --- |
+| Nhà cung cấp AI và bản đồ/tuyến | Chưa chỉ định hãng; lựa chọn khi thiết kế. Nghiệm thu phải dùng AI thật và dữ liệu tuyến có căn cứ; không coi danh sách GPT/VinAI/FPT AI/Map4D/Google trong PDF là lựa chọn đã ký |
+| Dữ liệu audio, bản dịch, quyền ảnh và bản đồ offline | Phải có nội dung được cấp quyền; thiếu dữ liệu phải hiển thị đúng, không cam kết đã sản xuất đủ kho nội dung |
+| Nguồn thời tiết, API sự kiện, độ mới và mật độ | GĐ2 chỉ tích hợp nguồn được phép; chưa có API không giả định đồng bộ thời gian thực; ngưỡng đủ dữ liệu/độ mới cần kiểm chứng theo nguồn |
+| Chỉ tiêu tải/khả dụng/lưu dữ liệu | Đề xuất ở tệp 02, hiệu chỉnh trên pilot; không phải số liệu đã chạy thử |
+| Giá, hạn mức gói đối tác; chiến dịch quảng cáo/thưởng | Quản trị cấu hình trước khi kích hoạt, theo D-16; không hard-code mức chưa được chọn |
+| Báo cáo B2G và thương mại dữ liệu | Chỉ số cơ bản đã mô tả; ngưỡng nhóm đề xuất ≥10. Ký hợp đồng, chia sẻ và thương mại hóa cần phạm vi riêng, không có trong bàn giao chức năng xuất tổng hợp |
+| Chính sách lưu trữ/xóa và nghĩa vụ pháp lý | SRS có mục tiêu quyền riêng tư; cần đối chiếu thực tế trước vận hành, không coi trích dẫn pháp luật trong PDF là đánh giá pháp lý hiện hành |
+
+## 4. Giới hạn nguồn đã kiểm tra
+
+- Đã đọc cả 12 trang PDF và kiểm tra ảnh render; các nội dung nền tảng, sản phẩm, doanh thu và rủi ro đều được đối chiếu.
+- Mục 2.2 PDF nhắc ảnh/clip sản phẩm đính kèm, nhưng không có các tệp bổ sung đó trong thư mục dự án lúc đọc. Không dựng yêu cầu giao diện từ tệp chưa có.
+- `be` và `fe` chưa có mã nguồn để đối chiếu tại thời điểm soạn. SRS không áp đặt framework, cấu trúc API hoặc giả định tính năng đã triển khai.
+- Các số liệu thị trường/sự kiện/địa lý trong PDF dùng làm bối cảnh của ý tưởng; tài liệu này không xác minh độc lập các số liệu đó.
