@@ -39,6 +39,8 @@ Use case dùng khối mã `plantuml` để thể hiện đúng tác nhân, biên
 
 ## Trạng thái và sử dụng
 
+Kế hoạch phát triển và backlog BE/FE được quản lý tại [docs/implementation](../implementation/README.md), kèm ma trận truy vết FR/NFR và cổng nghiệm thu theo giai đoạn.
+
 1. Dùng cột GĐ trong yêu cầu và danh mục use case để lập phạm vi bàn giao, không hiểu toàn bộ tầm nhìn là phải làm ngay.
 2. Dùng FR/BR làm đầu vào thiết kế giao diện, API và dữ liệu; dùng UC/sequence và NFR để lập kịch bản nghiệm thu.
 3. Chọn nhà cung cấp AI/bản đồ và hiệu chỉnh chỉ tiêu kỹ thuật theo thử nghiệm trước khi cam kết vận hành.
