@@ -6,9 +6,10 @@
 
 ### BE-01 - Chuẩn hóa cấu hình và module (M)
 
-- [ ] Tách config env đã validate, module router/controller/service/repository; thống nhất request ID, logger che bí mật, error code/field errors, phân trang và health/readiness riêng. Giữ `/api/health` tương thích.
+- [x] Tách config env đã validate, module router/controller/service/repository; thống nhất request ID, logger che bí mật, error code/field errors, phân trang và health/readiness riêng. Giữ `/api/health` tương thích.
 - Phụ thuộc: X-01. Truy vết: NFR-07, NFR-10, NFR-22, NFR-23.
 - Nghiệm thu: thiếu env bắt buộc báo lỗi khởi động rõ; lỗi không lộ stack/secret; readiness phản ánh DB khi được tích hợp; health không trả cấu hình nội bộ.
+- Bằng chứng triển khai: [hướng dẫn BE](../../be/DEVELOPMENT.md), [OpenAPI scaffold](../../be/openapi.yaml), các test `app`, `config`, `validation` đạt trên Node 20.20.2. Đây là hoàn thành phần scaffold BE-01; không đồng nghĩa X-01/X-02 hoặc FR nghiệp vụ đã nghiệm thu.
 
 ### BE-02 - Kết nối MariaDB và hợp đồng dữ liệu (M)
 

@@ -27,5 +27,31 @@ test('API health, CORS, 404 và JSON không hợp lệ', async (t) => {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{',
   });
   assert.equal(invalid.status, 400);
-  assert.deepEqual(await invalid.json(), { error: { message: 'Yêu cầu không hợp lệ.' } });
+  const invalidBody = await invalid.json();
+  assert.equal(invalidBody.error.code, 'INVALID_JSON');
+  assert.equal(invalidBody.error.message, 'Yêu cầu không hợp lệ.');
+  assert.equal(invalidBody.error.requestId, invalid.headers.get('x-request-id'));
+  assert.equal(health.headers.get('x-powered-by'), null);
+  assert.equal(health.headers.get('x-content-type-options'), 'nosniff');
+});
+
+test('readiness phản ánh DB và không trả thông tin kết nối', async (t) => {
+  let connected = true;
+  const database = { async checkReadiness() {
+    if (!connected) throw new Error('sensitive-database-detail');
+  } };
+  const server = createApp({ database }).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
+  const url = `http://127.0.0.1:${server.address().port}/api/v1/ready`;
+  const ready = await fetch(url);
+  assert.equal(ready.status, 200);
+  assert.equal(ready.headers.get('cache-control'), 'no-store');
+  assert.equal((await ready.json()).checks.database, 'up');
+  connected = false;
+  const down = await fetch(url);
+  assert.equal(down.status, 503);
+  const body = await down.text();
+  assert.equal(JSON.parse(body).checks.database, 'down');
+  assert.ok(!body.includes('sensitive-database-detail'));
 });

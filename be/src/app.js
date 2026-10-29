@@ -1,28 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import { createLogger } from './config/logger.js';
+import { requestContext } from './middleware/request-context.js';
+import { errorHandler, notFound } from './middleware/error-handler.js';
+import { createApiRouter } from './routes/index.js';
 
-export function createApp({ clientOrigin = 'http://localhost:5173' } = {}) {
+export function createApp({
+  clientOrigin = 'http://localhost:5173', trustProxyHops = 0,
+  database, logger = createLogger('silent'),
+} = {}) {
   const app = express();
   app.disable('x-powered-by');
+  if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
+  app.use(requestContext(logger));
+  app.use(helmet());
   app.use(cors({ origin: clientOrigin }));
   app.use(express.json({ limit: '1mb' }));
 
-  app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'gialai-travel-api' });
-  });
-
-  app.use((_req, res) => {
-    res.status(404).json({ error: { message: 'Không tìm thấy API.' } });
-  });
-
-  // Express nhận diện middleware xử lý lỗi qua đủ bốn tham số.
-  app.use((error, _req, res, _next) => {
-    const status = error.status >= 400 && error.status < 500 ? error.status : 500;
-    if (status === 500) console.error(error);
-    res.status(status).json({
-      error: { message: status === 500 ? 'Lỗi máy chủ.' : 'Yêu cầu không hợp lệ.' },
-    });
-  });
+  app.use('/api', createApiRouter({ database, logger }));
+  app.use(notFound);
+  app.use(errorHandler(logger));
 
   return app;
 }

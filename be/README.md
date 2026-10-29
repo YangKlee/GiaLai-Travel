@@ -1,5 +1,7 @@
 # Cơ sở dữ liệu GiaLaiTravel
 
+Hướng dẫn scaffold Express, cấu hình môi trường và HTTP contract: [DEVELOPMENT.md](DEVELOPMENT.md).
+
 ## 1. Tệp và điều kiện
 
 - [schema.sql](schema.sql): cấu trúc MySQL cho cả GĐ1 và GĐ2, gồm 58 bảng và một view báo cáo B2G.

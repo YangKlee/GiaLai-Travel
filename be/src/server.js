@@ -1,23 +1,23 @@
 import { createApp } from './app.js';
+import { loadConfig } from './config/env.js';
+import { createLogger } from './config/logger.js';
 
-const port = Number(process.env.PORT || 3000);
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  throw new Error('PORT phải là số nguyên từ 1 đến 65535.');
-}
+const config = loadConfig();
+const logger = createLogger(config.logLevel);
 
-const app = createApp({ clientOrigin: process.env.CLIENT_ORIGIN });
-const server = app.listen(port, (error) => {
-  if (error) {
-    console.error(error);
-    process.exitCode = 1;
-    return;
-  }
-  console.log(`GiaLai Travel API: http://localhost:${port}`);
+const app = createApp({ clientOrigin: config.clientOrigins, trustProxyHops: config.trustProxyHops, logger });
+const server = app.listen(config.port);
+server.requestTimeout = 60_000;
+server.headersTimeout = 15_000;
+server.on('listening', () => logger.info({ port: config.port }, 'API listening'));
+server.on('error', (error) => {
+  logger.error({ errorCode: error.code }, 'HTTP server failed');
+  process.exitCode = 1;
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.once(signal, () => {
-    server.close(() => process.exit(0));
+    server.close();
     setTimeout(() => process.exit(1), 10_000).unref();
   });
 }

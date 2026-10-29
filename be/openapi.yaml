@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: GiaLaiTravel API
+  version: 0.1.0
+  description: Implemented scaffold endpoints only; business contracts will be added per milestone.
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/health:
+    get:
+      operationId: getLiveness
+      summary: HTTP process liveness, independent of database availability
+      responses:
+        '200':
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liveness'
+  /api/v1/health:
+    get:
+      operationId: getVersionedLiveness
+      responses:
+        '200':
+          description: Process is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liveness'
+  /api/ready:
+    get:
+      operationId: getReadiness
+      summary: Check database connectivity; does not verify the complete schema
+      responses:
+        '200':
+          $ref: '#/components/responses/Ready'
+        '503':
+          $ref: '#/components/responses/NotReady'
+  /api/v1/ready:
+    get:
+      operationId: getVersionedReadiness
+      responses:
+        '200':
+          $ref: '#/components/responses/Ready'
+        '503':
+          $ref: '#/components/responses/NotReady'
+components:
+  responses:
+    Ready:
+      description: Database reachable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Readiness'
+    NotReady:
+      description: Database unreachable or unconfigured; response omits connection details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Readiness'
+  schemas:
+    Liveness:
+      type: object
+      required: [status, service]
+      properties:
+        status:
+          const: ok
+        service:
+          const: gialai-travel-api
+    Readiness:
+      type: object
+      required: [status, service, checks]
+      properties:
+        status:
+          enum: [ready, not_ready]
+        service:
+          const: gialai-travel-api
+        checks:
+          type: object
+          required: [database]
+          properties:
+            database:
+              enum: [up, down]
+        requestId:
+          type: string
+          format: uuid
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+              format: uuid
+            fields:
+              type: array
+              items:
+                type: object
+                required: [field, message]
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
