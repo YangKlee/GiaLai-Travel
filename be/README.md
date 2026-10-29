@@ -9,7 +9,7 @@
 - Tạo CSDL và cấp quyền qua cPanel trước khi import. Tài khoản chạy DDL cần quyền tạo bảng, index, khóa ngoại và view trong CSDL đó; file không tự tạo hoặc đổi CSDL.
 - File khởi tạo dùng một lần trên CSDL mới; không phải migration chạy lặp. Không có lệnh xóa bảng, xóa CSDL hoặc tắt kiểm tra khóa ngoại. MySQL tự commit DDL, vì vậy lỗi giữa chừng không rollback toàn bộ cấu trúc.
 
-Thư mục backend hiện có tên `be` trong repository; `schema.sql` được đặt tại đây theo yêu cầu. Chưa chọn framework hoặc ORM.
+Thư mục backend có tên `be` trong repository; `schema.sql` được đặt tại đây theo yêu cầu. Backend dùng Express.js trên Node.js 20.20.2, chưa tích hợp ORM hoặc kết nối CSDL. Xem [hướng dẫn chạy project](../README.md).
 
 ## 2. Cách chạy
 

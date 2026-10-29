@@ -1,0 +1,17 @@
+{
+  "name": "gialai-travel",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["be", "fe"],
+  "engines": { "node": "20.20.2" },
+  "scripts": {
+    "dev": "concurrently -k -n be,fe \"npm run dev -w be\" \"npm run dev -w fe\"",
+    "dev:be": "npm run dev -w be",
+    "dev:fe": "npm run dev -w fe",
+    "start": "npm run start -w be",
+    "build": "npm run build -w fe",
+    "lint": "npm run lint -w fe",
+    "test": "npm run test -w be"
+  },
+  "devDependencies": { "concurrently": "^9.2.1" }
+}
