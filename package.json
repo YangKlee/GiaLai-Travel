@@ -6,6 +6,7 @@
   "engines": { "node": "20.20.2" },
   "scripts": {
     "dev": "concurrently -k -n be,fe \"npm run dev -w be\" \"npm run dev -w fe\"",
+    "dev:demo": "concurrently -k -n be,fe \"npm run dev:demo -w be\" \"npm run dev -w fe\"",
     "dev:be": "npm run dev -w be",
     "dev:fe": "npm run dev -w fe",
     "start": "npm run start -w be",

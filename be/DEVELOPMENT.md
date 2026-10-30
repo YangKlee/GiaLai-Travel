@@ -30,6 +30,9 @@ tham số hóa. Chỉ thêm module khi triển khai chức năng tương ứng, 
 
 ## HTTP contract
 
+- API khám phá: `GET /api/v1/catalog`, `/api/v1/places` và `/api/v1/places/:id`; bộ lọc, response và giới hạn theo [OpenAPI](openapi.yaml). Chỉ trả POI công bố, revision được duyệt và bản dịch tiếng Việt thuộc vùng giai đoạn 1; thiếu nội dung trả rỗng/404, lỗi DB trả 503. Chưa có API dịch vụ/slot hoặc ngoại lệ đóng cửa.
+- Demo độc lập: tại gốc chạy `npm run dev:demo`. Server `be/demo/server.js` không kết nối DB, không load `.env`, không tự fallback từ server thật; response có `dataset: demo`. Dữ liệu mẫu không xác minh giờ, giá, tọa độ hoặc nguồn du lịch. Dùng `npm run dev` cho backend CSDL thật.
+
 - `GET /api/health` và `/api/v1/health`: liveness, giữ response cũ tương thích FE.
 - `GET /api/ready` và `/api/v1/ready`: 200 khi kết nối DB được, 503 khi chưa được.
   Readiness không chứng minh đủ schema hoặc đủ quyền nghiệp vụ.

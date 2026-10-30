@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "dev:demo": "node --watch demo/server.js",
     "start": "node --env-file-if-exists=.env src/server.js",
     "test": "node --test",
     "db:check": "node --env-file-if-exists=.env scripts/check-database.js",
@@ -23,6 +24,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "sequelize-auto": "^0.8.8"
+    "sequelize-auto": "^0.8.8",
+    "yaml": "^2.9.1"
   }
 }

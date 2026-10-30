@@ -2,10 +2,122 @@ openapi: 3.1.0
 info:
   title: GiaLaiTravel API
   version: 0.1.0
-  description: Implemented scaffold endpoints only; business contracts will be added per milestone.
+  description: Health and public place discovery. Demo server returns dataset=demo and never connects to the application database.
 servers:
   - url: http://localhost:3000
 paths:
+  /api/v1/catalog:
+    get:
+      operationId: getCatalog
+      summary: Categories and regions containing published phase-1 places
+      responses:
+        '200':
+          description: Available filters
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, dataset]
+                properties:
+                  dataset:
+                    $ref: '#/components/schemas/Dataset'
+                  data:
+                    type: object
+                    required: [categories, regions]
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          type: object
+                          required: [code, name]
+                          properties:
+                            code:
+                              $ref: '#/components/schemas/Category'
+                            name:
+                              type: string
+                      regions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Region'
+        '503':
+          $ref: '#/components/responses/CatalogUnavailable'
+  /api/v1/places:
+    get:
+      operationId: listPlaces
+      summary: Published Vietnamese places; unknown prices excluded when a price filter is supplied
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: category, in: query, schema: { $ref: '#/components/schemas/Category' } }
+        - { name: regionId, in: query, schema: { type: string, format: uuid } }
+        - { name: minPrice, in: query, schema: { type: string, pattern: '^(0|[1-9][0-9]{0,19})$' }, description: Integer VND up to unsigned BIGINT; must not exceed maxPrice }
+        - { name: maxPrice, in: query, schema: { type: string, pattern: '^(0|[1-9][0-9]{0,19})$' } }
+        - { name: sort, in: query, schema: { type: string, enum: [name, price-asc], default: name } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Filtered places; stable ID tie-breaker, unknown prices last
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta, dataset]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Place'
+                  meta:
+                    $ref: '#/components/schemas/Pagination'
+                  dataset:
+                    $ref: '#/components/schemas/Dataset'
+        '422':
+          $ref: '#/components/responses/InvalidCatalogRequest'
+        '503':
+          $ref: '#/components/responses/CatalogUnavailable'
+  /api/v1/places/{id}:
+    get:
+      operationId: getPlace
+      summary: Published place detail; hidden, draft and missing IDs all return 404
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Place and known opening intervals (weekday 0 is Sunday, Vietnam local time)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, dataset]
+                properties:
+                  dataset:
+                    $ref: '#/components/schemas/Dataset'
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Place'
+                      - type: object
+                        required: [openingHours]
+                        properties:
+                          openingHours:
+                            type: array
+                            description: Empty means unknown, never open all day. Closure exceptions are not yet exposed; not a real-time availability guarantee.
+                            items:
+                              type: object
+                              required: [weekday, opensAt, closesAt, crossesMidnight]
+                              properties:
+                                weekday: { type: integer, minimum: 0, maximum: 6 }
+                                opensAt: { type: string }
+                                closesAt: { type: string }
+                                crossesMidnight: { type: boolean }
+        '404':
+          description: Place not available
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          $ref: '#/components/responses/InvalidCatalogRequest'
+        '503':
+          $ref: '#/components/responses/CatalogUnavailable'
   /api/health:
     get:
       operationId: getLiveness
@@ -46,6 +158,16 @@ paths:
           $ref: '#/components/responses/NotReady'
 components:
   responses:
+    InvalidCatalogRequest:
+      description: Invalid filter or ID; includes field errors and request ID
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    CatalogUnavailable:
+      description: Catalog database unavailable; no automatic demo fallback
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     Ready:
       description: Database reachable
       content:
@@ -59,6 +181,41 @@ components:
           schema:
             $ref: '#/components/schemas/Readiness'
   schemas:
+    Dataset:
+      type: string
+      enum: [live, demo]
+    Category:
+      type: string
+      enum: [NATURE, CULTURE, FOOD, STAY, ADVENTURE, OTHER]
+    Region:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    Place:
+      type: object
+      required: [id, title, description, category, region, latitude, longitude, referencePriceVnd, typicalDurationMinutes, sourceReference, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, description: Plain text; never render as HTML }
+        category: { $ref: '#/components/schemas/Category' }
+        region: { $ref: '#/components/schemas/Region' }
+        latitude: { type: [number, 'null'], minimum: -90, maximum: 90 }
+        longitude: { type: [number, 'null'], minimum: -180, maximum: 180 }
+        referencePriceVnd: { type: [string, 'null'], pattern: '^(0|[1-9][0-9]*)$' }
+        typicalDurationMinutes: { type: [integer, 'null'], minimum: 1 }
+        sourceReference: { type: [string, 'null'], description: Source text or HTTP URL; demo values are null }
+        updatedAt: { type: string, format: date-time }
     Liveness:
       type: object
       required: [status, service]
