@@ -18,6 +18,8 @@ const schema = z.object({
   DB_QUERY_TIMEOUT_MS: integer(10000, 100, 60000),
   DB_SSL: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   DB_SSL_CA: z.string().min(1).optional(),
+  SERVE_STATIC: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  STATIC_DIR: z.string().min(1).optional(),
 }).superRefine((env, ctx) => {
   const localDevelopment = env.NODE_ENV !== 'production' &&
     ['localhost', '127.0.0.1', '::1'].includes(env.DB_HOST);
@@ -37,6 +39,7 @@ export function loadConfig(environment = process.env) {
   return Object.freeze({
     nodeEnv: env.NODE_ENV, port: env.PORT, clientOrigins: env.CLIENT_ORIGIN,
     logLevel: env.LOG_LEVEL, trustProxyHops: env.TRUST_PROXY_HOPS,
+    serveStatic: env.SERVE_STATIC, staticDir: env.STATIC_DIR,
     database: Object.freeze({
       host: env.DB_HOST, port: env.DB_PORT, database: env.DB_NAME,
       user: env.DB_USER, password: env.DB_PASSWORD,
