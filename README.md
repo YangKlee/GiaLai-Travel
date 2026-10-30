@@ -1,6 +1,6 @@
 # GiaLai Travel
 
-Tài liệu: [SRS](docs/srs/README.md) · [Kế hoạch và task triển khai BE/FE](docs/implementation/README.md).
+Tài liệu: [Cấu trúc dự án BE/FE](PROJECT_STRUCTURE.md) · [SRS](docs/srs/README.md) · [Kế hoạch và task triển khai BE/FE](docs/implementation/README.md).
 
 Backend Express 5 và frontend React 19 (JavaScript, Vite), dùng npm workspaces.
 
