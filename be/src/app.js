@@ -8,7 +8,7 @@ import { createApiRouter } from './routes/index.js';
 
 export function createApp({
   clientOrigin = 'http://localhost:5173', trustProxyHops = 0,
-  database, catalogRepository, auth, logger = createLogger('silent'),
+  database, catalogRepository, auth, mail, clock, logger = createLogger('silent'),
 } = {}) {
   const app = express();
   app.disable('x-powered-by');
@@ -18,7 +18,7 @@ export function createApp({
   app.use(cors({ origin: clientOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
 
-  app.use('/api', createApiRouter({ database, catalogRepository, auth, logger }));
+  app.use('/api', createApiRouter({ database, catalogRepository, auth, mail, clock, logger }));
   app.use(notFound);
   app.use(errorHandler(logger));
 

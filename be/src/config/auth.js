@@ -12,11 +12,16 @@ export function loadAuthConfig(config, environment = process.env) {
     AUTH_ISSUER: z.string().min(1).max(200).default('gialai-travel-api'),
     AUTH_AUDIENCE: z.string().min(1).max(200).default('gialai-travel-web'),
     AUTH_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+    AUTH_RESET_TOKEN_MINUTES: z.coerce.number().int().min(5).max(60).default(15),
+    AUTH_MAIL_MODE: z.enum(['disabled', 'outbox']).default('disabled'),
   }).safeParse(environment);
   if (!result.success) throw new Error('Invalid auth configuration: ' + result.error.issues.map((issue) => issue.path.join('.')).join(', '));
   const env = result.data;
   const secure = env.AUTH_COOKIE_SECURE === undefined ? config.nodeEnv === 'production' : env.AUTH_COOKIE_SECURE === 'true';
   if (config.nodeEnv === 'production' && !secure) throw new Error('AUTH_COOKIE_SECURE is required in production');
+  if (config.nodeEnv === 'production' && env.AUTH_MAIL_MODE === 'outbox') {
+    throw new Error('AUTH_MAIL_MODE=outbox cannot be used in production');
+  }
   try {
     const privateKey = createPrivateKey(readFileSync(env.AUTH_PRIVATE_KEY_FILE));
     if (privateKey.asymmetricKeyType !== 'rsa' || privateKey.asymmetricKeyDetails.modulusLength < 2048) throw new Error('Invalid key');
@@ -31,6 +36,7 @@ export function loadAuthConfig(config, environment = process.env) {
       }
     }
     return { privateKey, publicKeys, kid: env.AUTH_KEY_ID, issuer: env.AUTH_ISSUER, audience: env.AUTH_AUDIENCE,
-      secure, origins: config.clientOrigins, accessSeconds: 900, sessionMilliseconds: 7 * 86400_000 };
+      secure, origins: config.clientOrigins, accessSeconds: 900, sessionMilliseconds: 7 * 86400_000,
+      resetMilliseconds: env.AUTH_RESET_TOKEN_MINUTES * 60_000, mailMode: env.AUTH_MAIL_MODE };
   } catch { throw new Error('Invalid auth key files'); }
 }

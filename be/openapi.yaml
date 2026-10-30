@@ -373,6 +373,53 @@ paths:
         "422": *a5
         "429": *a6
         "503": *a7
+  /api/v1/auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      summary: Issue a 15-minute single-use password reset token with uniform public response
+      parameters:
+        - *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPassword"
+      responses:
+        "202":
+          description: Uniform public response regardless of whether the email exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForgotPasswordResponse"
+        "403": *a3
+        "422": *a5
+        "429": *a6
+        "503": *a7
+  /api/v1/auth/reset-password:
+    post:
+      operationId: resetPassword
+      summary: Consume a single-use password reset token, update password and revoke all sessions
+      parameters:
+        - *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPassword"
+      responses:
+        "200":
+          description: Password updated and all active sessions revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetPasswordResponse"
+        "400": *a2
+        "403": *a3
+        "422": *a5
+        "429": *a6
+        "503": *a7
   /api/v1/auth/me:
     get:
       operationId: getCurrentUser
@@ -699,6 +746,58 @@ components:
               maximum: 900
             user:
               $ref: "#/components/schemas/AuthUser"
+    ForgotPassword:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    ForgotPasswordResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - accepted
+            - message
+          properties:
+            accepted:
+              const: true
+            message:
+              type: string
+    ResetPassword:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 200
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    ResetPasswordResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
   securitySchemes:
     BearerAuth:
       type: http

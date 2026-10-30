@@ -4,3 +4,8 @@ export function serializeUtc(value) {
   if (!Number.isFinite(date.getTime())) throw new TypeError('Invalid UTC datetime');
   return date.toISOString();
 }
+
+export function resolveNow(clock, fallbackUtc) {
+  const source = typeof clock === 'function' ? clock() : (fallbackUtc ?? new Date());
+  return new Date(serializeUtc(source));
+}

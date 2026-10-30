@@ -15,6 +15,7 @@
     "test": "node --test",
     "db:check": "node --env-file-if-exists=.env scripts/check-database.js",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "job:run": "node --env-file-if-exists=.env scripts/run-jobs.js",
     "admin:create": "node --env-file-if-exists=.env scripts/bootstrap-admin.js",
     "auth:keys": "node scripts/auth-keys.js",
     "test:integration": "node scripts/integration-tests.js",

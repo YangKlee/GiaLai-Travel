@@ -70,6 +70,24 @@ export function createDatabase(config) {
       }
     },
     checkReadiness: () => sequelize.authenticate(),
+    async withAdvisoryLock(lockName, work) {
+      if (typeof lockName !== 'string' || !/^[A-Za-z0-9:_-]{1,64}$/.test(lockName)) {
+        throw new TypeError('Invalid advisory lock name');
+      }
+      const connection = await sequelize.connectionManager.getConnection({ type: 'WRITE' });
+      let acquired = false;
+      try {
+        const [rows] = await connection.promise().execute('SELECT GET_LOCK(?, 0) AS acquired', [lockName]);
+        acquired = Number(rows[0]?.acquired) === 1;
+        if (!acquired) return { acquired: false };
+        return { acquired: true, value: await work() };
+      } finally {
+        if (acquired) {
+          await connection.promise().execute('SELECT RELEASE_LOCK(?)', [lockName]).catch(() => {});
+        }
+        await sequelize.connectionManager.releaseConnection(connection);
+      }
+    },
     close: () => sequelize.close(),
   };
 }

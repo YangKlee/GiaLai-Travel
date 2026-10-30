@@ -10,6 +10,7 @@ import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { isolatedDatabase } from './database-helper.js';
 import { createApp } from '../src/app.js';
+import { createMailAdapter } from '../src/adapters/index.js';
 import { createDemoCatalogRepository } from '../demo/catalog.repository.js';
 
 const requireFe = createRequire(new URL('../../fe/package.json', import.meta.url));
@@ -25,8 +26,9 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
     const { database } = await isolatedDatabase({ after: (work) => cleanup.push(work) });
     const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
     const auth = { privateKey, publicKeys: new Map([['browser', publicKey]]), kid: 'browser', issuer: 'browser-api', audience: 'browser-web',
-      secure: false, origins: [base], accessSeconds: 900, sessionMilliseconds: 7 * 86400_000 };
-    server = createApp({ database, auth, catalogRepository: createDemoCatalogRepository() }).listen(0, '127.0.0.1');
+      secure: false, origins: [base], accessSeconds: 900, sessionMilliseconds: 7 * 86400_000, resetMilliseconds: 15 * 60_000 };
+    const mail = createMailAdapter({ mode: 'outbox' });
+    server = createApp({ database, auth, mail, catalogRepository: createDemoCatalogRepository() }).listen(0, '127.0.0.1');
     await once(server, 'listening');
     vite = spawn(process.execPath, [join(dirname(requireFe.resolve('vite/package.json')), 'bin/vite.js'), '--host', '127.0.0.1', '--port', '5180'], {
       cwd: fileURLToPath(new URL('../../fe/', import.meta.url)), stdio: 'pipe',
@@ -46,7 +48,14 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
     await page.goto(base);
     const paths = await page.evaluate(async () => {
       const module = await import('/src/constants/path.ts');
-      return { REGISTER: module.APP_PATHS.REGISTER, LOGIN: module.APP_PATHS.LOGIN, ACCOUNT: module.APP_PATHS.ACCOUNT, EXPLORE: module.APP_PATHS.EXPLORE };
+      return {
+        REGISTER: module.APP_PATHS.REGISTER,
+        LOGIN: module.APP_PATHS.LOGIN,
+        FORGOT_PASSWORD: module.APP_PATHS.FORGOT_PASSWORD,
+        RESET_PASSWORD: module.APP_PATHS.RESET_PASSWORD,
+        ACCOUNT: module.APP_PATHS.ACCOUNT,
+        EXPLORE: module.APP_PATHS.EXPLORE,
+      };
     });
     const email = `browser-${randomUUID()}@example.test`; const password = 'Browser integration password 🌿';
     const displayName = 'Du khách kiểm thử';
@@ -144,6 +153,33 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
     await expect(mobile.getByRole('alert')).toContainText('Email này đã được đăng ký.');
     await expect(mobile.getByLabel('Email', { exact: true })).toHaveAttribute('aria-invalid', 'true');
     assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
+
+    // Password reset browser flow: uniform message, URL token stripping, session revocation and login with new password.
+    await mobile.goto(base + paths.LOGIN);
+    await mobile.getByRole('link', { name: 'Quên mật khẩu?', exact: true }).click();
+    await expect(mobile.getByRole('heading', { name: 'Quên mật khẩu', exact: true })).toBeVisible();
+    assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
+    await mobile.getByLabel('Email', { exact: true }).fill(email);
+    await mobile.getByRole('button', { name: 'Gửi liên kết đặt lại', exact: true }).click();
+    await expect(mobile.getByRole('status')).toContainText('Nếu email tồn tại trong hệ thống');
+    assert.equal(mail.outbox.length, 1);
+
+    const resetLink = mail.outbox[0].resetUrl;
+    const rawToken = new URL(resetLink).searchParams.get('token');
+    await mobile.goto(resetLink);
+    await expect(mobile.getByRole('heading', { name: 'Đặt lại mật khẩu', exact: true })).toBeVisible();
+    assert.ok(!mobile.url().includes(rawToken), 'Reset token must be stripped from URL bar');
+    assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
+
+    const nextPassword = 'Reset browser password 🌿';
+    await mobile.getByLabel('Mật khẩu mới', { exact: true }).fill(nextPassword);
+    await mobile.getByRole('button', { name: 'Cập nhật mật khẩu', exact: true }).click();
+    await expect(mobile.getByRole('heading', { name: 'Đăng nhập', exact: true })).toBeVisible();
+    await expect(mobile.getByRole('status')).toContainText('Mật khẩu đã được đặt lại');
+    await mobile.getByLabel('Email', { exact: true }).fill(email);
+    await mobile.getByLabel('Mật khẩu', { exact: true }).fill(nextPassword);
+    await mobile.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+    await expect(mobile.getByRole('heading', { name: 'Tài khoản của tôi', exact: true })).toBeVisible();
   } finally {
     await browser?.close();
     if (vite && vite.exitCode === null) { const exited = once(vite, 'exit'); vite.kill(); await exited; }

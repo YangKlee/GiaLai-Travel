@@ -10,7 +10,12 @@ function files(directory) {
 }
 
 test('business modules and shared services use model APIs rather than manual queries', () => {
-  for (const path of [...files(new URL('../src/modules/', import.meta.url)), ...files(new URL('../src/shared/', import.meta.url))]) {
+  for (const path of [
+    ...files(new URL('../src/modules/', import.meta.url)),
+    ...files(new URL('../src/shared/', import.meta.url)),
+    ...files(new URL('../src/adapters/', import.meta.url)),
+    ...files(new URL('../src/jobs/', import.meta.url)),
+  ]) {
     const source = readFileSync(path, 'utf8');
     assert.doesNotMatch(source, /\.(?:query|execute)\s*\(/, path.pathname);
     assert.doesNotMatch(source, /\bliteral\s*\(/, path.pathname);
