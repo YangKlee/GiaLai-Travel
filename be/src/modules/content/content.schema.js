@@ -170,6 +170,8 @@ const placePayloadSchema = z.object({
     .optional(),
   typicalDurationMinutes: z.union([z.number().int().min(1).max(1440), z.null()]).optional(),
   openingHours: z.array(openingHourSchema).optional(),
+  bannerUrl: z.union([z.string().max(2000), z.null()]).optional(),
+  imageUrl: z.union([z.string().max(2000), z.null()]).optional(),
 });
 
 const audioPayloadSchema = z.object({
@@ -184,6 +186,8 @@ const eventPayloadSchema = z
     startsAt: z.string().datetime(),
     endsAt: z.string().datetime(),
     eventStatus: z.enum(['SCHEDULED', 'CANCELLED', 'COMPLETED']).default('SCHEDULED'),
+    bannerUrl: z.union([z.string().max(2000), z.null()]).optional(),
+    imageUrl: z.union([z.string().max(2000), z.null()]).optional(),
   })
   .superRefine((val, ctx) => {
     if (new Date(val.endsAt) <= new Date(val.startsAt)) {
@@ -232,3 +236,59 @@ export function validateKindPayload(kind, payload, ctx) {
     }
   }
 }
+
+export const adminUploadSchema = z
+  .object({
+    fileName: z.string().trim().min(1).max(255),
+    mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+    contentBase64: z.string().min(1, 'Nội dung tệp không được rỗng'),
+    folder: z.enum(['events', 'places', 'banners']).default('events'),
+  })
+  .strict();
+
+const placeBaseSchema = z.object({
+  title: z.string().trim().min(2, 'Tiêu đề tối thiểu 2 ký tự.').max(255),
+  description: z.string().trim().min(2, 'Mô tả tối thiểu 2 ký tự.').max(50000),
+  category: z.enum(['NATURE', 'CULTURE', 'FOOD', 'STAY', 'ADVENTURE', 'OTHER']),
+  regionId: guidSchema,
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  referencePriceVnd: z
+    .union([z.string().regex(/^(0|[1-9]\d{0,19})$/), z.number().int().min(0), z.null()])
+    .optional(),
+  typicalDurationMinutes: z
+    .union([z.coerce.number().int().min(1).max(1440), z.null()])
+    .optional(),
+  bannerUrl: z.string().max(2000).nullish(),
+  imageUrl: z.string().max(2000).nullish(),
+  sourceReference: z.string().trim().max(1000).nullish(),
+  openingHours: z.array(openingHourSchema).optional(),
+});
+
+export const adminPlaceCreateSchema = placeBaseSchema.strict();
+export const adminPlaceUpdateSchema = placeBaseSchema.partial();
+
+const eventBaseSchema = z.object({
+  title: z.string().trim().min(2, 'Tiêu đề tối thiểu 2 ký tự.').max(255),
+  description: z.string().trim().min(2, 'Mô tả tối thiểu 2 ký tự.').max(50000),
+  placeId: guidSchema,
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+  eventStatus: z.enum(['SCHEDULED', 'CANCELLED', 'COMPLETED']).default('SCHEDULED'),
+  bannerUrl: z.string().max(2000).nullish(),
+  imageUrl: z.string().max(2000).nullish(),
+  sourceReference: z.string().trim().max(1000).nullish(),
+});
+
+export const adminEventCreateSchema = eventBaseSchema.strict().superRefine((val, ctx) => {
+  if (new Date(val.endsAt) <= new Date(val.startsAt)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['endsAt'],
+      message: 'Thời gian kết thúc sự kiện phải sau thời gian bắt đầu.',
+    });
+  }
+});
+
+export const adminEventUpdateSchema = eventBaseSchema.partial();
+

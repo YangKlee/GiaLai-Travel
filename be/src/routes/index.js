@@ -4,6 +4,7 @@ import { createCatalogRouter } from '../modules/catalog/catalog.routes.js';
 import { createAuthRouter } from '../modules/auth/auth.routes.js';
 import { createAuthService } from '../modules/auth/auth.service.js';
 import { createUsersRouter } from '../modules/users/users.routes.js';
+import { createAdminUsersRouter } from '../modules/users/admin-users.routes.js';
 import { createContentRouter } from '../modules/content/content.routes.js';
 import {
   createItineraryProposalsRouter,
@@ -49,6 +50,8 @@ export function createApiRouter(dependencies) {
         routingAdapter,
       }),
     );
+  }
+  if (dependencies.database?.models) {
     router.use('/v1', createBookingsRouter({ ...dependencies, authService }));
   }
   router.use('/v1/auth', createAuthRouter({ ...dependencies, authService }));
@@ -93,6 +96,7 @@ export function createApiRouter(dependencies) {
     );
   }
   if (dependencies.database?.models && authService) {
+    router.use('/v1/admin/users', createAdminUsersRouter({ ...dependencies, authService }));
     router.use('/v1/admin', createContentRouter({ ...dependencies, authService }));
     router.use(
       '/v1/admin/bookings',

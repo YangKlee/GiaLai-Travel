@@ -1,5 +1,8 @@
-import { AppError } from '../../shared/app-error.js';
-import { estimateDefaultRouteLeg } from '../../adapters/index.js';
+import {
+  buildGoogleMapsDayRouteUrl,
+  buildGoogleMapsDirectionsUrl,
+  estimateDefaultRouteLeg,
+} from '../../adapters/index.js';
 
 function parseTimeToMinutes(timeStr) {
   if (!timeStr) return 0;
@@ -55,90 +58,121 @@ export function validateProposalSchedule({
         continue;
       }
 
+      const displayTitle = stop.placeTitle || place.title;
       const arrivesAt = new Date(stop.arrivesAt);
       const departsAt = new Date(stop.departsAt);
       const stopDurationMinutes = Math.round((departsAt.getTime() - arrivesAt.getTime()) / 60000);
 
       if (stopDurationMinutes < 15) {
         warnings.push(
-          `Ngày ${dayNo}, ${place.title}: Thời gian ghé thăm (${stopDurationMinutes} phút) quá ngắn, khuyến nghị tối thiểu 20-30 phút.`,
+          `Ngày ${dayNo}, ${displayTitle}: Thời gian ghé thăm (${stopDurationMinutes} phút) quá ngắn, khuyến nghị tối thiểu 20-30 phút.`,
         );
       }
 
-      // Check Vietnam Time (UTC+7) for opening hours
-      const vnArrives = new Date(arrivesAt.getTime() + 7 * 3600000);
-      const vnDeparts = new Date(departsAt.getTime() + 7 * 3600000);
-      const weekday = vnArrives.getUTCDay(); // 0 is Sunday, 1 is Monday...
+      // Only check opening hours when the stop is an actual visit to the DB place (same title)
+      const isDirectDbPlaceVisit =
+        !stop.placeTitle || stop.placeTitle.toLowerCase() === place.title.toLowerCase();
 
-      const openingHours = place.openingHours || [];
-      const dayHours = openingHours.find((h) => h.weekday === weekday);
+      if (isDirectDbPlaceVisit) {
+        const vnArrives = new Date(arrivesAt.getTime() + 7 * 3600000);
+        const vnDeparts = new Date(departsAt.getTime() + 7 * 3600000);
+        const weekday = vnArrives.getUTCDay();
 
-      if (openingHours.length > 0) {
-        if (!dayHours) {
-          warnings.push(
-            `Ngày ${dayNo}, ${place.title}: Địa điểm có thể không mở cửa vào ${['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][weekday]}.`,
-          );
-        } else {
-          const arriveMins = vnArrives.getUTCHours() * 60 + vnArrives.getUTCMinutes();
-          const departMins = vnDeparts.getUTCHours() * 60 + vnDeparts.getUTCMinutes();
-          const openMins = parseTimeToMinutes(dayHours.opensAt || dayHours.opens_at);
-          const closeMins = parseTimeToMinutes(dayHours.closesAt || dayHours.closes_at);
+        const openingHours = place.openingHours || [];
+        const dayHours = openingHours.find((h) => h.weekday === weekday);
 
-          const crosses = Boolean(dayHours.crossesMidnight || dayHours.crosses_midnight);
-          let isWithinOpenHours = false;
-          if (!crosses) {
-            isWithinOpenHours = arriveMins >= openMins && departMins <= closeMins;
-          } else {
-            isWithinOpenHours = arriveMins >= openMins || departMins <= closeMins;
-          }
-
-          if (!isWithinOpenHours) {
+        if (openingHours.length > 0) {
+          if (!dayHours) {
             warnings.push(
-              `Ngày ${dayNo}, ${place.title}: Khung giờ ghé thăm (${vnArrives.toISOString().slice(11, 16)} - ${vnDeparts.toISOString().slice(11, 16)}) nằm ngoài giờ mở cửa quy định (${dayHours.opensAt || dayHours.opens_at} - ${dayHours.closesAt || dayHours.closes_at}).`,
+              `Ngày ${dayNo}, ${displayTitle}: Địa điểm có thể không mở cửa vào ${['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][weekday]}.`,
+            );
+          } else {
+            const arriveMins = vnArrives.getUTCHours() * 60 + vnArrives.getUTCMinutes();
+            const departMins = vnDeparts.getUTCHours() * 60 + vnDeparts.getUTCMinutes();
+            const openMins = parseTimeToMinutes(dayHours.opensAt || dayHours.opens_at);
+            const closeMins = parseTimeToMinutes(dayHours.closesAt || dayHours.closes_at);
+
+            const crosses = Boolean(dayHours.crossesMidnight || dayHours.crosses_midnight);
+            let isWithinOpenHours = false;
+            if (!crosses) {
+              isWithinOpenHours = arriveMins >= openMins && departMins <= closeMins;
+            } else {
+              isWithinOpenHours = arriveMins >= openMins || departMins <= closeMins;
+            }
+
+            if (!isWithinOpenHours) {
+              warnings.push(
+                `Ngày ${dayNo}, ${displayTitle}: Khung giờ ghé thăm (${vnArrives.toISOString().slice(11, 16)} - ${vnDeparts.toISOString().slice(11, 16)}) nằm ngoài giờ mở cửa quy định (${dayHours.opensAt || dayHours.opens_at} - ${dayHours.closesAt || dayHours.closes_at}).`,
+              );
+            }
+          }
+        }
+
+        // Check temporary closures
+        const placeClosures = closuresList.filter(
+          (c) => c.place_id === place.id || c.placeId === place.id,
+        );
+        for (const closure of placeClosures) {
+          const closureStart = new Date(closure.starts_at || closure.startsAt);
+          const closureEnd = new Date(closure.ends_at || closure.endsAt);
+          if (arrivesAt < closureEnd && departsAt > closureStart) {
+            violations.push(
+              `Ngày ${dayNo}, ${displayTitle}: Địa điểm đang có thông báo tạm dừng đón khách (${closure.reason || 'Bảo trì'}). Nguồn: ${closure.source_reference || closure.sourceReference || 'Sở VHTTDL'}.`,
             );
           }
         }
       }
 
-      // Check temporary closures
-      const placeClosures = closuresList.filter((c) => c.place_id === place.id || c.placeId === place.id);
-      for (const closure of placeClosures) {
-        const closureStart = new Date(closure.starts_at || closure.startsAt);
-        const closureEnd = new Date(closure.ends_at || closure.endsAt);
-        if (arrivesAt < closureEnd && departsAt > closureStart) {
-          violations.push(
-            `Ngày ${dayNo}, ${place.title}: Địa điểm đang có thông báo tạm dừng đón khách (${closure.reason || 'Bảo trì'}). Nguồn: ${closure.source_reference || closure.sourceReference || 'Sở VHTTDL'}.`,
-          );
+      // Cost calculation: preserve AI API's estimatedCostVnd if provided, otherwise calculate from DB reference price
+      let stopTotalCost;
+      if (stop.estimatedCostVnd != null && Number(stop.estimatedCostVnd) >= 0) {
+        stopTotalCost = BigInt(Math.round(Number(stop.estimatedCostVnd)));
+      } else {
+        let stopUnitCost = BigInt(String(place.referencePriceVnd || place.reference_price_vnd || 0));
+        if (stop.eventId) {
+          const ev = eventsMap.get(stop.eventId);
+          if (ev && ev.ticketPriceVnd) {
+            stopUnitCost += BigInt(String(ev.ticketPriceVnd));
+          }
         }
+        stopTotalCost = stopUnitCost * BigInt(partySize);
       }
-
-      // Cost calculation
-      let stopUnitCost = BigInt(String(place.referencePriceVnd || place.reference_price_vnd || 0));
-      if (stop.eventId) {
-        const ev = eventsMap.get(stop.eventId);
-        if (ev && ev.ticketPriceVnd) {
-          stopUnitCost += BigInt(String(ev.ticketPriceVnd));
-        }
-      }
-      const stopTotalCost = stopUnitCost * BigInt(partySize);
       calculatedTotalVnd += stopTotalCost;
 
-      // Leg travel validation
+      // Coordinates: preserve AI API's coordinates if provided, otherwise DB place coordinates
       let fromLat = input.origin.latitude;
       let fromLon = input.origin.longitude;
+      let fromLabel = input.origin.label || 'Điểm xuất phát';
       if (prevStop) {
         const prevPlace = placesMap.get(prevStop.placeId);
-        if (prevPlace) {
-          fromLat = Number(prevPlace.latitude);
-          fromLon = Number(prevPlace.longitude);
-        }
+        fromLat =
+          prevStop.latitude != null
+            ? Number(prevStop.latitude)
+            : Number(prevPlace?.latitude ?? input.origin.latitude);
+        fromLon =
+          prevStop.longitude != null
+            ? Number(prevStop.longitude)
+            : Number(prevPlace?.longitude ?? input.origin.longitude);
+        fromLabel = prevStop.placeTitle || prevPlace?.title || 'Điểm trước';
       }
 
-      const toLat = Number(place.latitude);
-      const toLon = Number(place.longitude);
+      const toLat =
+        stop.latitude != null ? Number(stop.latitude) : Number(place.latitude);
+      const toLon =
+        stop.longitude != null ? Number(stop.longitude) : Number(place.longitude);
 
-      const legEstimate = routingAdapter
-        ? routingAdapter.estimateDefaultLeg
+      const existingLeg = (day.legs || []).find((l) => l.toStopSequence === stop.sequenceNo);
+
+      const legEstimate = existingLeg
+        ? {
+            distanceMeters: existingLeg.distanceMeters,
+            durationSeconds: existingLeg.durationSeconds,
+            transportMode: existingLeg.transportMode || input.transportMode,
+            provider: existingLeg.provider || 'ai-google-maps-route',
+            sourceReference: existingLeg.sourceReference || 'Lộ trình AI & Google Maps',
+            estimatedCostVnd: existingLeg.estimatedCostVnd ?? 0,
+          }
+        : routingAdapter && typeof routingAdapter.estimateDefaultLeg === 'function'
           ? routingAdapter.estimateDefaultLeg({
               fromLat,
               fromLon,
@@ -152,14 +186,7 @@ export function validateProposalSchedule({
               toLat,
               toLon,
               transportMode: input.transportMode,
-            })
-        : estimateDefaultRouteLeg({
-            fromLat,
-            fromLon,
-            toLat,
-            toLon,
-            transportMode: input.transportMode,
-          });
+            });
 
       if (prevStop) {
         const prevDepartsAt = new Date(prevStop.departsAt);
@@ -183,22 +210,49 @@ export function validateProposalSchedule({
       const legCost = BigInt(String(legEstimate.estimatedCostVnd || 0));
       calculatedTotalVnd += legCost;
 
+      const legDepartsEpochMs = prevStop
+        ? new Date(prevStop.departsAt).getTime()
+        : arrivesAt.getTime() - legEstimate.durationSeconds * 1000;
+
       validatedLegs.push({
         fromStopSequence: prevStop ? prevStop.sequenceNo : null,
         toStopSequence: stop.sequenceNo,
+        fromLabel: existingLeg?.fromLabel || fromLabel,
+        toLabel: existingLeg?.toLabel || displayTitle,
+        fromLatitude: fromLat,
+        fromLongitude: fromLon,
+        toLatitude: toLat,
+        toLongitude: toLon,
+        departsAt: existingLeg?.departsAt || new Date(legDepartsEpochMs).toISOString(),
+        arrivesAt: stop.arrivesAt,
         distanceMeters: legEstimate.distanceMeters,
         durationSeconds: legEstimate.durationSeconds,
         transportMode: input.transportMode,
         provider: legEstimate.provider,
         sourceReference: legEstimate.sourceReference,
         estimatedCostVnd: Number(legCost),
+        googleMapsDirectionsUrl:
+          existingLeg?.googleMapsDirectionsUrl ||
+          buildGoogleMapsDirectionsUrl({
+            fromLat,
+            fromLon,
+            toLat,
+            toLon,
+            transportMode: input.transportMode,
+          }),
       });
 
       validatedStops.push({
         placeId: place.id,
-        contentRevisionId: place.revisionId || stop.contentRevisionId || place.content_id,
+        contentRevisionId: place.revisionId || stop.contentRevisionId || place.content_id || null,
         eventId: stop.eventId || null,
-        placeTitle: place.title,
+        placeTitle: displayTitle,
+        placeCategory: stop.placeCategory || place.category,
+        latitude: toLat,
+        longitude: toLon,
+        activityType:
+          stop.activityType ||
+          (place.category === 'FOOD' ? 'LUNCH' : place.category === 'STAY' ? 'STAY' : 'VISIT'),
         sequenceNo: stop.sequenceNo,
         arrivesAt: stop.arrivesAt,
         departsAt: stop.departsAt,
@@ -212,6 +266,14 @@ export function validateProposalSchedule({
     validatedDays.push({
       dayNumber: dayNo,
       travelDate,
+      daySummary: day.daySummary || null,
+      googleMapsDayRouteUrl:
+        day.googleMapsDayRouteUrl ||
+        buildGoogleMapsDayRouteUrl({
+          origin: input.origin,
+          stops: validatedStops,
+          transportMode: input.transportMode,
+        }),
       stops: validatedStops,
       legs: validatedLegs,
     });

@@ -1,4 +1,4 @@
-import type { OfflineManifestData, SavedItineraryDetail } from './itineraries';
+import type { ItineraryProposal, OfflineManifestData, SavedItineraryDetail } from './itineraries';
 import { getItineraryOfflineManifest, getMyItinerary } from './itineraries';
 
 export interface OfflineItineraryPackage {
@@ -142,6 +142,106 @@ export async function downloadItineraryForOffline(
   }
 
   onProgress?.('STORING', 100);
+  return pkg;
+}
+
+export async function saveProposalOfflineDirectly(
+  userId: string,
+  name: string,
+  proposal: ItineraryProposal,
+  customItineraryId?: string,
+): Promise<OfflineItineraryPackage> {
+  const effectiveUserId = userId || 'guest-local';
+  const itineraryId = customItineraryId || `local-${Date.now()}`;
+  const nowIso = new Date().toISOString();
+
+  const detail: SavedItineraryDetail = {
+    id: itineraryId,
+    ownerId: effectiveUserId,
+    name: name.trim() || 'Lộ trình AI Gia Lai',
+    lockVersion: 1,
+    currentRevisionId: `rev-${itineraryId}`,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    revision: {
+      ...proposal,
+      id: `rev-${itineraryId}`,
+      revisionNo: 1,
+      validatedAt: nowIso,
+    },
+  };
+
+  const manifest: OfflineManifestData = {
+    manifestVersion: '1.0',
+    packageId: itineraryId,
+    itineraryName: detail.name,
+    startDate: proposal.startDate,
+    daysCount: proposal.daysCount,
+    partySize: proposal.partySize,
+    totalBudgetVnd: proposal.totalBudgetVnd,
+    transportMode: proposal.transportMode,
+    origin: proposal.origin,
+    days: proposal.days.map((d) => ({
+      dayNumber: d.dayNumber,
+      date: d.travelDate,
+      title: d.daySummary || `Ngày ${d.dayNumber}`,
+      stops: d.stops.map((s) => ({
+        id: s.id || `${d.dayNumber}-${s.sequenceNo}`,
+        stopOrder: s.sequenceNo,
+        placeId: s.placeId,
+        placeTitle: s.placeTitle,
+        contentRevisionId: s.contentRevisionId ?? null,
+        lat: s.latitude ?? null,
+        lng: s.longitude ?? null,
+        arrivalMinutes: 420,
+        departureMinutes: 510,
+        estimatedCostVnd: String(s.estimatedCostVnd),
+      })),
+      legs: d.legs.map((l, idx) => ({
+        fromStopId: String(l.fromStopSequence ?? idx),
+        toStopId: String(l.toStopSequence),
+        transportMode: l.transportMode,
+        durationMinutes: Math.ceil(l.durationSeconds / 60),
+        distanceMeters: l.distanceMeters,
+        estimatedCostVnd: String(l.estimatedCostVnd),
+      })),
+    })),
+    checksum: `local-sha256-${itineraryId}`,
+    generatedAt: nowIso,
+  };
+
+  const payloadString = JSON.stringify({ manifest, detail });
+  const estimatedSizeBytes = new TextEncoder().encode(payloadString).length;
+
+  const pkg: OfflineItineraryPackage = {
+    userId: effectiveUserId,
+    itineraryId,
+    packageVersion: 1,
+    name: detail.name,
+    daysCount: proposal.daysCount,
+    partySize: proposal.partySize,
+    totalBudgetVnd: proposal.totalBudgetVnd,
+    estimatedTotalVnd: proposal.estimatedTotalVnd,
+    downloadedAt: nowIso,
+    checksumSha256: manifest.checksum,
+    sizeBytes: estimatedSizeBytes,
+    manifest,
+    detail,
+  };
+
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction([STORE_ACTIVE], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.objectStore(STORE_ACTIVE).put(pkg);
+    });
+  } catch {
+    const key = getCompoundKey(effectiveUserId, itineraryId);
+    memoryActive.set(key, pkg);
+  }
+
   return pkg;
 }
 

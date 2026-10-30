@@ -18,7 +18,11 @@ export function createItineraryProposalsRouter({
   clock,
 }) {
   const router = Router();
-  const service = createItineraryService(database, { aiAdapter, routingAdapter, clock });
+  const service = createItineraryService(database, {
+    aiAdapter,
+    routingAdapter,
+    clock,
+  });
 
   router.use((_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -60,7 +64,11 @@ export function createMyItinerariesRouter({
   clock,
 }) {
   const router = Router();
-  const service = createItineraryService(database, { aiAdapter, routingAdapter, clock });
+  const service = createItineraryService(database, {
+    aiAdapter,
+    routingAdapter,
+    clock,
+  });
 
   router.use((_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');

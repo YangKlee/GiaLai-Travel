@@ -5,6 +5,7 @@ import { paginationMeta } from '../../shared/pagination.js';
 import { resolveNow, serializeUtc } from '../../shared/time.js';
 import { validateKindPayload } from './content.schema.js';
 import { createContentRepository } from './content.repository.js';
+import { createR2Storage } from '../../adapters/r2-storage.js';
 
 function requireAdmin(actor) {
   if (!actor || !Array.isArray(actor.roles) || !actor.roles.includes('ADMIN')) {
@@ -130,8 +131,9 @@ function serializeContentItem(instance) {
   };
 }
 
-export function createContentService(database, { clock } = {}) {
+export function createContentService(database, { clock, r2Storage } = {}) {
   const repository = createContentRepository(database);
+  const storage = r2Storage || createR2Storage();
 
   async function safe(work) {
     try {
@@ -566,6 +568,632 @@ export function createContentService(database, { clock } = {}) {
               sourceReference: closure.source_reference,
             },
           };
+        });
+      }),
+
+    uploadR2: (actor, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const buffer = Buffer.from(input.contentBase64, 'base64');
+        const uploadResult = await storage.uploadImage({
+          buffer,
+          mimeType: input.mimeType,
+          originalName: input.fileName,
+          folder: input.folder || 'events',
+        });
+        await appendAudit(database, null, {
+          actorId: actor.user.id,
+          action: 'ADMIN_R2_UPLOAD',
+          targetType: 'MEDIA_ASSET',
+          targetId: uploadResult.key,
+          requestId,
+          metadata: {
+            fileName: input.fileName,
+            mimeType: input.mimeType,
+            provider: uploadResult.provider,
+            byteSize: uploadResult.byteSize,
+          },
+        });
+        return { data: uploadResult };
+      }),
+
+    listAdminPlaces: (actor, query) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { rows, total } = await repository.listAdminPlaces(query);
+        return {
+          data: rows,
+          meta: paginationMeta(query, total),
+        };
+      }),
+
+    getAdminPlace: (actor, id) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const place = await repository.getAdminPlaceById(id);
+        if (!place) throw new AppError(404, 'PLACE_NOT_FOUND', 'Không tìm thấy địa điểm.');
+        return { data: place };
+      }),
+
+    createAdminPlace: (actor, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const now = resolveNow(clock);
+        const {
+          Places,
+          Regions,
+          ContentItems,
+          ContentRevisions,
+          ContentTranslations,
+          PlaceOpeningHours,
+        } = database.models;
+        const region = await Regions.findByPk(input.regionId);
+        if (!region) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
+
+        return database.transaction(async (transaction) => {
+          const contentId = randomUUID();
+          const revisionId = randomUUID();
+          const placeId = randomUUID();
+
+          await ContentItems.create(
+            {
+              id: contentId,
+              kind: 'PLACE',
+              visibility: 'PUBLIC',
+              published_revision_id: revisionId,
+              created_by: actor.user.id,
+              created_at: now,
+              updated_at: now,
+            },
+            { transaction },
+          );
+
+          const payload = {
+            regionId: input.regionId,
+            category: input.category,
+            latitude: Number(input.latitude),
+            longitude: Number(input.longitude),
+            referencePriceVnd: input.referencePriceVnd ? String(input.referencePriceVnd) : null,
+            typicalDurationMinutes: input.typicalDurationMinutes
+              ? Number(input.typicalDurationMinutes)
+              : null,
+            bannerUrl: input.bannerUrl || null,
+            imageUrl: input.imageUrl || input.bannerUrl || null,
+            openingHours: input.openingHours || [],
+          };
+
+          await ContentRevisions.create(
+            {
+              id: revisionId,
+              content_id: contentId,
+              revision_no: 1,
+              status: 'PUBLISHED',
+              source_reference: input.sourceReference || 'https://gialai.gov.vn/diem-den',
+              payload,
+              submitted_by: actor.user.id,
+              reviewed_by: actor.user.id,
+              reviewed_at: now,
+              created_at: now,
+            },
+            { transaction },
+          );
+
+          await ContentTranslations.create(
+            {
+              revision_id: revisionId,
+              language_code: 'vi',
+              title: input.title,
+              body: input.description,
+            },
+            { transaction },
+          );
+
+          await Places.create(
+            {
+              id: placeId,
+              content_id: contentId,
+              region_id: input.regionId,
+              category: input.category,
+              latitude: input.latitude,
+              longitude: input.longitude,
+              reference_price_vnd: input.referencePriceVnd
+                ? String(input.referencePriceVnd)
+                : null,
+              typical_duration_minutes: input.typicalDurationMinutes
+                ? Number(input.typicalDurationMinutes)
+                : null,
+              updated_at: now,
+            },
+            { transaction },
+          );
+
+          if (Array.isArray(input.openingHours) && input.openingHours.length > 0) {
+            await PlaceOpeningHours.bulkCreate(
+              input.openingHours.map((item) => ({
+                id: randomUUID(),
+                place_id: placeId,
+                weekday: item.weekday,
+                opens_at: item.opensAt.length === 5 ? `${item.opensAt}:00` : item.opensAt,
+                closes_at: item.closesAt.length === 5 ? `${item.closesAt}:00` : item.closesAt,
+                crosses_midnight: Boolean(item.crossesMidnight),
+              })),
+              { transaction },
+            );
+          }
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_PLACE_CREATE',
+            targetType: 'PLACE',
+            targetId: placeId,
+            requestId,
+            metadata: { title: input.title, category: input.category, regionId: input.regionId },
+          });
+
+          const created = await repository.getAdminPlaceById(placeId, transaction);
+          return { data: created };
+        });
+      }),
+
+    updateAdminPlace: (actor, id, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const now = resolveNow(clock);
+        const {
+          Places,
+          Regions,
+          ContentItems,
+          ContentRevisions,
+          ContentTranslations,
+          PlaceOpeningHours,
+        } = database.models;
+
+        return database.transaction(async (transaction) => {
+          const place = await Places.findByPk(id, { transaction });
+          if (!place) throw new AppError(404, 'PLACE_NOT_FOUND', 'Không tìm thấy địa điểm.');
+
+          if (input.regionId) {
+            const region = await Regions.findByPk(input.regionId, { transaction });
+            if (!region) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
+            place.region_id = input.regionId;
+          }
+          if (input.category) place.category = input.category;
+          if (input.latitude !== undefined) place.latitude = input.latitude;
+          if (input.longitude !== undefined) place.longitude = input.longitude;
+          if (input.referencePriceVnd !== undefined) {
+            place.reference_price_vnd = input.referencePriceVnd
+              ? String(input.referencePriceVnd)
+              : null;
+          }
+          if (input.typicalDurationMinutes !== undefined) {
+            place.typical_duration_minutes = input.typicalDurationMinutes
+              ? Number(input.typicalDurationMinutes)
+              : null;
+          }
+          place.updated_at = now;
+          await place.save({ transaction });
+
+          const contentItem = await ContentItems.findByPk(place.content_id, { transaction });
+          if (contentItem) {
+            await contentItem.update({ updated_at: now }, { transaction });
+
+            const rev = contentItem.published_revision_id
+              ? await ContentRevisions.findByPk(contentItem.published_revision_id, {
+                  transaction,
+                })
+              : await ContentRevisions.findOne({
+                  where: { content_id: contentItem.id },
+                  order: [['revision_no', 'DESC']],
+                  transaction,
+                });
+
+            if (rev) {
+              const oldPayload = parsePayload(rev.payload);
+              const newPayload = {
+                ...oldPayload,
+                regionId: place.region_id,
+                category: place.category,
+                latitude: Number(place.latitude),
+                longitude: Number(place.longitude),
+                referencePriceVnd: place.reference_price_vnd,
+                typicalDurationMinutes: place.typical_duration_minutes,
+                bannerUrl:
+                  input.bannerUrl !== undefined
+                    ? input.bannerUrl || null
+                    : oldPayload.bannerUrl,
+                imageUrl:
+                  input.imageUrl !== undefined
+                    ? input.imageUrl || null
+                    : input.bannerUrl !== undefined
+                      ? input.bannerUrl || null
+                      : oldPayload.imageUrl,
+              };
+              if (input.openingHours !== undefined) newPayload.openingHours = input.openingHours;
+
+              await rev.update(
+                {
+                  payload: newPayload,
+                  ...(input.sourceReference ? { source_reference: input.sourceReference } : {}),
+                },
+                { transaction },
+              );
+
+              const trans = await ContentTranslations.findOne({
+                where: { revision_id: rev.id, language_code: 'vi' },
+                transaction,
+              });
+              if (trans) {
+                await trans.update(
+                  {
+                    ...(input.title ? { title: input.title } : {}),
+                    ...(input.description ? { body: input.description } : {}),
+                  },
+                  { transaction },
+                );
+              }
+            }
+          }
+
+          if (input.openingHours !== undefined) {
+            await PlaceOpeningHours.destroy({ where: { place_id: id }, transaction });
+            if (Array.isArray(input.openingHours) && input.openingHours.length > 0) {
+              await PlaceOpeningHours.bulkCreate(
+                input.openingHours.map((item) => ({
+                  id: randomUUID(),
+                  place_id: id,
+                  weekday: item.weekday,
+                  opens_at: item.opensAt.length === 5 ? `${item.opensAt}:00` : item.opensAt,
+                  closes_at: item.closesAt.length === 5 ? `${item.closesAt}:00` : item.closesAt,
+                  crosses_midnight: Boolean(item.crossesMidnight),
+                })),
+                { transaction },
+              );
+            }
+          }
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_PLACE_UPDATE',
+            targetType: 'PLACE',
+            targetId: id,
+            requestId,
+            metadata: { placeId: id, title: input.title },
+          });
+
+          const updated = await repository.getAdminPlaceById(id, transaction);
+          return { data: updated };
+        });
+      }),
+
+    deleteAdminPlace: (actor, id, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const {
+          Places,
+          Events,
+          Services,
+          AudioGuides,
+          ContentItems,
+          ContentRevisions,
+          ContentTranslations,
+          PlaceOpeningHours,
+          PlaceClosures,
+        } = database.models;
+
+        const place = await Places.findByPk(id);
+        if (!place) throw new AppError(404, 'PLACE_NOT_FOUND', 'Không tìm thấy địa điểm.');
+
+        const eventsCount = await Events.count({ where: { place_id: id } });
+        if (eventsCount > 0) {
+          throw new AppError(
+            409,
+            'PLACE_HAS_EVENTS',
+            `Không thể xóa địa điểm này vì có ${eventsCount} sự kiện liên kết. Vui lòng chuyển hoặc xóa các sự kiện trước.`,
+          );
+        }
+
+        const servicesCount = Services ? await Services.count({ where: { place_id: id } }) : 0;
+        if (servicesCount > 0) {
+          throw new AppError(
+            409,
+            'PLACE_HAS_SERVICES',
+            `Không thể xóa địa điểm vì có ${servicesCount} dịch vụ liên kết.`,
+          );
+        }
+
+        const audioCount = AudioGuides ? await AudioGuides.count({ where: { place_id: id } }) : 0;
+        if (audioCount > 0) {
+          throw new AppError(
+            409,
+            'PLACE_HAS_AUDIO',
+            `Không thể xóa địa điểm vì có ${audioCount} bài thuyết minh âm thanh liên kết.`,
+          );
+        }
+
+        return database.transaction(async (transaction) => {
+          await PlaceOpeningHours.destroy({ where: { place_id: id }, transaction });
+          await PlaceClosures.destroy({ where: { place_id: id }, transaction });
+          await Places.destroy({ where: { id }, transaction });
+
+          const contentId = place.content_id;
+          if (contentId) {
+            const revs = await ContentRevisions.findAll({
+              where: { content_id: contentId },
+              transaction,
+            });
+            const revIds = revs.map((r) => r.id);
+            if (revIds.length > 0) {
+              await ContentTranslations.destroy({
+                where: { revision_id: revIds },
+                transaction,
+              });
+              await ContentRevisions.destroy({ where: { content_id: contentId }, transaction });
+            }
+            await ContentItems.destroy({ where: { id: contentId }, transaction });
+          }
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_PLACE_DELETE',
+            targetType: 'PLACE',
+            targetId: id,
+            requestId,
+          });
+
+          return { data: { id, success: true, message: 'Đã xóa địa điểm thành công.' } };
+        });
+      }),
+
+    listAdminEvents: (actor, query) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { rows, total } = await repository.listAdminEvents(query);
+        return {
+          data: rows,
+          meta: paginationMeta(query, total),
+        };
+      }),
+
+    getAdminEvent: (actor, id) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const event = await repository.getAdminEventById(id);
+        if (!event) throw new AppError(404, 'EVENT_NOT_FOUND', 'Không tìm thấy sự kiện.');
+        return { data: event };
+      }),
+
+    createAdminEvent: (actor, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const now = resolveNow(clock);
+        const { Places, Events, ContentItems, ContentRevisions, ContentTranslations } =
+          database.models;
+
+        const place = await Places.findByPk(input.placeId);
+        if (!place) throw new AppError(422, 'PLACE_NOT_FOUND', 'Địa điểm tổ chức không tồn tại.');
+
+        return database.transaction(async (transaction) => {
+          const contentId = randomUUID();
+          const revisionId = randomUUID();
+          const eventId = randomUUID();
+
+          await ContentItems.create(
+            {
+              id: contentId,
+              kind: 'EVENT',
+              visibility: 'PUBLIC',
+              published_revision_id: revisionId,
+              created_by: actor.user.id,
+              created_at: now,
+              updated_at: now,
+            },
+            { transaction },
+          );
+
+          const payload = {
+            placeId: input.placeId,
+            startsAt: input.startsAt,
+            endsAt: input.endsAt,
+            eventStatus: input.eventStatus || 'SCHEDULED',
+            bannerUrl: input.bannerUrl || null,
+            imageUrl: input.imageUrl || input.bannerUrl || null,
+          };
+
+          await ContentRevisions.create(
+            {
+              id: revisionId,
+              content_id: contentId,
+              revision_no: 1,
+              status: 'PUBLISHED',
+              source_reference: input.sourceReference || 'https://baogialai.com.vn/su-kien',
+              payload,
+              submitted_by: actor.user.id,
+              reviewed_by: actor.user.id,
+              reviewed_at: now,
+              created_at: now,
+            },
+            { transaction },
+          );
+
+          await ContentTranslations.create(
+            {
+              revision_id: revisionId,
+              language_code: 'vi',
+              title: input.title,
+              body: input.description,
+            },
+            { transaction },
+          );
+
+          await Events.create(
+            {
+              id: eventId,
+              content_id: contentId,
+              place_id: input.placeId,
+              starts_at: new Date(input.startsAt),
+              ends_at: new Date(input.endsAt),
+              event_status: input.eventStatus || 'SCHEDULED',
+            },
+            { transaction },
+          );
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_EVENT_CREATE',
+            targetType: 'EVENT',
+            targetId: eventId,
+            requestId,
+            metadata: {
+              title: input.title,
+              placeId: input.placeId,
+              eventStatus: input.eventStatus,
+            },
+          });
+
+          const created = await repository.getAdminEventById(eventId, transaction);
+          return { data: created };
+        });
+      }),
+
+    updateAdminEvent: (actor, id, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const now = resolveNow(clock);
+        const { Places, Events, ContentItems, ContentRevisions, ContentTranslations } =
+          database.models;
+
+        return database.transaction(async (transaction) => {
+          const event = await Events.findByPk(id, { transaction });
+          if (!event) throw new AppError(404, 'EVENT_NOT_FOUND', 'Không tìm thấy sự kiện.');
+
+          if (input.placeId) {
+            const place = await Places.findByPk(input.placeId, { transaction });
+            if (!place)
+              throw new AppError(422, 'PLACE_NOT_FOUND', 'Địa điểm tổ chức không tồn tại.');
+            event.place_id = input.placeId;
+          }
+          if (input.startsAt) event.starts_at = new Date(input.startsAt);
+          if (input.endsAt) event.ends_at = new Date(input.endsAt);
+          if (input.eventStatus) event.event_status = input.eventStatus;
+          await event.save({ transaction });
+
+          const contentItem = await ContentItems.findByPk(event.content_id, { transaction });
+          if (contentItem) {
+            await contentItem.update({ updated_at: now }, { transaction });
+
+            const rev = contentItem.published_revision_id
+              ? await ContentRevisions.findByPk(contentItem.published_revision_id, {
+                  transaction,
+                })
+              : await ContentRevisions.findOne({
+                  where: { content_id: contentItem.id },
+                  order: [['revision_no', 'DESC']],
+                  transaction,
+                });
+
+            if (rev) {
+              const oldPayload = parsePayload(rev.payload);
+              const newPayload = {
+                ...oldPayload,
+                placeId: event.place_id,
+                startsAt: serializeUtc(event.starts_at),
+                endsAt: serializeUtc(event.ends_at),
+                eventStatus: event.event_status,
+                bannerUrl:
+                  input.bannerUrl !== undefined
+                    ? input.bannerUrl || null
+                    : oldPayload.bannerUrl,
+                imageUrl:
+                  input.imageUrl !== undefined
+                    ? input.imageUrl || null
+                    : input.bannerUrl !== undefined
+                      ? input.bannerUrl || null
+                      : oldPayload.imageUrl,
+              };
+
+              await rev.update(
+                {
+                  payload: newPayload,
+                  ...(input.sourceReference ? { source_reference: input.sourceReference } : {}),
+                },
+                { transaction },
+              );
+
+              const trans = await ContentTranslations.findOne({
+                where: { revision_id: rev.id, language_code: 'vi' },
+                transaction,
+              });
+              if (trans) {
+                await trans.update(
+                  {
+                    ...(input.title ? { title: input.title } : {}),
+                    ...(input.description ? { body: input.description } : {}),
+                  },
+                  { transaction },
+                );
+              }
+            }
+          }
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_EVENT_UPDATE',
+            targetType: 'EVENT',
+            targetId: id,
+            requestId,
+            metadata: { eventId: id, title: input.title },
+          });
+
+          const updated = await repository.getAdminEventById(id, transaction);
+          return { data: updated };
+        });
+      }),
+
+    deleteAdminEvent: (actor, id, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { Events, ContentItems, ContentRevisions, ContentTranslations, ItineraryStops } =
+          database.models;
+
+        const event = await Events.findByPk(id);
+        if (!event) throw new AppError(404, 'EVENT_NOT_FOUND', 'Không tìm thấy sự kiện.');
+
+        return database.transaction(async (transaction) => {
+          if (ItineraryStops) {
+            await ItineraryStops.update(
+              { event_id: null },
+              { where: { event_id: id }, transaction },
+            );
+          }
+
+          await Events.destroy({ where: { id }, transaction });
+
+          const contentId = event.content_id;
+          if (contentId) {
+            const revs = await ContentRevisions.findAll({
+              where: { content_id: contentId },
+              transaction,
+            });
+            const revIds = revs.map((r) => r.id);
+            if (revIds.length > 0) {
+              await ContentTranslations.destroy({
+                where: { revision_id: revIds },
+                transaction,
+              });
+              await ContentRevisions.destroy({ where: { content_id: contentId }, transaction });
+            }
+            await ContentItems.destroy({ where: { id: contentId }, transaction });
+          }
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'ADMIN_EVENT_DELETE',
+            targetType: 'EVENT',
+            targetId: id,
+            requestId,
+          });
+
+          return { data: { id, success: true, message: 'Đã xóa sự kiện thành công.' } };
         });
       }),
   };

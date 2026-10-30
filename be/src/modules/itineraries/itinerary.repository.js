@@ -20,9 +20,24 @@ export function createItineraryRepository(database) {
   } = database.models;
 
   return {
-    async findPublicPlacesForPlanning(categories) {
+    async findPublicPlacesForPlanning(categories, selectedPlaceIds = []) {
+      const catSet = new Set(Array.isArray(categories) ? categories : []);
+      if (catSet.size > 0) {
+        catSet.add('FOOD');
+        catSet.add('STAY');
+      }
+      const validSelected = Array.isArray(selectedPlaceIds) ? selectedPlaceIds.filter(Boolean) : [];
       const whereCategory =
-        Array.isArray(categories) && categories.length > 0 ? { category: { [Op.in]: categories } } : {};
+        catSet.size > 0 && validSelected.length > 0
+          ? {
+              [Op.or]: [
+                { category: { [Op.in]: [...catSet] } },
+                { id: { [Op.in]: validSelected } },
+              ],
+            }
+          : catSet.size > 0
+            ? { category: { [Op.in]: [...catSet] } }
+            : {};
 
       return Places.findAll({
         where: whereCategory,
@@ -403,6 +418,13 @@ export function createItineraryRepository(database) {
               arrives_at: new Date(stop.arrivesAt),
               departs_at: new Date(stop.departsAt),
               estimated_cost_vnd: String(stop.estimatedCostVnd || 0),
+              cost_breakdown: {
+                placeTitle: stop.placeTitle || null,
+                placeCategory: stop.placeCategory || null,
+                activityType: stop.activityType || null,
+                latitude: stop.latitude ?? null,
+                longitude: stop.longitude ?? null,
+              },
               note: stop.note || null,
             },
             { transaction },

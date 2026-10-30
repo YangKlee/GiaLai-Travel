@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': { target: env.API_PROXY_TARGET || 'http://127.0.0.1:3000', changeOrigin: true },
+        '/uploads': { target: env.API_PROXY_TARGET || 'http://127.0.0.1:3000', changeOrigin: true },
       },
     },
     test: {

@@ -24,7 +24,9 @@ export const preferencesSchema = z
       .array(z.enum(['NATURE', 'CULTURE', 'FOOD', 'STAY', 'ADVENTURE', 'OTHER']))
       .optional(),
     pace: z.enum(['RELAXED', 'BALANCED', 'FAST']).default('BALANCED').optional(),
-    dietaryNotes: z.union([z.string().trim().max(500), z.null()]).optional(),
+    dietaryNotes: z.union([z.string().trim().max(2000), z.null()]).optional(),
+    customPrompt: z.union([z.string().trim().max(2000), z.null()]).optional(),
+    selectedPlaceIds: z.array(guidSchema).max(30).optional(),
   })
   .strict()
   .optional();
@@ -41,6 +43,8 @@ export const proposalInputSchema = z
     origin: originSchema,
     transportMode: z.enum(TRANSPORT_MODES).default('MOTORBIKE'),
     preferences: preferencesSchema,
+    selectedPlaceIds: z.array(guidSchema).max(30).optional(),
+    customPrompt: z.union([z.string().trim().max(2000), z.null()]).optional(),
   })
   .strict();
 
@@ -49,6 +53,10 @@ const itineraryStopSchema = z
     id: guidSchema.optional(),
     placeId: guidSchema,
     placeTitle: z.string().optional(),
+    placeCategory: z.enum(['NATURE', 'CULTURE', 'FOOD', 'STAY', 'ADVENTURE', 'OTHER']).optional(),
+    latitude: z.union([z.number(), z.null()]).optional(),
+    longitude: z.union([z.number(), z.null()]).optional(),
+    activityType: z.string().max(50).optional(),
     contentRevisionId: z.union([guidSchema, z.null()]).optional(),
     eventId: z.union([guidSchema, z.null()]).optional(),
     sequenceNo: z.number().int().min(1),
@@ -75,12 +83,21 @@ const itineraryLegSchema = z
     toStopId: guidSchema.optional(),
     fromStopSequence: z.union([z.number().int(), z.null()]).optional(),
     toStopSequence: z.number().int().min(1).optional(),
+    fromLabel: z.string().max(255).optional(),
+    toLabel: z.string().max(255).optional(),
+    fromLatitude: z.union([z.number(), z.null()]).optional(),
+    fromLongitude: z.union([z.number(), z.null()]).optional(),
+    toLatitude: z.union([z.number(), z.null()]).optional(),
+    toLongitude: z.union([z.number(), z.null()]).optional(),
+    departsAt: z.string().datetime().optional(),
+    arrivesAt: z.string().datetime().optional(),
     distanceMeters: z.number().int().min(0),
     durationSeconds: z.number().int().min(0),
     transportMode: z.string().max(30),
     provider: z.string().max(80).default('haversine-engine'),
     sourceReference: z.string().max(1000).default('Ước tính khoảng cách trắc địa'),
     estimatedCostVnd: z.union([z.string().regex(/^\d+$/), z.number().int().min(0)]).default(0),
+    googleMapsDirectionsUrl: z.string().max(2000).optional(),
   })
   .strict();
 
@@ -89,6 +106,8 @@ const itineraryDaySchema = z
     id: guidSchema.optional(),
     dayNumber: z.number().int().min(1),
     travelDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    daySummary: z.union([z.string().max(1000), z.null()]).optional(),
+    googleMapsDayRouteUrl: z.string().max(2000).optional(),
     stops: z.array(itineraryStopSchema),
     legs: z.array(itineraryLegSchema).default([]),
   })

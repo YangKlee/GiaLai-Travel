@@ -2,6 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { AppError } from '../../shared/app-error.js';
 import { appendAudit } from '../../shared/audit.js';
 import { resolveNow, serializeUtc } from '../../shared/time.js';
+import {
+  buildGoogleMapsDayRouteUrl,
+  buildGoogleMapsDirectionsUrl,
+} from '../../adapters/index.js';
 import { createItineraryRepository } from './itinerary.repository.js';
 import { validateProposalSchedule } from './itinerary.validator.js';
 
@@ -15,6 +19,7 @@ function mapPlaceRow(p) {
   const plain = p.get ? p.get({ plain: true }) : p;
   const rev = plain.content?.published_revision;
   const translation = rev?.content_translations?.[0];
+
   return {
     id: plain.id,
     contentId: plain.content_id,
@@ -48,6 +53,13 @@ function mapEventRow(e) {
 function formatItineraryDetail(itinerary, legs = []) {
   const plain = itinerary.get ? itinerary.get({ plain: true }) : itinerary;
   const rev = plain.current_revision;
+  const origin = rev
+    ? {
+        latitude: Number(rev.departure_latitude),
+        longitude: Number(rev.departure_longitude),
+      }
+    : { latitude: 13.9833, longitude: 108.0 };
+  const transportMode = rev?.transport_mode || 'MOTORBIKE';
 
   const legsByDayId = new Map();
   for (const leg of legs) {
@@ -72,25 +84,81 @@ function formatItineraryDetail(itinerary, legs = []) {
     .map((d) => {
       const stops = (d.itinerary_stops ?? [])
         .sort((a, b) => a.sequence_no - b.sequence_no)
-        .map((s) => ({
-          id: s.id,
-          placeId: s.place_id,
-          placeTitle: s.place?.content?.published_revision?.content_translations?.[0]?.title ?? 'Địa điểm',
-          contentRevisionId: s.content_revision_id,
-          eventId: s.event_id ?? null,
-          sequenceNo: s.sequence_no,
-          arrivesAt: serializeUtc(s.arrives_at),
-          departsAt: serializeUtc(s.departs_at),
-          estimatedCostVnd: Number(s.estimated_cost_vnd),
-          note: s.note ?? null,
-        }));
+        .map((s) => {
+          const meta = s.cost_breakdown && typeof s.cost_breakdown === 'object' ? s.cost_breakdown : {};
+          const lat =
+            meta.latitude != null
+              ? Number(meta.latitude)
+              : s.place?.latitude != null
+                ? Number(s.place.latitude)
+                : null;
+          const lon =
+            meta.longitude != null
+              ? Number(meta.longitude)
+              : s.place?.longitude != null
+                ? Number(s.place.longitude)
+                : null;
+          return {
+            id: s.id,
+            placeId: s.place_id,
+            placeTitle:
+              meta.placeTitle ||
+              s.place?.content?.published_revision?.content_translations?.[0]?.title ||
+              'Địa điểm',
+            placeCategory: meta.placeCategory || s.place?.category || undefined,
+            activityType: meta.activityType || undefined,
+            latitude: lat,
+            longitude: lon,
+            contentRevisionId: s.content_revision_id,
+            eventId: s.event_id ?? null,
+            sequenceNo: s.sequence_no,
+            arrivesAt: serializeUtc(s.arrives_at),
+            departsAt: serializeUtc(s.departs_at),
+            estimatedCostVnd: Number(s.estimated_cost_vnd),
+            note: s.note ?? null,
+          };
+        });
+
+      const stopById = new Map(stops.map((st) => [st.id, st]));
+      const rawDayLegs = legsByDayId.get(d.id) ?? [];
+      const enrichedLegs = rawDayLegs.map((l, lIdx) => {
+        const fromStop = l.fromStopId ? stopById.get(l.fromStopId) : null;
+        const toStop = l.toStopId ? stopById.get(l.toStopId) : stops[lIdx] ?? null;
+        const fromLat = fromStop?.latitude ?? origin.latitude;
+        const fromLon = fromStop?.longitude ?? origin.longitude;
+        const toLat = toStop?.latitude ?? origin.latitude;
+        const toLon = toStop?.longitude ?? origin.longitude;
+        return {
+          ...l,
+          fromStopSequence: fromStop ? fromStop.sequenceNo : null,
+          toStopSequence: toStop ? toStop.sequenceNo : lIdx + 1,
+          fromLabel: fromStop ? fromStop.placeTitle : 'Điểm xuất phát',
+          toLabel: toStop ? toStop.placeTitle : 'Điểm đến',
+          fromLatitude: fromLat,
+          fromLongitude: fromLon,
+          toLatitude: toLat,
+          toLongitude: toLon,
+          googleMapsDirectionsUrl: buildGoogleMapsDirectionsUrl({
+            fromLat,
+            fromLon,
+            toLat,
+            toLon,
+            transportMode: l.transportMode || transportMode,
+          }),
+        };
+      });
 
       return {
         id: d.id,
         dayNumber: d.day_number,
         travelDate: d.travel_date,
+        googleMapsDayRouteUrl: buildGoogleMapsDayRouteUrl({
+          origin,
+          stops,
+          transportMode,
+        }),
         stops,
-        legs: legsByDayId.get(d.id) ?? [],
+        legs: enrichedLegs,
       };
     });
 
@@ -110,14 +178,14 @@ function formatItineraryDetail(itinerary, legs = []) {
           daysCount: rev.day_count,
           partySize: rev.traveler_count,
           budgetVnd: rev.budget_vnd,
+          totalBudgetVnd: rev.budget_vnd,
           estimatedTotalVnd: rev.estimated_total_vnd,
-          origin: {
-            latitude: Number(rev.departure_latitude),
-            longitude: Number(rev.departure_longitude),
-          },
-          transportMode: rev.transport_mode,
+          origin,
+          transportMode,
           preferences: rev.preferences ?? {},
           warnings: rev.warnings ?? [],
+          violations: [],
+          isValid: true,
           aiRequestId: rev.ai_request_id ?? null,
           validatedAt: serializeUtc(rev.validated_at),
           createdAt: serializeUtc(rev.created_at),
@@ -147,22 +215,28 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
   }
 
   return {
-    proposeItinerary: (actor, input, requestId) =>
+    proposeItinerary: (actor, input) =>
       safe(async () => {
         const categories = input.preferences?.categories ?? [];
+        const selectedPlaceIds =
+          input.selectedPlaceIds ?? input.preferences?.selectedPlaceIds ?? [];
+        const customPrompt =
+          input.customPrompt ??
+          input.preferences?.customPrompt ??
+          input.preferences?.dietaryNotes ??
+          null;
+
         const baseDate = new Date(`${input.startDate}T00:00:00.000Z`);
         const endDate = new Date(baseDate.getTime() + input.daysCount * 86400000).toISOString();
 
         const [placesRaw, eventsRaw] = await Promise.all([
-          repository.findPublicPlacesForPlanning(categories),
+          repository.findPublicPlacesForPlanning(categories, selectedPlaceIds),
           repository.findPublicEventsForPlanning(input.startDate, endDate),
         ]);
 
         const places = placesRaw.map(mapPlaceRow);
         const events = eventsRaw.map(mapEventRow);
-
-        const placeIds = places.map((p) => p.id);
-        const closures = await repository.findPlaceClosures(placeIds);
+        const closures = await repository.findPlaceClosures(places.map((p) => p.id));
 
         const placesMap = new Map(places.map((p) => [p.id, p]));
         const eventsMap = new Map(events.map((e) => [e.id, e]));
@@ -171,6 +245,12 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
           throw new AppError(503, 'AI_UNAVAILABLE', 'Dịch vụ tạo lịch trình AI chưa được cấu hình.');
         }
 
+        const mergedPreferences = {
+          ...(input.preferences ?? {}),
+          ...(selectedPlaceIds.length > 0 ? { selectedPlaceIds } : {}),
+          ...(customPrompt ? { customPrompt } : {}),
+        };
+
         const aiContext = {
           startDate: input.startDate,
           daysCount: input.daysCount,
@@ -178,7 +258,9 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
           totalBudgetVnd: input.totalBudgetVnd,
           origin: input.origin,
           transportMode: input.transportMode,
-          preferences: input.preferences,
+          preferences: mergedPreferences,
+          selectedPlaceIds,
+          customPrompt,
           places,
           events,
           routingAdapter,
@@ -207,9 +289,9 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
               id: aiRequestId,
               userId: actor.user.id,
               purpose: 'GENERATE',
-              provider: aiResult.provider || 'gialai-ai-planner',
-              modelName: aiResult.modelName || 'gialai-planner-v1',
-              promptVersion: aiResult.promptVersion || '2026-v1',
+              provider: aiResult.provider || 'google-gemini',
+              modelName: aiResult.modelName || 'gemini-3.1-flash-lite',
+              promptVersion: aiResult.promptVersion || '2026-v2',
               status: 'SUCCEEDED',
               inputContext: {
                 startDate: input.startDate,
@@ -218,7 +300,7 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
                 totalBudgetVnd: String(input.totalBudgetVnd),
                 origin: input.origin,
                 transportMode: input.transportMode,
-                preferences: input.preferences ?? {},
+                preferences: mergedPreferences,
               },
               outputPayload: {
                 estimatedTotalVnd: validationResult.estimatedTotalVnd,
@@ -242,12 +324,15 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
             estimatedTotalVnd: validationResult.estimatedTotalVnd,
             origin: input.origin,
             transportMode: input.transportMode,
-            preferences: input.preferences ?? {},
+            preferences: mergedPreferences,
             warnings: validationResult.warnings,
             violations: validationResult.violations,
             isValid: validationResult.isValid,
             aiRequestId,
-            promptExcerpt: aiResult.promptText ? aiResult.promptText.slice(0, 300) : null,
+            aiProvider: aiResult.provider,
+            aiModel: aiResult.modelName,
+            summary: aiResult.summary || null,
+            promptExcerpt: aiResult.promptText ? aiResult.promptText.slice(0, 500) : null,
             days: validationResult.days,
           },
         };
@@ -342,7 +427,6 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
         requireUser(actor);
         const now = resolveNow(clock);
 
-        // Fetch places to calculate/validate
         const placeIds = [];
         for (const day of input.days) {
           for (const stop of day.stops) {
@@ -476,7 +560,7 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
         return { data: formatItineraryDetail(result.itinerary, result.legs) };
       }),
 
-    renameMyItinerary: (actor, id, input, requestId) =>
+    renameMyItinerary: (actor, id, input) =>
       safe(async () => {
         requireUser(actor);
         const success = await repository.renameItinerary(id, actor.user.id, input.name);
@@ -504,16 +588,25 @@ export function createItineraryService(database, { aiAdapter, routingAdapter, cl
         const days = (rev.itinerary_days ?? []).map((d) => ({
           dayNumber: d.day_number,
           travelDate: d.travel_date,
-          stops: (d.itinerary_stops ?? []).map((s) => ({
-            placeId: s.place_id,
-            contentRevisionId: s.content_revision_id,
-            eventId: s.event_id,
-            sequenceNo: s.sequence_no,
-            arrivesAt: serializeUtc(s.arrives_at),
-            departsAt: serializeUtc(s.departs_at),
-            estimatedCostVnd: Number(s.estimated_cost_vnd),
-            note: s.note,
-          })),
+          stops: (d.itinerary_stops ?? []).map((s) => {
+            const meta =
+              s.cost_breakdown && typeof s.cost_breakdown === 'object' ? s.cost_breakdown : {};
+            return {
+              placeId: s.place_id,
+              placeTitle: meta.placeTitle || undefined,
+              placeCategory: meta.placeCategory || undefined,
+              activityType: meta.activityType || undefined,
+              latitude: meta.latitude ?? undefined,
+              longitude: meta.longitude ?? undefined,
+              contentRevisionId: s.content_revision_id,
+              eventId: s.event_id,
+              sequenceNo: s.sequence_no,
+              arrivesAt: serializeUtc(s.arrives_at),
+              departsAt: serializeUtc(s.departs_at),
+              estimatedCostVnd: Number(s.estimated_cost_vnd),
+              note: s.note,
+            };
+          }),
           legs: [],
         }));
 

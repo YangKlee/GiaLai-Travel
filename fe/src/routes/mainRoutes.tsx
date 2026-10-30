@@ -5,7 +5,6 @@ import { MainLayout } from '@/layouts/MainLayout';
 import { APP_PATHS, ROUTE_SEGMENTS } from '@/constants/path';
 import { RouteSuspense } from './RouteSuspense';
 import {
-  adminContentLoader,
   bookingsLoader,
   eventDetailLoader,
   eventsLoader,
@@ -18,6 +17,7 @@ import {
 import { PageLoadingState } from '@/components/common/PageLoadingState';
 import { sessionLoader } from './authLoaders';
 import { authRoutes } from './authRoutes';
+import { adminRoutes } from './adminRoutes';
 
 const ExplorePage = lazy(() => import('@/features/explore/pages/ExplorePage'));
 const PlaceDetailPage = lazy(() => import('@/features/explore/pages/PlaceDetailPage'));
@@ -27,7 +27,6 @@ const ServiceDetailPage = lazy(() => import('@/features/explore/pages/ServiceDet
 const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
 const BookingsPage = lazy(() => import('@/features/bookings/pages/BookingsPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
-const AdminContentPage = lazy(() => import('@/features/admin/pages/AdminContentPage'));
 const ServerErrorPage = lazy(() =>
   import('@/features/errors/pages/ErrorPages').then((m) => ({ default: m.ServerErrorPage })),
 );
@@ -158,20 +157,7 @@ export const mainRoutes: RouteObject[] = [
           </RouteSuspense>
         ),
       },
-      {
-        path: ROUTE_SEGMENTS.ADMIN,
-        loader: adminContentLoader,
-        element: (
-          <RouteSuspense>
-            <AdminContentPage />
-          </RouteSuspense>
-        ),
-        errorElement: (
-          <RouteSuspense>
-            <ServerErrorPage />
-          </RouteSuspense>
-        ),
-      },
+      ...adminRoutes,
     ],
   },
 ];

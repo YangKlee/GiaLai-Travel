@@ -1,18 +1,9 @@
 import { get, patch, post } from './api';
 
 export type IssueCategory =
-  | 'INACCURATE_INFO'
-  | 'CLOSED_DOWN'
-  | 'INAPPROPRIATE'
-  | 'OUTDATED_PRICE'
-  | 'OTHER';
+  'INACCURATE_INFO' | 'CLOSED_DOWN' | 'INAPPROPRIATE' | 'OUTDATED_PRICE' | 'OTHER';
 
-export type IssueStatus =
-  | 'NEW'
-  | 'PROCESSING'
-  | 'ACCEPTED'
-  | 'REJECTED'
-  | 'CLOSED';
+export type IssueStatus = 'NEW' | 'PROCESSING' | 'ACCEPTED' | 'REJECTED' | 'CLOSED';
 
 export interface IssueItem {
   id: string;
@@ -76,9 +67,7 @@ export interface AuditLogListResponse {
   };
 }
 
-export async function createIssueReport(
-  input: IssueCreateInput,
-): Promise<{ data: IssueItem }> {
+export async function createIssueReport(input: IssueCreateInput): Promise<{ data: IssueItem }> {
   return post<{ data: IssueItem }, IssueCreateInput>('/v1/issues', input);
 }
 
@@ -107,14 +96,14 @@ export async function listAdminIssues(params?: {
   if (params?.status) query.set('status', params.status);
   if (params?.category) query.set('category', params.category);
   const qs = query.toString();
-  return get<IssueListResponse>(`/v1/admin/issues${qs ? `?${qs}` : ''}`);
+  return get<IssueListResponse>(`/api/v1/admin/issues${qs ? `?${qs}` : ''}`);
 }
 
 export async function reviewAdminIssue(
   id: string,
   input: IssueReviewInput,
 ): Promise<{ data: IssueItem }> {
-  return patch<{ data: IssueItem }, IssueReviewInput>(`/v1/admin/issues/${id}`, input);
+  return patch<{ data: IssueItem }, IssueReviewInput>(`/api/v1/admin/issues/${id}`, input);
 }
 
 export async function listAdminAuditLogs(params?: {
@@ -131,5 +120,5 @@ export async function listAdminAuditLogs(params?: {
   if (params?.action) query.set('action', params.action);
   if (params?.result) query.set('result', params.result);
   const qs = query.toString();
-  return get<AuditLogListResponse>(`/v1/admin/audit-logs${qs ? `?${qs}` : ''}`);
+  return get<AuditLogListResponse>(`/api/v1/admin/audit-logs${qs ? `?${qs}` : ''}`);
 }

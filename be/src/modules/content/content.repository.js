@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Op } from 'sequelize';
+import { serializeUtc } from '../../shared/time.js';
 
 export function createContentRepository(database) {
   const {
@@ -16,7 +17,20 @@ export function createContentRepository(database) {
     Regions,
     ServiceSlots,
     Services,
+    ItineraryStops,
   } = database.models;
+
+  function safeParse(value) {
+    if (!value) return {};
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return {};
+      }
+    }
+    return value;
+  }
 
   return {
     listMediaAssets: () =>
@@ -386,5 +400,310 @@ export function createContentRepository(database) {
         },
         transaction,
       }),
+
+    listAdminPlaces: async ({ q, category, regionId, page = 1, pageSize = 50 } = {}) => {
+      const whereClause = {};
+      if (category) whereClause.category = category;
+      if (regionId) whereClause.region_id = regionId;
+
+      const rows = await Places.findAll({
+        where: whereClause,
+        include: [
+          {
+            association: Places.associations.content,
+            required: true,
+            include: [
+              {
+                association: ContentItems.associations.published_revision,
+                required: false,
+                include: [
+                  {
+                    association: ContentRevisions.associations.content_translations,
+                    required: false,
+                    where: { language_code: 'vi' },
+                  },
+                ],
+              },
+            ],
+          },
+          { association: Places.associations.region, required: false },
+          { association: Places.associations.place_opening_hours, required: false },
+        ],
+        order: [['updated_at', 'DESC'], ['id', 'ASC']],
+      });
+
+      let items = rows.map((p) => {
+        const plain = p.get({ plain: true });
+        const content = plain.content || {};
+        const rev = content.published_revision || {};
+        const trans = rev.content_translations?.[0] || {};
+        const payload = safeParse(rev.payload);
+        return {
+          id: plain.id,
+          contentId: plain.content_id,
+          title: trans.title || `Địa điểm ${plain.id.slice(0, 8)}`,
+          description: trans.body || '',
+          category: plain.category,
+          regionId: plain.region_id,
+          regionName: plain.region?.name || 'Gia Lai',
+          latitude: Number(plain.latitude),
+          longitude: Number(plain.longitude),
+          referencePriceVnd: plain.reference_price_vnd ? String(plain.reference_price_vnd) : null,
+          typicalDurationMinutes: plain.typical_duration_minutes,
+          bannerUrl: payload.bannerUrl || null,
+          imageUrl: payload.imageUrl || payload.bannerUrl || null,
+          sourceReference: rev.source_reference || null,
+          visibility: content.visibility || 'PUBLIC',
+          openingHours: (plain.place_opening_hours || []).map((h) => ({
+            weekday: h.weekday,
+            opensAt: h.opens_at,
+            closesAt: h.closes_at,
+            crossesMidnight: Boolean(h.crosses_midnight),
+          })),
+          updatedAt: serializeUtc(plain.updated_at),
+        };
+      });
+
+      if (q) {
+        const queryLower = q.toLowerCase();
+        items = items.filter(
+          (item) =>
+            item.title.toLowerCase().includes(queryLower) ||
+            item.description.toLowerCase().includes(queryLower),
+        );
+      }
+
+      const total = items.length;
+      const paginated = items.slice((page - 1) * pageSize, page * pageSize);
+      return { rows: paginated, total };
+    },
+
+    getAdminPlaceById: async (id, transaction) => {
+      const p = await Places.findByPk(id, {
+        include: [
+          {
+            association: Places.associations.content,
+            required: true,
+            include: [
+              {
+                association: ContentItems.associations.published_revision,
+                required: false,
+                include: [
+                  {
+                    association: ContentRevisions.associations.content_translations,
+                    required: false,
+                    where: { language_code: 'vi' },
+                  },
+                ],
+              },
+            ],
+          },
+          { association: Places.associations.region, required: false },
+          { association: Places.associations.place_opening_hours, required: false },
+        ],
+        transaction,
+      });
+      if (!p) return null;
+      const plain = p.get({ plain: true });
+      const content = plain.content || {};
+      const rev = content.published_revision || {};
+      const trans = rev.content_translations?.[0] || {};
+      const payload = safeParse(rev.payload);
+      return {
+        id: plain.id,
+        contentId: plain.content_id,
+        title: trans.title || `Địa điểm ${plain.id.slice(0, 8)}`,
+        description: trans.body || '',
+        category: plain.category,
+        regionId: plain.region_id,
+        regionName: plain.region?.name || 'Gia Lai',
+        latitude: Number(plain.latitude),
+        longitude: Number(plain.longitude),
+        referencePriceVnd: plain.reference_price_vnd ? String(plain.reference_price_vnd) : null,
+        typicalDurationMinutes: plain.typical_duration_minutes,
+        bannerUrl: payload.bannerUrl || null,
+        imageUrl: payload.imageUrl || payload.bannerUrl || null,
+        sourceReference: rev.source_reference || null,
+        visibility: content.visibility || 'PUBLIC',
+        openingHours: (plain.place_opening_hours || []).map((h) => ({
+          weekday: h.weekday,
+          opensAt: h.opens_at,
+          closesAt: h.closes_at,
+          crossesMidnight: Boolean(h.crosses_midnight),
+        })),
+        updatedAt: serializeUtc(plain.updated_at),
+      };
+    },
+
+    listAdminEvents: async ({ q, status, placeId, page = 1, pageSize = 50 } = {}) => {
+      const whereClause = {};
+      if (status) whereClause.event_status = status;
+      if (placeId) whereClause.place_id = placeId;
+
+      const rows = await Events.findAll({
+        where: whereClause,
+        include: [
+          {
+            association: Events.associations.content,
+            required: true,
+            include: [
+              {
+                association: ContentItems.associations.published_revision,
+                required: false,
+                include: [
+                  {
+                    association: ContentRevisions.associations.content_translations,
+                    required: false,
+                    where: { language_code: 'vi' },
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            association: Events.associations.place,
+            required: false,
+            include: [
+              { association: Places.associations.region, required: false },
+              {
+                association: Places.associations.content,
+                required: false,
+                include: [
+                  {
+                    association: ContentItems.associations.published_revision,
+                    required: false,
+                    include: [
+                      {
+                        association: ContentRevisions.associations.content_translations,
+                        required: false,
+                        where: { language_code: 'vi' },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        order: [['starts_at', 'DESC'], ['id', 'ASC']],
+      });
+
+      let items = rows.map((e) => {
+        const plain = e.get({ plain: true });
+        const content = plain.content || {};
+        const rev = content.published_revision || {};
+        const trans = rev.content_translations?.[0] || {};
+        const payload = safeParse(rev.payload);
+        const place = plain.place || {};
+        const placeTrans = place.content?.published_revision?.content_translations?.[0];
+        const placeTitle = placeTrans?.title || (place.id ? `Địa điểm #${place.id.slice(0, 8)}` : '');
+        return {
+          id: plain.id,
+          contentId: plain.content_id,
+          placeId: plain.place_id,
+          placeTitle,
+          regionName: place.region?.name || 'Gia Lai',
+          title: trans.title || `Sự kiện ${plain.id.slice(0, 8)}`,
+          description: trans.body || '',
+          startsAt: serializeUtc(plain.starts_at),
+          endsAt: serializeUtc(plain.ends_at),
+          eventStatus: plain.event_status,
+          bannerUrl: payload.bannerUrl || null,
+          imageUrl: payload.imageUrl || payload.bannerUrl || null,
+          sourceReference: rev.source_reference || null,
+          visibility: content.visibility || 'PUBLIC',
+          updatedAt: serializeUtc(plain.synced_at || rev.created_at || new Date()),
+        };
+      });
+
+      if (q) {
+        const queryLower = q.toLowerCase();
+        items = items.filter(
+          (item) =>
+            item.title.toLowerCase().includes(queryLower) ||
+            item.description.toLowerCase().includes(queryLower) ||
+            item.placeTitle.toLowerCase().includes(queryLower),
+        );
+      }
+
+      const total = items.length;
+      const paginated = items.slice((page - 1) * pageSize, page * pageSize);
+      return { rows: paginated, total };
+    },
+
+    getAdminEventById: async (id, transaction) => {
+      const e = await Events.findByPk(id, {
+        include: [
+          {
+            association: Events.associations.content,
+            required: true,
+            include: [
+              {
+                association: ContentItems.associations.published_revision,
+                required: false,
+                include: [
+                  {
+                    association: ContentRevisions.associations.content_translations,
+                    required: false,
+                    where: { language_code: 'vi' },
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            association: Events.associations.place,
+            required: false,
+            include: [
+              { association: Places.associations.region, required: false },
+              {
+                association: Places.associations.content,
+                required: false,
+                include: [
+                  {
+                    association: ContentItems.associations.published_revision,
+                    required: false,
+                    include: [
+                      {
+                        association: ContentRevisions.associations.content_translations,
+                        required: false,
+                        where: { language_code: 'vi' },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        transaction,
+      });
+      if (!e) return null;
+      const plain = e.get({ plain: true });
+      const content = plain.content || {};
+      const rev = content.published_revision || {};
+      const trans = rev.content_translations?.[0] || {};
+      const payload = safeParse(rev.payload);
+      const place = plain.place || {};
+      const placeTrans = place.content?.published_revision?.content_translations?.[0];
+      const placeTitle = placeTrans?.title || (place.id ? `Địa điểm #${place.id.slice(0, 8)}` : '');
+      return {
+        id: plain.id,
+        contentId: plain.content_id,
+        placeId: plain.place_id,
+        placeTitle,
+        regionName: place.region?.name || 'Gia Lai',
+        title: trans.title || `Sự kiện ${plain.id.slice(0, 8)}`,
+        description: trans.body || '',
+        startsAt: serializeUtc(plain.starts_at),
+        endsAt: serializeUtc(plain.ends_at),
+        eventStatus: plain.event_status,
+        bannerUrl: payload.bannerUrl || null,
+        imageUrl: payload.imageUrl || payload.bannerUrl || null,
+        sourceReference: rev.source_reference || null,
+        visibility: content.visibility || 'PUBLIC',
+        updatedAt: serializeUtc(plain.synced_at || rev.created_at || new Date()),
+      };
+    },
   };
 }

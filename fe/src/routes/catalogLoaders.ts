@@ -8,10 +8,11 @@ import {
   getPlaces,
   getService,
 } from '@/services/catalog';
+import type { Place } from '@/features/explore/types/catalog';
 import { getAdminContentMeta, listAdminContents } from '@/services/admin';
 import { listMyItineraries } from '@/services/itineraries';
 import type { SavedItinerarySummary } from '@/services/itineraries';
-import { listAdminBookings, listMyBookings } from '@/services/bookings';
+import { listMyBookings } from '@/services/bookings';
 import type { BookingRecord } from '@/services/bookings';
 import { listMyNotifications } from '@/services/notifications';
 import type { NotificationItem } from '@/services/notifications';
@@ -71,7 +72,12 @@ export async function serviceDetailLoader({ params, request }: LoaderFunctionArg
 }
 
 export async function tripsLoader({ request }: LoaderFunctionArgs) {
-  const { dataset } = await getCatalog(request.signal);
+  const [{ dataset }, placesRes] = await Promise.all([
+    getCatalog(request.signal),
+    getPlaces(new URLSearchParams({ pageSize: '50' }), request.signal).catch(() => ({
+      data: [] as Place[],
+    })),
+  ]);
   await bootstrapAuth();
   const state = useAuthStore.getState();
   let savedItineraries: SavedItinerarySummary[] = [];
@@ -82,7 +88,12 @@ export async function tripsLoader({ request }: LoaderFunctionArgs) {
       savedItineraries = [];
     }
   }
-  return { dataset, savedItineraries, isAuthenticated: state.phase === 'authenticated' };
+  return {
+    dataset,
+    availablePlaces: placesRes.data,
+    savedItineraries,
+    isAuthenticated: state.phase === 'authenticated',
+  };
 }
 
 export async function bookingsLoader({ request }: LoaderFunctionArgs) {
@@ -127,12 +138,9 @@ export async function adminContentLoader({ request }: LoaderFunctionArgs) {
   if (state.phase !== 'authenticated' || !state.user?.roles.includes('ADMIN')) {
     return redirect(APP_PATHS.FORBIDDEN);
   }
-  const [meta, contents, bookingsRes] = await Promise.all([
+  const [meta, contents] = await Promise.all([
     getAdminContentMeta(request.signal),
     listAdminContents(new URLSearchParams({ pageSize: '50' }), request.signal),
-    Promise.resolve(listAdminBookings({ pageSize: 50 })).catch(() => ({
-      data: [] as BookingRecord[],
-    })),
   ]);
-  return { meta, contents, bookings: bookingsRes.data };
+  return { meta, contents };
 }

@@ -19,7 +19,17 @@ export function createApp({
   app.use(requestContext(logger));
   app.use(helmet({ contentSecurityPolicy: serveStatic ? false : undefined }));
   app.use(cors({ origin: clientOrigin, credentials: true }));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '15mb' }));
+
+  const uploadsDir = path.resolve(process.cwd(), '.local', 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    try {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch {
+      // ignore
+    }
+  }
+  app.use('/uploads', express.static(uploadsDir));
 
   app.use(
     '/api',

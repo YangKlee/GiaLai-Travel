@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { validate } from '../../shared/validation.js';
 import {
+  adminEventCreateSchema,
+  adminEventUpdateSchema,
+  adminPlaceCreateSchema,
+  adminPlaceUpdateSchema,
+  adminUploadSchema,
   contentCreateSchema,
   contentParamsSchema,
   contentQuerySchema,
@@ -132,6 +137,78 @@ export function createContentRouter({ database, authService, clock }) {
         );
     },
   );
+
+  router.post('/upload-r2', validate(adminUploadSchema), async (req, res) => {
+    res.json(await contentService.uploadR2(req.auth, req.validated.body, req.id));
+  });
+
+  router.get('/places', async (req, res) => {
+    res.json(await contentService.listAdminPlaces(req.auth, req.query));
+  });
+
+  router.get('/places/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.getAdminPlace(req.auth, req.validated.params.id));
+  });
+
+  router.post('/places', validate(adminPlaceCreateSchema), async (req, res) => {
+    res
+      .status(201)
+      .json(await contentService.createAdminPlace(req.auth, req.validated.body, req.id));
+  });
+
+  router.put(
+    '/places/:id',
+    validate(contentParamsSchema, 'params'),
+    validate(adminPlaceUpdateSchema),
+    async (req, res) => {
+      res.json(
+        await contentService.updateAdminPlace(
+          req.auth,
+          req.validated.params.id,
+          req.validated.body,
+          req.id,
+        ),
+      );
+    },
+  );
+
+  router.delete('/places/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.deleteAdminPlace(req.auth, req.validated.params.id, req.id));
+  });
+
+  router.get('/events', async (req, res) => {
+    res.json(await contentService.listAdminEvents(req.auth, req.query));
+  });
+
+  router.get('/events/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.getAdminEvent(req.auth, req.validated.params.id));
+  });
+
+  router.post('/events', validate(adminEventCreateSchema), async (req, res) => {
+    res
+      .status(201)
+      .json(await contentService.createAdminEvent(req.auth, req.validated.body, req.id));
+  });
+
+  router.put(
+    '/events/:id',
+    validate(contentParamsSchema, 'params'),
+    validate(adminEventUpdateSchema),
+    async (req, res) => {
+      res.json(
+        await contentService.updateAdminEvent(
+          req.auth,
+          req.validated.params.id,
+          req.validated.body,
+          req.id,
+        ),
+      );
+    },
+  );
+
+  router.delete('/events/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.deleteAdminEvent(req.auth, req.validated.params.id, req.id));
+  });
 
   return router;
 }

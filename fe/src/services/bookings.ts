@@ -1,13 +1,7 @@
 import { get, post } from './api';
 
 export type BookingStatus =
-  | 'CHO_DUYET'
-  | 'CHO_THANH_TOAN'
-  | 'DA_XAC_NHAN'
-  | 'TU_CHOI'
-  | 'HET_HAN'
-  | 'DA_HUY'
-  | 'HOAN_THANH';
+  'CHO_DUYET' | 'CHO_THANH_TOAN' | 'DA_XAC_NHAN' | 'TU_CHOI' | 'HET_HAN' | 'DA_HUY' | 'HOAN_THANH';
 
 export interface BookingQuoteInput {
   serviceId: string;
@@ -178,7 +172,7 @@ export async function listAdminBookings(params?: {
   if (params?.pageSize) query.set('pageSize', String(params.pageSize));
   if (params?.status) query.set('status', params.status);
   const qs = query.toString();
-  return get<BookingListResponse>(`/v1/admin/bookings${qs ? `?${qs}` : ''}`);
+  return get<BookingListResponse>(`/api/v1/admin/bookings${qs ? `?${qs}` : ''}`);
 }
 
 export async function reviewAdminBooking(
@@ -186,14 +180,14 @@ export async function reviewAdminBooking(
   input: { decision: 'APPROVE' | 'REJECT'; rejectionReason?: string },
 ): Promise<BookingDetailResponse> {
   return post<BookingDetailResponse, { decision: 'APPROVE' | 'REJECT'; rejectionReason?: string }>(
-    `/v1/admin/bookings/${bookingId}/review`,
+    `/api/v1/admin/bookings/${bookingId}/review`,
     input,
   );
 }
 
 export async function completeAdminBooking(bookingId: string): Promise<BookingDetailResponse> {
   return post<BookingDetailResponse, Record<string, never>>(
-    `/v1/admin/bookings/${bookingId}/complete`,
+    `/api/v1/admin/bookings/${bookingId}/complete`,
     {},
   );
 }

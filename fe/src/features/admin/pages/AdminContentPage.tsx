@@ -1,16 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import {
-  CheckCircle2,
-  EyeOff,
-  FileEdit,
-  Flag,
-  History,
-  Layers,
-  ShieldCheck,
-  Ticket,
-  XCircle,
-} from 'lucide-react';
+import { CheckCircle2, EyeOff, FileEdit, Layers, ShieldCheck, XCircle } from 'lucide-react';
 import { useLoaderData } from 'react-router-dom';
 import type { adminContentLoader } from '@/routes/catalogLoaders';
 import {
@@ -20,14 +10,10 @@ import {
   submitAdminRevision,
   updateAdminContentVisibility,
 } from '@/services/admin';
-import { completeAdminBooking, reviewAdminBooking } from '@/services/bookings';
-import type { BookingRecord } from '@/services/bookings';
-import { listAdminAuditLogs, listAdminIssues, reviewAdminIssue } from '@/services/operations';
-import type { AuditLogItem, IssueItem, IssueStatus } from '@/services/operations';
 import { ApiError } from '@/services/api';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatDate, formatVnd } from '@/utils/format';
+import { formatDate } from '@/utils/format';
 import { CATEGORY_NAMES } from '@/features/explore/types/catalog';
 import type {
   AdminContentItem,
@@ -85,91 +71,6 @@ export default function AdminContentPage() {
 
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
-
-  const [adminTab, setAdminTab] = useState<'CMS' | 'BOOKINGS' | 'ISSUES' | 'AUDIT'>('CMS');
-  const [bookings, setBookings] = useState<BookingRecord[]>(initialData.bookings ?? []);
-  const [bookingFilter, setBookingFilter] = useState<string>('ALL');
-  const [bookingActionId, setBookingActionId] = useState<string | null>(null);
-  const [bookingRejectReason, setBookingRejectReason] = useState<Record<string, string>>({});
-
-  const [issues, setIssues] = useState<IssueItem[]>([]);
-  const [issuesLoaded, setIssuesLoaded] = useState(false);
-  const [issueResponse, setIssueResponse] = useState<Record<string, string>>({});
-  const [issueBusyId, setIssueBusyId] = useState<string | null>(null);
-
-  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
-  const [auditLoaded, setAuditLoaded] = useState(false);
-
-  async function loadIssues() {
-    try {
-      const res = await listAdminIssues({ pageSize: 50 });
-      setIssues(res.data);
-      setIssuesLoaded(true);
-    } catch (err) {
-      setErrorMessage(getErrorMessage(err, 'Không thể tải danh sách báo lỗi.'));
-    }
-  }
-
-  async function loadAuditLogs() {
-    try {
-      const res = await listAdminAuditLogs({ pageSize: 50 });
-      setAuditLogs(res.data);
-      setAuditLoaded(true);
-    } catch (err) {
-      setErrorMessage(getErrorMessage(err, 'Không thể tải nhật ký kiểm toán.'));
-    }
-  }
-
-  async function handleReviewIssue(issueId: string, status: IssueStatus) {
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setIssueBusyId(issueId);
-    try {
-      const resp = issueResponse[issueId];
-      const res = await reviewAdminIssue(issueId, { status, response: resp });
-      setIssues((prev) => prev.map((i) => (i.id === issueId ? res.data : i)));
-      setStatusMessage(`Đã cập nhật trạng thái phiếu phản hồi thành ${status}.`);
-    } catch (err) {
-      setErrorMessage(getErrorMessage(err, 'Không thể xử lý phản hồi.'));
-    } finally {
-      setIssueBusyId(null);
-    }
-  }
-
-  async function handleReviewBooking(bookingId: string, decision: 'APPROVE' | 'REJECT') {
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setBookingActionId(bookingId);
-    try {
-      const reason = bookingRejectReason[bookingId];
-      const res = await reviewAdminBooking(bookingId, { decision, rejectionReason: reason });
-      setBookings((prev) => prev.map((b) => (b.id === bookingId ? res.data : b)));
-      setStatusMessage(
-        decision === 'APPROVE'
-          ? `Đã duyệt đơn #${bookingId.slice(0, 8)} và chuyển sang giữ chỗ 30 phút.`
-          : `Đã từ chối đơn #${bookingId.slice(0, 8)}.`,
-      );
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Không thể duyệt đơn đặt dịch vụ'));
-    } finally {
-      setBookingActionId(null);
-    }
-  }
-
-  async function handleCompleteBooking(bookingId: string) {
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setBookingActionId(bookingId);
-    try {
-      const res = await completeAdminBooking(bookingId);
-      setBookings((prev) => prev.map((b) => (b.id === bookingId ? res.data : b)));
-      setStatusMessage(`Đơn #${bookingId.slice(0, 8)} đã hoàn tất và ghi nhận hoa hồng 10%.`);
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Không thể đánh dấu hoàn tất đơn'));
-    } finally {
-      setBookingActionId(null);
-    }
-  }
 
   function upsertItem(updated: AdminContentItem) {
     setItems((current) => {
@@ -345,14 +246,6 @@ export default function AdminContentPage() {
   ).length;
   const hiddenCount = items.filter((i) => i.visibility === 'HIDDEN').length;
 
-  const filteredBookings = bookings.filter((b) => {
-    if (bookingFilter === 'ALL') return true;
-    if (bookingFilter === 'DA_HUY') {
-      return b.status === 'DA_HUY' || b.status === 'TU_CHOI' || b.status === 'HET_HAN';
-    }
-    return b.status === bookingFilter;
-  });
-
   return (
     <section className="account-shell">
       <div className="section-heading">
@@ -369,47 +262,6 @@ export default function AdminContentPage() {
         </Badge>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', margin: '16px 0 24px', flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          className={`button ${adminTab === 'CMS' ? 'button-primary' : 'button-outline'}`}
-          onClick={() => setAdminTab('CMS')}
-        >
-          <Layers size={16} style={{ marginRight: '6px' }} />
-          Nội dung &amp; Bản sửa đổi (CMS)
-        </button>
-        <button
-          type="button"
-          className={`button ${adminTab === 'BOOKINGS' ? 'button-primary' : 'button-outline'}`}
-          onClick={() => setAdminTab('BOOKINGS')}
-        >
-          <Ticket size={16} style={{ marginRight: '6px' }} />
-          Quản lý Đặt chỗ &amp; Hoa hồng ({bookings.length})
-        </button>
-        <button
-          type="button"
-          className={`button ${adminTab === 'ISSUES' ? 'button-primary' : 'button-outline'}`}
-          onClick={() => {
-            setAdminTab('ISSUES');
-            if (!issuesLoaded) void loadIssues();
-          }}
-        >
-          <Flag size={16} style={{ marginRight: '6px' }} />
-          Báo lỗi &amp; Góp ý dữ liệu
-        </button>
-        <button
-          type="button"
-          className={`button ${adminTab === 'AUDIT' ? 'button-primary' : 'button-outline'}`}
-          onClick={() => {
-            setAdminTab('AUDIT');
-            if (!auditLoaded) void loadAuditLogs();
-          }}
-        >
-          <History size={16} style={{ marginRight: '6px' }} />
-          Nhật ký Kiểm toán (Audit)
-        </button>
-      </div>
-
       {statusMessage && (
         <p className="success-note" role="status">
           {statusMessage}
@@ -421,24 +273,22 @@ export default function AdminContentPage() {
         </p>
       )}
 
-      {adminTab === 'CMS' ? (
-        <>
-          <div className="place-grid">
-            <div className="content-card">
-              <p className="muted">Tổng mục nội dung</p>
-              <h2>{items.length}</h2>
-            </div>
-            <div className="content-card">
-              <p className="muted">Đang công bố (PUBLIC)</p>
-              <h2>{publicCount}</h2>
-            </div>
-            <div className="content-card">
-              <p className="muted">Chờ duyệt (PENDING) / Đã ẩn</p>
-              <h2>
-                {pendingCount} chờ duyệt · {hiddenCount} ẩn
-              </h2>
-            </div>
-          </div>
+      <div className="place-grid">
+        <div className="content-card">
+          <p className="muted">Tổng mục nội dung</p>
+          <h2>{items.length}</h2>
+        </div>
+        <div className="content-card">
+          <p className="muted">Đang công bố (PUBLIC)</p>
+          <h2>{publicCount}</h2>
+        </div>
+        <div className="content-card">
+          <p className="muted">Chờ duyệt (PENDING) / Đã ẩn</p>
+          <h2>
+            {pendingCount} chờ duyệt · {hiddenCount} ẩn
+          </h2>
+        </div>
+      </div>
 
       <div className="account-grid">
         <div className="content-card account-section-card">
@@ -842,339 +692,6 @@ export default function AdminContentPage() {
           )}
         </div>
       </div>
-        </>
-      ) : adminTab === 'BOOKINGS' ? (
-        <div style={{ marginTop: '16px' }}>
-          <div className="place-grid">
-            <div className="content-card">
-              <p className="muted">Tổng đơn đặt</p>
-              <h2>{bookings.length}</h2>
-            </div>
-            <div className="content-card">
-              <p className="muted">Chờ duyệt (24h)</p>
-              <h2>{bookings.filter((b) => b.status === 'CHO_DUYET').length}</h2>
-            </div>
-            <div className="content-card">
-              <p className="muted">Đang giữ chỗ 30p</p>
-              <h2>{bookings.filter((b) => b.status === 'CHO_THANH_TOAN').length}</h2>
-            </div>
-            <div className="content-card">
-              <p className="muted">Đã xác nhận / Hoàn tất</p>
-              <h2>
-                {
-                  bookings.filter(
-                    (b) => b.status === 'DA_XAC_NHAN' || b.status === 'HOAN_THANH',
-                  ).length
-                }
-              </h2>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', margin: '20px 0', flexWrap: 'wrap' }}>
-            {['ALL', 'CHO_DUYET', 'CHO_THANH_TOAN', 'DA_XAC_NHAN', 'HOAN_THANH', 'DA_HUY'].map((st) => (
-              <button
-                key={st}
-                type="button"
-                className={`button ${bookingFilter === st ? 'button-primary' : 'button-outline'}`}
-                onClick={() => setBookingFilter(st)}
-              >
-                {st === 'ALL'
-                  ? `Tất cả (${bookings.length})`
-                  : st === 'CHO_DUYET'
-                    ? `Chờ duyệt (${bookings.filter((b) => b.status === 'CHO_DUYET').length})`
-                    : st === 'CHO_THANH_TOAN'
-                      ? `Chờ thanh toán (${bookings.filter((b) => b.status === 'CHO_THANH_TOAN').length})`
-                      : st === 'DA_XAC_NHAN'
-                        ? `Đã xác nhận (${bookings.filter((b) => b.status === 'DA_XAC_NHAN').length})`
-                        : st === 'HOAN_THANH'
-                          ? `Hoàn tất (${bookings.filter((b) => b.status === 'HOAN_THANH').length})`
-                          : `Đã hủy / Quá hạn (${bookings.filter((b) => b.status === 'DA_HUY' || b.status === 'TU_CHOI' || b.status === 'HET_HAN').length})`}
-              </button>
-            ))}
-          </div>
-
-          {filteredBookings.length === 0 ? (
-            <div className="content-card" style={{ textAlign: 'center', padding: '36px' }}>
-              <p className="muted">Không có đơn đặt nào trong danh mục này.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {filteredBookings.map((b) => {
-                const isBusy = bookingActionId === b.id;
-                const canComplete = b.status === 'DA_XAC_NHAN' && new Date() >= new Date(b.endsAt);
-
-                return (
-                  <div key={b.id} className="content-card">
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        flexWrap: 'wrap',
-                        gap: '12px',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Badge>{b.status}</Badge>
-                          <strong style={{ fontSize: '1.05rem' }}>{b.serviceTitle}</strong>
-                          <span className="muted">({b.partnerName})</span>
-                        </div>
-                        <p style={{ margin: '6px 0', fontSize: '0.9rem' }}>
-                          Khách đặt: <strong>{b.contactName}</strong> (
-                          {b.contactEmail ?? b.contactPhone ?? 'Không có'})
-                          {' · '}Số lượng: <strong>{b.quantity} suất</strong>
-                          {' · '}Thời gian: {formatDate(b.startsAt)} → {formatDate(b.endsAt)}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div
-                          style={{
-                            fontSize: '1.2rem',
-                            fontWeight: 700,
-                            color: 'var(--color-primary)',
-                          }}
-                        >
-                          {formatVnd(b.totalVnd)}
-                        </div>
-                        <small className="muted">
-                          Hoa hồng 10%: {formatVnd(String(Math.round(Number(b.totalVnd) * 0.1)))}
-                        </small>
-                      </div>
-                    </div>
-
-                    {b.status === 'CHO_DUYET' && (
-                      <div
-                        style={{
-                          marginTop: '14px',
-                          paddingTop: '12px',
-                          borderTop: '1px solid #eee',
-                          display: 'flex',
-                          gap: '8px',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Button
-                          variant="primary"
-                          disabled={isBusy}
-                          onClick={() => void handleReviewBooking(b.id, 'APPROVE')}
-                        >
-                          <CheckCircle2 size={16} style={{ marginRight: '6px' }} />
-                          Phê duyệt &amp; Giữ chỗ 30 phút
-                        </Button>
-                        <input
-                          type="text"
-                          placeholder="Lý do từ chối (nếu từ chối)..."
-                          value={bookingRejectReason[b.id] ?? ''}
-                          onChange={(e) =>
-                            setBookingRejectReason((prev) => ({
-                              ...prev,
-                              [b.id]: e.target.value,
-                            }))
-                          }
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--color-border-subtle)',
-                            fontSize: '0.88rem',
-                            flex: '1 1 200px',
-                          }}
-                        />
-                        <Button
-                          variant="secondary"
-                          disabled={isBusy}
-                          onClick={() => void handleReviewBooking(b.id, 'REJECT')}
-                        >
-                          <XCircle size={16} style={{ marginRight: '6px' }} />
-                          Từ chối đơn
-                        </Button>
-                      </div>
-                    )}
-
-                    {b.status === 'DA_XAC_NHAN' && (
-                      <div
-                        style={{
-                          marginTop: '14px',
-                          paddingTop: '12px',
-                          borderTop: '1px solid #eee',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                        }}
-                      >
-                        <span className="muted" style={{ fontSize: '0.85rem' }}>
-                          {new Date() < new Date(b.endsAt)
-                            ? `Dịch vụ đang diễn ra. Hoàn tất khả dụng sau ${formatDate(b.endsAt)}`
-                            : 'Dịch vụ đã kết thúc. Sẵn sàng hoàn tất đơn & hạch toán hoa hồng.'}
-                        </span>
-                        <Button
-                          variant="primary"
-                          disabled={isBusy || !canComplete}
-                          onClick={() => void handleCompleteBooking(b.id)}
-                        >
-                          <CheckCircle2 size={16} style={{ marginRight: '6px' }} />
-                          Xác nhận hoàn thành &amp; Ghi nhận hoa hồng
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : adminTab === 'ISSUES' ? (
-        <div style={{ marginTop: '16px' }}>
-          <div className="card-header-inline" style={{ marginBottom: '16px' }}>
-            <Flag size={22} className="text-primary" />
-            <div>
-              <h2>Quản lý Phản ánh chất lượng nội dung &amp; Báo lỗi</h2>
-              <p className="muted">
-                Tiếp nhận và giải quyết các phản ánh đóng góp từ du khách đối với thông tin điểm đến, giá cả, và giờ mở cửa.
-              </p>
-            </div>
-          </div>
-
-          {issues.length === 0 ? (
-            <div className="content-card" style={{ textAlign: 'center', padding: '36px' }}>
-              <p className="muted">Chưa có phản ánh báo lỗi nào cần xử lý.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {issues.map((issue) => {
-                const isBusy = issueBusyId === issue.id;
-                return (
-                  <div key={issue.id} className="content-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Badge>{issue.status}</Badge>
-                          <strong style={{ fontSize: '1.05rem' }}>{issue.contentTitle}</strong>
-                          <span className="muted">({issue.category})</span>
-                        </div>
-                        <p style={{ margin: '8px 0', fontSize: '0.92rem', color: '#333' }}>
-                          {issue.description}
-                        </p>
-                        <small className="muted">
-                          Người gửi: {issue.reporterName ?? 'Ẩn danh'} · Ngày gửi: {formatDate(issue.createdAt)}
-                        </small>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #eee' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <input
-                          type="text"
-                          placeholder="Phản hồi của ban quản trị gửi cho du khách..."
-                          value={issueResponse[issue.id] ?? issue.response ?? ''}
-                          onChange={(e) =>
-                            setIssueResponse((prev) => ({
-                              ...prev,
-                              [issue.id]: e.target.value,
-                            }))
-                          }
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--color-border-subtle)',
-                            fontSize: '0.88rem',
-                            flex: '1 1 250px',
-                          }}
-                        />
-                        <Button
-                          variant="primary"
-                          disabled={isBusy}
-                          onClick={() => void handleReviewIssue(issue.id, 'ACCEPTED')}
-                        >
-                          <CheckCircle2 size={16} style={{ marginRight: '4px' }} />
-                          Chấp thuận
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          disabled={isBusy}
-                          onClick={() => void handleReviewIssue(issue.id, 'REJECTED')}
-                        >
-                          <XCircle size={16} style={{ marginRight: '4px' }} />
-                          Từ chối
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          disabled={isBusy}
-                          onClick={() => void handleReviewIssue(issue.id, 'CLOSED')}
-                        >
-                          Đóng phiếu
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{ marginTop: '16px' }}>
-          <div className="card-header-inline" style={{ marginBottom: '16px' }}>
-            <History size={22} className="text-primary" />
-            <div>
-              <h2>Nhật ký Kiểm toán Hệ thống (Audit Logs)</h2>
-              <p className="muted">
-                Lịch sử các thao tác nghiệp vụ, bảo mật, và kiểm duyệt trên hệ thống (đã che giấu dữ liệu nhạy cảm).
-              </p>
-            </div>
-          </div>
-
-          {auditLogs.length === 0 ? (
-            <div className="content-card" style={{ textAlign: 'center', padding: '36px' }}>
-              <p className="muted">Chưa có nhật ký kiểm toán nào.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {auditLogs.map((log) => (
-                <div key={log.id} className="content-card" style={{ padding: '12px 16px', fontSize: '0.88rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span
-                        style={{
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          fontWeight: 600,
-                          fontSize: '0.78rem',
-                          background: log.result === 'SUCCESS' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
-                          color: log.result === 'SUCCESS' ? '#28a745' : '#dc3545',
-                        }}
-                      >
-                        {log.result}
-                      </span>
-                      <strong>{log.action}</strong>
-                      <span className="muted">({log.targetType}{log.targetId ? `: ${log.targetId.slice(0, 8)}…` : ''})</span>
-                    </div>
-                    <span className="muted">{formatDate(log.createdAt)}</span>
-                  </div>
-
-                  {log.metadata && (
-                    <pre
-                      style={{
-                        margin: '8px 0 0',
-                        padding: '8px',
-                        background: '#f8f9fa',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        overflowX: 'auto',
-                      }}
-                    >
-                      {JSON.stringify(log.metadata, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </section>
   );
 }

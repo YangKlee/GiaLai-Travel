@@ -225,3 +225,49 @@ export const EVENT_STATUS_NAMES: Record<EventStatus, string> = {
   CANCELLED: 'Đã hủy / tạm hoãn',
   COMPLETED: 'Đã kết thúc',
 };
+
+export interface AdminPlaceItem {
+  id: string;
+  contentId: string;
+  title: string;
+  description: string;
+  category: Category;
+  regionId: string;
+  regionName: string;
+  latitude: number;
+  longitude: number;
+  referencePriceVnd: string | null;
+  typicalDurationMinutes: number | null;
+  bannerUrl: string | null;
+  imageUrl: string | null;
+  sourceReference: string | null;
+  visibility: ContentVisibility;
+  openingHours: OpeningHour[];
+  updatedAt: string;
+}
+
+export interface AdminEventItem {
+  id: string;
+  contentId: string;
+  placeId: string;
+  placeTitle: string;
+  regionName: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string;
+  eventStatus: EventStatus;
+  bannerUrl: string | null;
+  imageUrl: string | null;
+  sourceReference: string | null;
+  visibility: ContentVisibility;
+  updatedAt: string;
+}
+
+export interface AdminR2UploadResult {
+  url: string;
+  key: string;
+  provider: string;
+  byteSize: number;
+  mimeType: string;
+}

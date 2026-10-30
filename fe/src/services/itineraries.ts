@@ -18,14 +18,22 @@ export interface ProposalInput {
     categories?: Category[];
     pace?: 'RELAXED' | 'BALANCED' | 'FAST';
     dietaryNotes?: string | null;
+    customPrompt?: string | null;
+    selectedPlaceIds?: string[];
   };
+  selectedPlaceIds?: string[];
+  customPrompt?: string | null;
 }
 
 export interface ItineraryStop {
   id?: string;
   placeId: string;
   placeTitle?: string;
-  contentRevisionId?: string;
+  placeCategory?: Category;
+  latitude?: number | null;
+  longitude?: number | null;
+  activityType?: string;
+  contentRevisionId?: string | null;
   eventId?: string | null;
   sequenceNo: number;
   arrivesAt: string;
@@ -36,20 +44,33 @@ export interface ItineraryStop {
 
 export interface ItineraryLeg {
   id?: string;
+  fromStopId?: string | null;
+  toStopId?: string;
   fromStopSequence?: number | null;
   toStopSequence: number;
+  fromLabel?: string;
+  toLabel?: string;
+  fromLatitude?: number | null;
+  fromLongitude?: number | null;
+  toLatitude?: number | null;
+  toLongitude?: number | null;
+  departsAt?: string;
+  arrivesAt?: string;
   distanceMeters: number;
   durationSeconds: number;
   transportMode: string;
   provider: string;
   sourceReference: string;
   estimatedCostVnd: number;
+  googleMapsDirectionsUrl?: string;
 }
 
 export interface ItineraryDay {
   id?: string;
   dayNumber: number;
   travelDate: string;
+  daySummary?: string | null;
+  googleMapsDayRouteUrl?: string;
   stops: ItineraryStop[];
   legs: ItineraryLeg[];
 }
@@ -70,11 +91,16 @@ export interface ItineraryProposal {
     categories?: Category[];
     pace?: 'RELAXED' | 'BALANCED' | 'FAST';
     dietaryNotes?: string | null;
+    customPrompt?: string | null;
+    selectedPlaceIds?: string[];
   };
   warnings: string[];
   violations: string[];
   isValid: boolean;
   aiRequestId: string | null;
+  aiProvider?: string;
+  aiModel?: string;
+  summary?: string | null;
   promptExcerpt?: string | null;
   days: ItineraryDay[];
 }
@@ -246,6 +272,10 @@ export interface OfflineManifestData {
   generatedAt: string;
 }
 
-export async function getItineraryOfflineManifest(id: string): Promise<{ data: OfflineManifestData }> {
-  return get<{ data: OfflineManifestData }>(`/api/v1/me/itineraries/${encodeURIComponent(id)}/manifest`);
+export async function getItineraryOfflineManifest(
+  id: string,
+): Promise<{ data: OfflineManifestData }> {
+  return get<{ data: OfflineManifestData }>(
+    `/api/v1/me/itineraries/${encodeURIComponent(id)}/manifest`,
+  );
 }

@@ -1,3 +1,4 @@
+import { adminNavigation } from '@/features/admin/adminNavigation';
 import { useEffect, useRef, useState } from 'react';
 import {
   Bell,
@@ -172,9 +173,7 @@ export function MainLayout() {
                       <div className="header-details">
                         <p className="full-name">{user.displayName}</p>
                         <p className="email-text">{user.email}</p>
-                        <Badge>
-                          {getUserRoleLabel()}
-                        </Badge>
+                        <Badge>{getUserRoleLabel()}</Badge>
                       </div>
                     </div>
 
@@ -268,10 +267,7 @@ export function MainLayout() {
               </div>
             ) : (
               <div className="auth-header-actions">
-                <Link
-                  to={APP_PATHS.LOGIN}
-                  className={buttonVariants({ variant: 'secondary' })}
-                >
+                <Link to={APP_PATHS.LOGIN} className={buttonVariants({ variant: 'secondary' })}>
                   Đăng nhập
                 </Link>
                 <Link to={APP_PATHS.REGISTER} className={buttonVariants()}>
@@ -316,7 +312,7 @@ export function MainLayout() {
           <div className="sidebar-nav-container">
             <div className="nav-group">
               <span className="nav-group-title">Khám phá</span>
-              <nav className="sidebar-nav">
+              <nav className="sidebar-nav" aria-label="Khám phá">
                 <NavLink
                   to={APP_PATHS.EXPLORE}
                   className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
@@ -352,7 +348,7 @@ export function MainLayout() {
             {user && (
               <div className="nav-group">
                 <span className="nav-group-title">Tiện ích cá nhân</span>
-                <nav className="sidebar-nav">
+                <nav className="sidebar-nav" aria-label="Tiện ích cá nhân">
                   <NavLink
                     to={APP_PATHS.BOOKINGS}
                     className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
@@ -389,18 +385,21 @@ export function MainLayout() {
             {isAdmin && (
               <div className="nav-group">
                 <span className="nav-group-title">Quản trị</span>
-                <nav className="sidebar-nav">
-                  <NavLink
-                    to={APP_PATHS.ADMIN}
-                    className={({ isActive }) =>
-                      `sidebar-link admin-link ${isActive ? 'active' : ''}`
-                    }
-                    onClick={() => setSidebarMobileOpen(false)}
-                    title="Bảng điều khiển Quản trị"
-                  >
-                    <ShieldCheck size={20} className="sidebar-icon" aria-hidden="true" />
-                    <span className="sidebar-text">Quản trị nội dung</span>
-                  </NavLink>
+                <nav className="sidebar-nav" aria-label="Quản trị">
+                  {adminNavigation.map(({ to, label, icon: Icon }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      className={({ isActive }) =>
+                        `sidebar-link admin-link ${isActive ? 'active' : ''}`
+                      }
+                      onClick={() => setSidebarMobileOpen(false)}
+                      title={label}
+                    >
+                      <Icon size={20} className="sidebar-icon" aria-hidden="true" />
+                      <span className="sidebar-text">{label}</span>
+                    </NavLink>
+                  ))}
                 </nav>
               </div>
             )}

@@ -20,6 +20,17 @@ const schema = z.object({
   DB_SSL_CA: z.string().min(1).optional(),
   SERVE_STATIC: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   STATIC_DIR: z.string().min(1).optional(),
+  R2_ACCOUNT_ID: z.string().trim().optional(),
+  R2_ACCESS_KEY_ID: z.string().trim().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().trim().optional(),
+  R2_BUCKET_NAME: z.string().trim().default('gialai-travel'),
+  R2_PUBLIC_URL: z.string().trim().optional(),
+  AI_PROVIDER: z.enum(['auto', 'gemini', 'openai', 'prompt-engine']).default('auto'),
+  GEMINI_API_KEY: z.string().trim().optional(),
+  GEMINI_MODEL: z.string().trim().default('gemini-2.0-flash'),
+  OPENAI_API_KEY: z.string().trim().optional(),
+  OPENAI_MODEL: z.string().trim().default('gpt-4o-mini'),
+  OPENAI_BASE_URL: z.string().trim().default('https://api.openai.com/v1'),
 }).superRefine((env, ctx) => {
   const localDevelopment = env.NODE_ENV !== 'production' &&
     ['localhost', '127.0.0.1', '::1'].includes(env.DB_HOST);
@@ -45,6 +56,21 @@ export function loadConfig(environment = process.env) {
       user: env.DB_USER, password: env.DB_PASSWORD,
       connectionLimit: env.DB_CONNECTION_LIMIT, connectTimeout: env.DB_CONNECT_TIMEOUT_MS,
       queryTimeout: env.DB_QUERY_TIMEOUT_MS, ssl: env.DB_SSL, sslCaPath: env.DB_SSL_CA,
+    }),
+    r2: Object.freeze({
+      accountId: env.R2_ACCOUNT_ID,
+      accessKeyId: env.R2_ACCESS_KEY_ID,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      bucketName: env.R2_BUCKET_NAME,
+      publicUrl: env.R2_PUBLIC_URL,
+    }),
+    ai: Object.freeze({
+      provider: env.AI_PROVIDER,
+      geminiApiKey: env.GEMINI_API_KEY || '',
+      geminiModel: env.GEMINI_MODEL,
+      openaiApiKey: env.OPENAI_API_KEY || '',
+      openaiModel: env.OPENAI_MODEL,
+      openaiBaseUrl: env.OPENAI_BASE_URL,
     }),
   });
 }
