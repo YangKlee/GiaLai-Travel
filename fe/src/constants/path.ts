@@ -1,0 +1,12 @@
+export const ROUTE_SEGMENTS = {
+  EXPLORE: 'explore', PLACES: 'places/:id', TRIPS: 'trips', ADMIN: 'admin',
+  UNAUTHORIZED: '401', FORBIDDEN: '403', NOT_FOUND: '404', SERVER_ERROR: '500',
+} as const;
+
+export const APP_PATHS = {
+  HOME: '/', EXPLORE: `/${ROUTE_SEGMENTS.EXPLORE}`, TRIPS: `/${ROUTE_SEGMENTS.TRIPS}`,
+  ADMIN: `/${ROUTE_SEGMENTS.ADMIN}`, UNAUTHORIZED: `/${ROUTE_SEGMENTS.UNAUTHORIZED}`,
+  FORBIDDEN: `/${ROUTE_SEGMENTS.FORBIDDEN}`, NOT_FOUND: `/${ROUTE_SEGMENTS.NOT_FOUND}`,
+  SERVER_ERROR: `/${ROUTE_SEGMENTS.SERVER_ERROR}`,
+  place: (id: string) => `/${ROUTE_SEGMENTS.PLACES.replace(':id', encodeURIComponent(id))}`,
+} as const;
