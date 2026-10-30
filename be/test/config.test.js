@@ -19,6 +19,15 @@ test('config validates boundaries without exposing supplied values', () => {
   assert.throws(() => loadConfig({ ...fixture, DB_SSL_CA: 'ca.pem' }), /DB_SSL/);
 });
 
+test('empty DB password is explicit and restricted to local development/test', () => {
+  for (const DB_HOST of ['localhost', '127.0.0.1', '::1']) {
+    assert.equal(loadConfig({ ...fixture, DB_HOST, DB_PASSWORD: '' }).database.password, '');
+  }
+  assert.throws(() => loadConfig({ ...fixture, NODE_ENV: 'production', DB_PASSWORD: '' }), /DB_PASSWORD/);
+  assert.throws(() => loadConfig({ ...fixture, DB_HOST: 'db.example.test', DB_PASSWORD: '' }), /DB_PASSWORD/);
+  assert.throws(() => loadConfig({ ...fixture, DB_PASSWORD: undefined }), /DB_PASSWORD/);
+});
+
 test('logger redacts credentials from structured fields', () => {
   let output = '';
   const destination = new Writable({ write(chunk, _encoding, done) { output += chunk; done(); } });

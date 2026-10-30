@@ -1,6 +1,6 @@
 # SRS - GiaLaiTravel
 
-**Phiên bản:** 1.4 - ID dạng string GUID, tương thích hosting MariaDB 10.5.26.<br>
+**Phiên bản:** 1.5 - đăng nhập JWT (D-22), ID string GUID, hosting MariaDB 10.5.26. Cập nhật 30/10/2026.<br>
 **Ngày soạn:** 29/10/2026.<br>
 **Ngôn ngữ:** Tiếng Việt.<br>
 **Nguồn chính:** [Đề cương ý tưởng, dự án khởi nghiệp](../Phụ%20LỤC.pdf), 12 trang.

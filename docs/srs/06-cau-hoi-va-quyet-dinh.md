@@ -29,6 +29,7 @@
 | D-19 | Chỉ tiêu kỹ thuật ngoài PDF? | Cho phép người soạn đề xuất, thông số có thể cấu hình/điều chỉnh | Tệp 02 và chi tiết kỹ thuật BR |
 | D-20 | Hệ quản trị cho schema backend? | Ban đầu chọn MySQL 8; sau lỗi import, chủ sản phẩm xác nhận hosting thực tế là MariaDB 10.5.26. Điều chỉnh schema theo môi trường hosting, giữ file tại `be/schema.sql` | Tệp 07; schema và hướng dẫn backend |
 | D-21 | Kiểu và cách sinh ID? | Tất cả ID/tham chiếu ID là string GUID do backend sinh, lưu CHAR(36); bỏ AUTO_INCREMENT. Giữ kiểu số cho tiền, dung lượng, bộ đếm và số phiên bản | Tệp 07; schema và hướng dẫn backend |
+| D-22 | Cơ chế đăng nhập? | Chủ sản phẩm xác nhận 30/10/2026: dùng JWT. Access JWT + refresh token xoay vòng, phiên DB thu hồi được; TTL/thuật toán/cookie là baseline kỹ thuật đề xuất trong [thiết kế auth](../implementation/auth-jwt.md) | FR-01; NFR-07–09; class diagram; schema; task BE/FE và X-03 |
 
 Email khôi phục tài khoản trong UC-01 là giao tiếp phục vụ bảo mật tài khoản, tách với thông báo nghiệp vụ đơn đặt/sự kiện ở D-18. Không suy ra yêu cầu gửi email marketing.
 

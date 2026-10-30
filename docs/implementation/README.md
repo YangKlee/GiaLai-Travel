@@ -1,6 +1,6 @@
 # Kế hoạch triển khai GiaLaiTravel
 
-Ngày lập: 29/10/2026. Đường cơ sở: SRS 1.4 và scaffold Express/React hiện tại.
+Ngày lập: 29/10/2026; cập nhật JWT: 30/10/2026. Đường cơ sở: SRS 1.5 và scaffold Express/React hiện tại.
 Trạng thái: kế hoạch đề xuất để triển khai, không phải báo cáo tính năng đã hoàn thành.
 
 ## 1. Cách sử dụng
@@ -8,6 +8,7 @@ Trạng thái: kế hoạch đề xuất để triển khai, không phải báo 
 | Tài liệu | Mục đích |
 | --- | --- |
 | [Kế hoạch này](README.md) | Phạm vi, kiến trúc, thứ tự triển khai, phụ thuộc và điều kiện bàn giao |
+| [Thiết kế JWT](auth-jwt.md) | Access/refresh token, vòng đời phiên, API và migration |
 | [Task backend](backend-tasks.md) | Backlog Express, CSDL, AI, giao dịch và tác vụ nền |
 | [Task frontend](frontend-tasks.md) | Backlog React cho khách, du khách, quản trị và các cổng GĐ2 |
 | [Tích hợp và nghiệm thu](integration-and-acceptance.md) | Task dùng chung, kịch bản kiểm thử, phát hành và vận hành |
@@ -21,7 +22,7 @@ SRS và quyết định đã xác nhận được ưu tiên khi khác đề cư�
 
 Đã có npm workspaces; Node.js 20.20.2; Express 5 với `GET /api/health`, CORS, JSON/error middleware và test API cơ bản; React 19/Vite với trang khởi tạo, proxy, ESLint và build. Schema đã mô tả cả hai giai đoạn, GUID dạng string và hosting MariaDB 10.5.26. Tài liệu CSDL có ghi kết quả kiểm thử DDL trước đây; kết quả này không thay cho kiểm thử backend sắp triển khai.
 
-Chưa có kết nối CSDL, đăng nhập, chức năng nghiệp vụ, AI thật, router ứng dụng, cổng quản trị, service worker, kho offline hoặc pipeline triển khai. Không đánh dấu hoàn thành task bên dưới chỉ vì có bảng SQL hoặc màn hình khởi tạo. Giữ nguyên schema gốc như baseline; thay đổi tiếp theo dùng migration có phiên bản, không import lại file khởi tạo lên CSDL đang có dữ liệu.
+Đã có pool mysql2, transaction, readiness, db:check và lệnh scaffold Sequelize; kết nối hosting hiện ETIMEDOUT, chưa sinh model. Chưa có đăng nhập JWT, chức năng nghiệp vụ, AI thật, router ứng dụng, cổng quản trị, service worker, kho offline hoặc pipeline triển khai. Không đánh dấu hoàn thành task chỉ vì có bảng SQL hoặc màn hình khởi tạo. Schema khởi tạo đã cập nhật JWT cho DB mới; DB baseline GUID dùng migration `001-jwt-auth.sql` sau backup/đối chiếu. Không import lại file khởi tạo lên CSDL đang có dữ liệu.
 
 ## 3. Phạm vi bàn giao
 
@@ -54,7 +55,7 @@ be/src/
 be/test/             # Unit, API và integration MariaDB
 ```
 
-Đề xuất dùng driver `mysql2/promise`, migration SQL có sổ phiên bản; chưa cần ORM. Phiên đăng nhập có thể thu hồi trên máy chủ, cookie HttpOnly/Secure/SameSite phù hợp mô hình domain; chống CSRF cho thao tác thay đổi. Chính sách cụ thể phải được ghi trong ADR ở X-01 trước khi code auth. Tác vụ chạy bằng CLI/cron hoặc worker độc lập, dùng chung service nghiệp vụ, không phụ thuộc việc người dùng mở web.
+Runtime hiện dùng `mysql2/promise`; đã có Sequelize/sequelize-auto để reverse engineer, chưa thay repository runtime. Migration SQL cần sổ phiên bản. D-22 xác nhận đăng nhập dùng JWT access RS256 qua Bearer và refresh opaque xoay vòng trong cookie HttpOnly/Secure; DB giữ phiên để thu hồi ngay. Baseline đề xuất access 15 phút, phiên refresh tối đa 7 ngày; kiểm session/user/quyền mỗi request và CSRF cho endpoint cookie. Xem [thiết kế JWT](auth-jwt.md); X-01 chốt domain/keyring/TTL trước code auth. Tác vụ chạy bằng CLI/cron hoặc worker độc lập, dùng chung service nghiệp vụ, không phụ thuộc việc người dùng mở web.
 
 ### Frontend
 
@@ -96,7 +97,7 @@ Mỗi milestone là một lát cắt có thể chạy và trình diễn. Chỉ b
 | Mốc | GĐ | Task BE | Task FE | Task chung | Đầu ra và điều kiện chuyển mốc |
 | --- | --- | --- | --- | --- | --- |
 | M0 - Thiết kế và nền tảng | 1 | BE-01 đến BE-04 | FE-01 đến FE-04 | X-01, X-02 | ADR, OpenAPI, MariaDB dev/test, migration, API client, layout và CI kiểm tra được |
-| M1 - Tài khoản và quyền | 1 | BE-05 đến BE-08 | FE-05 đến FE-07 | X-03 | Đăng ký/đăng nhập/khôi phục, thu hồi phiên, scope, hồ sơ/consent/privacy chạy xuyên suốt |
+| M1 - Tài khoản và quyền | 1 | BE-05 đến BE-08 | FE-05 đến FE-07 | X-03 | Đăng ký/login JWT/refresh/logout/khôi phục, rotation và thu hồi phiên, scope, hồ sơ/consent/privacy chạy xuyên suốt |
 | M2 - Nội dung và khám phá | 1 | BE-09 đến BE-14 | FE-08 đến FE-13 | X-04 | Quản trị tạo/duyệt nội dung; khách tìm/xem/audio/sự kiện; AI chỉ đọc tập công bố |
 | M3 - Lịch trình AI | 1 | BE-15 đến BE-18 | FE-14 đến FE-17 | X-05 | AI thật, tuyến có căn cứ, validator độc lập, sửa/lưu có revision; không phát sinh đơn |
 | M4 - Offline cơ bản | 1 | BE-19 | FE-18, FE-19 | X-06 | Tắt mạng trước mở vẫn đọc lịch/POI; tải lỗi giữ bản cũ; logout xóa cache riêng |

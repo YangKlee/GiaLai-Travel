@@ -4,6 +4,11 @@ Runtime: Node.js 20.20.2, Express 5, ES modules. Tại thư mục gốc chạy `
 tạo `be/.env` theo `be/.env.example` nếu chưa có, sau đó `npm run dev:be`.
 Không copy đè `.env` đã được cấu hình. Không commit thông tin truy cập CSDL.
 
+MySQL local có thể dùng `DB_PASSWORD=` rỗng khi `NODE_ENV=development/test`
+và `DB_HOST=localhost/127.0.0.1/::1`. Vẫn phải khai báo biến; production hoặc
+host khác bắt buộc mật khẩu không rỗng. CLI scaffold báo `stage` để phân biệt
+lỗi cấu hình, kết nối, metadata và ghi file.
+
 ## Cấu trúc
 
 ```text
@@ -43,7 +48,7 @@ HTTP. Production cần HTTPS tại reverse proxy và secret riêng theo môi tr�
 ## Kiểm tra
 
 `npm test` chạy toàn bộ test BE. Dùng đúng Node.js 20.20.2 khi kiểm tra/phát triển.
-Phần auth/CSRF/session, audit nghiệp vụ, migration runner và chức năng FR vẫn
+Phần auth JWT/refresh/CSRF theo [thiết kế](../docs/implementation/auth-jwt.md), audit nghiệp vụ, migration runner và chức năng FR vẫn
 triển khai theo backlog; scaffold không mở CRUD mẫu hay tự import CSDL.
 
 ## CSDL
@@ -51,6 +56,29 @@ triển khai theo backlog; scaffold không mở CRUD mẫu hay tự import CSDL.
 `npm run db:check -w be` kết nối bằng env, đọc version/UTC/danh sách bảng và view,
 đối chiếu tên với `schema.sql`. Lệnh chỉ đọc; không tự import hoặc sửa DB.
 `DB_SSL=true` bật xác minh TLS; `DB_SSL_CA` tùy chọn trỏ tới CA PEM khi hosting yêu cầu.
+
+### Sinh Sequelize model từ DB hiện có
+
+Đã thêm Sequelize và `sequelize-auto` để reverse engineer các bảng và quan hệ
+từ metadata của DB. Chạy từ thư mục gốc với cấu hình `be/.env`:
+
+```powershell
+npm run db:scaffold -w be
+```
+
+Để dùng đúng cấu hình trong `be/.env.example`:
+
+```powershell
+node --env-file=be/.env.example be/scripts/scaffold-models.js
+```
+
+Model ES modules và `init-models.js` được sinh vào `be/src/db/models/`.
+Lệnh chỉ đọc cấu trúc DB, không import `schema.sql`, không gọi `sync()` và
+không sinh model cho view báo cáo. Nếu thư mục output đã có, lệnh dừng để
+tránh ghi đè; hãy di chuyển bản cũ trước khi sinh lại. Backend hiện vẫn dùng
+repository mysql2; model sinh ra chưa tự được gắn vào các module nghiệp vụ.
+Kiểm tra lại các cột generated, JSON trên MariaDB, BIGINT và khóa ngoại ghép
+trước khi dùng model để ghi dữ liệu. Không dùng `sync({ alter: true })` trên hosting.
 
 Pool dùng UTF-8, UTC, `BIGINT`/`DECIMAL` dạng string và tắt multiple statements.
 Mỗi lần mượn connection đặt `time_zone='+00:00'`. Repository dùng `database.execute`

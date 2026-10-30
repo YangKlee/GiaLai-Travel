@@ -12,12 +12,18 @@ const schema = z.object({
   DB_PORT: integer(3306, 1, 65535),
   DB_NAME: z.string().trim().min(1),
   DB_USER: z.string().trim().min(1),
-  DB_PASSWORD: z.string().min(1),
+  DB_PASSWORD: z.string(),
   DB_CONNECTION_LIMIT: integer(5, 1, 50),
   DB_CONNECT_TIMEOUT_MS: integer(10000, 100, 60000),
   DB_QUERY_TIMEOUT_MS: integer(10000, 100, 60000),
   DB_SSL: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   DB_SSL_CA: z.string().min(1).optional(),
+}).superRefine((env, ctx) => {
+  const localDevelopment = env.NODE_ENV !== 'production' &&
+    ['localhost', '127.0.0.1', '::1'].includes(env.DB_HOST);
+  if (!env.DB_PASSWORD && !localDevelopment) {
+    ctx.addIssue({ code: 'custom', path: ['DB_PASSWORD'], message: 'A password is required outside local development/test' });
+  }
 });
 
 export function loadConfig(environment = process.env) {

@@ -4,14 +4,14 @@ Hướng dẫn scaffold Express, cấu hình môi trường và HTTP contract: [
 
 ## 1. Tệp và điều kiện
 
-- [schema.sql](schema.sql): cấu trúc MySQL cho cả GĐ1 và GĐ2, gồm 58 bảng và một view báo cáo B2G.
+- [schema.sql](schema.sql): cấu trúc MySQL cho cả GĐ1 và GĐ2, gồm 59 bảng và một view báo cáo B2G sau cập nhật JWT D-22.
 - [Class diagram](../docs/srs/07-class-diagram.md): các lớp miền nghiệp vụ và ánh xạ sang từng bảng.
 - Môi trường hosting đã xác nhận: **MariaDB 10.5.26**. Schema dùng `utf8mb4_unicode_ci`, InnoDB và cú pháp dùng chung với MySQL 8.0.16+. Không dùng collation `utf8mb4_0900_*`.
 - Trên MariaDB, kiểu JSON là alias của LONGTEXT và có kiểm tra JSON hợp lệ theo [tài liệu MariaDB](https://mariadb.com/docs/server/reference/data-types/string-data-types/json). Việc sửa collation không đồng nghĩa tương thích MySQL 5.7, nơi các CHECK trong file không được thực thi đầy đủ.
 - Tạo CSDL và cấp quyền qua cPanel trước khi import. Tài khoản chạy DDL cần quyền tạo bảng, index, khóa ngoại và view trong CSDL đó; file không tự tạo hoặc đổi CSDL.
 - File khởi tạo dùng một lần trên CSDL mới; không phải migration chạy lặp. Không có lệnh xóa bảng, xóa CSDL hoặc tắt kiểm tra khóa ngoại. MySQL tự commit DDL, vì vậy lỗi giữa chừng không rollback toàn bộ cấu trúc.
 
-Thư mục backend có tên `be` trong repository; `schema.sql` được đặt tại đây theo yêu cầu. Backend dùng Express.js trên Node.js 20.20.2, chưa tích hợp ORM hoặc kết nối CSDL. Xem [hướng dẫn chạy project](../README.md).
+Thư mục backend có tên `be` trong repository; `schema.sql` được đặt tại đây theo yêu cầu. Backend dùng Express.js trên Node.js 20.20.2, đã có pool mysql2 và lệnh scaffold Sequelize; kết nối hosting hiện ETIMEDOUT, chưa sinh model. [Thiết kế JWT](../docs/implementation/auth-jwt.md) đã cập nhật, API auth chưa triển khai. Xem [hướng dẫn chạy project](../README.md).
 
 ## 2. Cách chạy
 
@@ -45,7 +45,7 @@ FROM information_schema.views
 WHERE table_schema = DATABASE();
 ```
 
-Kết quả mong đợi: 58 bảng và view `b2g_released_metrics`. Khởi tạo không tạo user đăng nhập ứng dụng, không có mật khẩu mặc định, không có dữ liệu du khách/địa điểm giả. Chỉ seed vai trò, tham số đã thống nhất và giá premium. Gói đối tác để chưa kích hoạt cho tới khi có cấu hình thương mại.
+Kết quả mong đợi: 59 bảng và view `b2g_released_metrics`. Khởi tạo không tạo user đăng nhập ứng dụng, không có mật khẩu mặc định, không có dữ liệu du khách/địa điểm giả. Chỉ seed vai trò, tham số đã thống nhất và giá premium. Gói đối tác để chưa kích hoạt cho tới khi có cấu hình thương mại.
 
 ## 3. Quy ước dữ liệu
 
@@ -138,6 +138,11 @@ Tách tài khoản migration khỏi tài khoản chạy ứng dụng. Khi triể
 NFR về sao lưu, thu hồi phiên, giới hạn đăng nhập/AI, thời hạn lưu dữ liệu và mã hóa đường truyền cần được triển khai ngoài DDL. Chạy schema thành công chưa đồng nghĩa toàn bộ SRS đã được thực hiện.
 
 ## 6. Kết quả kiểm tra thiết kế
+
+Cập nhật JWT ngày 30/10/2026 thêm `auth_refresh_tokens` và bỏ `auth_sessions.token_hash`.
+Schema hiện có 59 bảng; migration [001-jwt-auth.sql](migrations/001-jwt-auth.sql)
+dành cho baseline GUID cũ. Chưa chạy kiểm thử DDL/migration này trên MariaDB/MySQL;
+các kết quả 58 bảng bên dưới thuộc bản trước JWT, không chứng minh bản mới đã đạt.
 
 **Bản hiện tại dùng GUID:** đã nạp thành công trên MariaDB 10.5.26 và MySQL 8.0.46; đạt 43 ca kiểm tra trên mỗi hệ. Cả hai có 58 bảng, 113 khóa ngoại và 166 cột ID/tham chiếu dạng CHAR(36); CHECK là 142 trên MariaDB (gồm kiểm tra JSON tự sinh) và 124 trên MySQL. Đã kiểm tra thêm GUID sai định dạng, GUID viết hoa, trùng GUID, FK GUID không tồn tại, thiếu ID do backend chưa cấp, kiểu string khi đọc lại và thứ tự consent độc lập với GUID. Dữ liệu thử đã rollback; 7 khối class diagram hợp lệ.
 

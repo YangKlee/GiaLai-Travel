@@ -10,7 +10,8 @@
     "dev": "node --watch --env-file-if-exists=.env src/server.js",
     "start": "node --env-file-if-exists=.env src/server.js",
     "test": "node --test",
-    "db:check": "node --env-file-if-exists=.env scripts/check-database.js"
+    "db:check": "node --env-file-if-exists=.env scripts/check-database.js",
+    "db:scaffold": "node --env-file-if-exists=.env scripts/scaffold-models.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -18,6 +19,10 @@
     "helmet": "^8.3.0",
     "mysql2": "^3.24.6",
     "pino": "^10.4.0",
+    "sequelize": "^6.37.8",
     "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "sequelize-auto": "^0.8.8"
   }
 }

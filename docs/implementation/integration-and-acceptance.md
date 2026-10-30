@@ -6,7 +6,7 @@ Owner: BE/FE là người thực hiện kỹ thuật; QA kiểm chứng độc l
 
 ### X-01 - Khóa thiết kế, chính sách và khả năng hạ tầng (M, M0)
 
-- [ ] BE+FE+OPS ghi ADR: modular monolith, driver/migration, session/cookie/CSRF/domain, serialization tiền/time, storage/upload, job/cron và cách giữ bí mật. Kiểm Node 20.20.2, MariaDB 10.5.26, outbound HTTPS/SMTP, TLS, quota file/process trên hosting.
+- [ ] BE+FE+OPS ghi ADR: modular monolith, driver/migration, JWT theo D-22 và [thiết kế auth](auth-jwt.md), keyring/rotation/TTL, refresh cookie/CSRF/domain, serialization tiền/time, storage/upload, job/cron và cách giữ bí mật. Kiểm Node 20.20.2, MariaDB 10.5.26, outbound HTTPS/SMTP, TLS, quota file/process trên hosting.
 - [ ] PO/QA ghi phiên bản password/session/file/retention/giới hạn lịch, nhà cung cấp và license; các đề xuất NFR chưa chốt giữ nhãn đề xuất. Ghi đầu vào/owner/hạn cần có; riêng provider/license GĐ2 có thể bổ sung trước mốc sử dụng.
 - Phụ thuộc: không có. Nghiệm thu: có ADR, policy registry, danh sách dependency chưa có và phương án hosting chạy job; không lấy việc có cPanel làm bằng chứng cron/worker/SMTP đã hoạt động.
 
@@ -20,7 +20,7 @@ Chia hai bước để tránh phụ thuộc vòng: **X-02a** chốt contract ban
 
 ### X-03 - Nghiệm thu danh tính và quyền dữ liệu (M, M1)
 
-- [ ] QA chạy đăng ký email trùng/Unicode/case, login fail/locked, logout replay, reset sai/hết hạn/đã dùng/cạnh tranh, CSRF, role thu hồi, profile/consent/privacy ownership.
+- [ ] QA chạy đăng ký email trùng/Unicode/case, login fail/locked, JWT sai chữ ký/alg/iss/aud/typ/claims/hết hạn, refresh rotation/replay/cạnh tranh/mất response, logout replay khi access còn/hết hạn, reset sai/hết hạn/đã dùng/cạnh tranh và thu hồi tất cả session, CSRF/CORS, role thu hồi, DB lỗi, profile/consent/privacy ownership; kiểm token không vào storage/log/cache.
 - [ ] BE+FE ghi bằng chứng email adapter thật ở staging, rate-limit boundaries, logout multi-tab/cache; xuất/xóa cần chạy lại với dữ liệu booking sau M5.
 - Phụ thuộc: BE-05 đến BE-08, FE-05 đến FE-07. Nghiệm thu: UC-01/22 có kết quả hợp lệ và ngoại lệ; không suy ra đã đáp ứng SLA dữ liệu 7 ngày chỉ vì tạo được phiếu.
 

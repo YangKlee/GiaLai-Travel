@@ -149,7 +149,7 @@ Ma trận liệt kê toàn bộ FR con hiện có trong SRS. Trạng thái ban �
 | NFR-05 | BE-02, BE-20, BE-21, BE-22, BE-23, BE-24, BE-25 | FE-20, FE-21, FE-22, FE-23 | X-07 | E-05, transaction/khóa/retry/rollback |
 | NFR-06 | BE-03, BE-28 | FE-26 | X-10 | E-06, backup DB+media/RPO/RTO |
 | NFR-07 | BE-01, BE-05, BE-06, BE-15, BE-27, BE-28 | FE-03, FE-05, FE-26 | X-03, X-08, X-10 | HTTPS/hash/secret/log redaction |
-| NFR-08 | BE-05, BE-14, BE-25, BE-32, BE-39 | FE-05, FE-13, FE-30, FE-36 | X-03, X-08, X-11b, X-12 | RBAC/owner/scope/thu hồi/CSRF |
+| NFR-08 | BE-05, BE-14, BE-25, BE-32, BE-39 | FE-05, FE-13, FE-30, FE-36 | X-03, X-08, X-11b, X-12 | JWT/refresh/replay/RBAC/owner/scope/thu hồi/CSRF |
 | NFR-09 | BE-05, BE-06, BE-15, BE-27 | FE-05, FE-06, FE-14 | X-03, X-05, X-08 | 5 fail/15 phút; AI 10/giờ; reset 15 phút |
 | NFR-10 | BE-09, BE-10, BE-16, BE-27, BE-36 | FE-02, FE-12, FE-15, FE-33 | X-04, X-05, X-08, X-11c | Schema/file/XSS/prompt injection |
 | NFR-11 | BE-07, BE-15, BE-34, BE-36 | FE-07, FE-14, FE-32, FE-33 | X-03, X-05, X-08, X-11b, X-11c | Nhập tay vị trí/không PII/consent hiện tại |

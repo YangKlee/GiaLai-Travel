@@ -5,7 +5,7 @@
 
 ## 1. Phạm vi và quy ước
 
-Mô hình bao quát GĐ1 và GĐ2 theo SRS. Các lớp thể hiện thực thể miền nghiệp vụ, thuộc tính chính, quan hệ và một số hành vi dự kiến; đây không phải mã backend đã triển khai. Schema có 58 bảng, không thu/chuyển tiền thật và không chứa tài khoản có mật khẩu mặc định.
+Mô hình bao quát GĐ1 và GĐ2 theo SRS. Các lớp thể hiện thực thể miền nghiệp vụ, thuộc tính chính, quan hệ và một số hành vi dự kiến; đây không phải mã backend đã triển khai. Schema có 59 bảng sau cập nhật JWT D-22, không thu/chuyển tiền thật và không chứa tài khoản có mật khẩu mặc định.
 
 Schema dùng collation `utf8mb4_unicode_ci` cho bảng; khóa email được chuẩn hóa ở cột sinh `email_key` dùng binary để giữ quy tắc không phân biệt hoa/thường mà vẫn phân biệt dấu. File SQL chạy trong database đang chọn trên phpMyAdmin, không tự tạo/chuyển database.
 
@@ -84,10 +84,19 @@ class UserRegionScope {
     +regionId: string
 }
 class AuthSession {
-    +tokenHash: binary
+    +id: string
+    +userId: string
     +expiresAt: datetime
     +revokedAt: datetime?
     +revoke()
+}
+class AuthRefreshToken {
+    +id: string
+    +sessionId: string
+    +tokenHash: binary
+    +expiresAt: datetime
+    +usedAt: datetime?
+    +rotate()
 }
 class PasswordResetToken {
     +tokenHash: binary
@@ -109,6 +118,7 @@ class PrivacyRequest {
     +complete()
 }
 User "1" --> "0..*" AuthSession : phiên
+AuthSession "1" --> "0..*" AuthRefreshToken : lịch sử rotation
 User "1" --> "0..*" PasswordResetToken : khôi phục
 User "1" --> "0..*" Consent : lịch sử đồng ý
 User "1" --> "0..*" PrivacyRequest : yêu cầu
@@ -546,6 +556,7 @@ IssueReport "0..1" --> "0..*" IssueReport : phiếu trùng
 | 1 | `Region` | `regions` | FR-01,02,18; NFR-07 đến NFR-14 |
 | 1 | `UserRegionScope` | `user_region_scopes` | FR-01,02,18; NFR-07 đến NFR-14 |
 | 1 | `AuthSession` | `auth_sessions` | FR-01,02,18; NFR-07 đến NFR-14 |
+| 1 | `AuthRefreshToken` | `auth_refresh_tokens` | FR-01,02,18; D-22; NFR-07 đến NFR-14 |
 | 1 | `PasswordResetToken` | `password_reset_tokens` | FR-01,02,18; NFR-07 đến NFR-14 |
 | 1 | `Consent` | `consents` | FR-01,02,18; NFR-07 đến NFR-14 |
 | 1 | `PrivacyRequest` | `privacy_requests` | FR-01,02,18; NFR-07 đến NFR-14 |

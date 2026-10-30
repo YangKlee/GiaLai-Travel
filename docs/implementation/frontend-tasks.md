@@ -23,7 +23,7 @@ Tuân theo [AGENTS](../../fe/AGENTS.md), [DESIGN](../../fe/DESIGN.md), [essentia
 
 ### FE-03 - API client, cache và định dạng dữ liệu (M)
 
-- [ ] Axios instance/interceptors/API functions trong `services/` theo OpenAPI, cookie/CSRF, lỗi field/request ID, 401/403/409/422/429; loaders lấy dữ liệu trang đầu, action/event handlers gửi mutation, cache key theo tài khoản/filter/locale; Zustand tách store theo domain/selectors; date UTC→Việt Nam, VND chính xác từ chuỗi tiền, GUID giữ string; abort request cũ và retry có quy tắc.
+- [ ] Axios instance/interceptors/API functions trong `services/` theo OpenAPI và [JWT](auth-jwt.md): Bearer access token chỉ trong bộ nhớ; cookie refresh với credentials và header CSRF; gom refresh một lần, phối hợp nhiều tab, retry request tối đa một lần và giữ idempotency key; lỗi field/request ID, 401/403/409/422/429; loaders lấy dữ liệu trang đầu, action/event handlers gửi mutation, cache key theo tài khoản/filter/locale; Zustand tách store theo domain/selectors; date UTC→Việt Nam, VND chính xác từ chuỗi tiền, GUID giữ string; abort request cũ và retry có quy tắc.
 - Phụ thuộc: X-02, FE-01; API BE-01/02/05. Truy vết: BR-01; NFR-07–08, NFR-23.
 - Nghiệm thu: filter đổi nhanh không hiện response cũ; mutation không retry bằng khóa mới; query riêng bị xóa khi đổi tài khoản; không ghi session secret/API key vào localStorage/bundle/log.
 
@@ -37,9 +37,9 @@ Tuân theo [AGENTS](../../fe/AGENTS.md), [DESIGN](../../fe/DESIGN.md), [essentia
 
 ### FE-05 - Đăng ký/đăng nhập/đăng xuất và quyền route (M)
 
-- [ ] Form auth theo policy; khôi phục trang đích sau login an toàn, session bootstrap, route guard theo role; logout gọi BE rồi xóa state/cache riêng; khóa tài khoản/hết phiên dừng thao tác.
+- [ ] Form auth theo policy JWT; reload bootstrap bằng `/auth/refresh` rồi `/auth/me`, route guard theo quyền BE; khôi phục trang đích an toàn; logout gọi BE kể cả access hết hạn rồi xóa token/state/cache riêng và báo các tab; refresh thất bại dừng thao tác và yêu cầu login lại. Không persist token vào Zustand storage hoặc cache offline.
 - Phụ thuộc: FE-02/03; API BE-05. Truy vết: FR-01.01–03; NFR-07–09; UC-01.
-- Nghiệm thu: email trùng/sai mật khẩu/locked/rate limit hiển thị đúng; không cho return URL chuyển đến domain tùy ý; back/refresh sau logout không lộ dữ liệu người trước; thử gọi API trực tiếp vẫn bị BE chặn.
+- Nghiệm thu: email trùng/sai mật khẩu/locked/rate limit hiển thị đúng; nhiều request 401 không gây nhiều refresh; 403 không refresh; không lặp vô hạn, mất response rotate yêu cầu login lại; không cho return URL chuyển đến domain tùy ý; back/reload và nhiều tab sau logout không lộ dữ liệu người trước; API trực tiếp vẫn bị BE chặn.
 
 ### FE-06 - Khôi phục mật khẩu (S)
 

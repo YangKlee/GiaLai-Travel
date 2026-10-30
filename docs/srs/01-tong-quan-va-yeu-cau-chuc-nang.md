@@ -77,7 +77,7 @@ Các chính sách mật khẩu, schema liên hệ/tệp và tham số GĐ2 là �
 | Mã yêu cầu | Phát biểu yêu cầu | Tiêu chí kiểm chứng |
 | --- | --- | --- |
 | FR-01.01 | Hệ thống phải tạo tài khoản với email duy nhất khi khách gửi thông tin đăng ký hợp lệ. | Email chưa tồn tại tạo được một tài khoản; email trùng bị từ chối. |
-| FR-01.02 | Hệ thống phải cấp phiên đăng nhập khi email và mật khẩu khớp với một tài khoản đang hoạt động. | Tài khoản hợp lệ nhận phiên; sai thông tin hoặc bị khóa không nhận phiên. |
+| FR-01.02 | Hệ thống phải cấp JWT access token và refresh token cho phiên đăng nhập khi email và mật khẩu khớp với một tài khoản đang hoạt động (D-22); hỗ trợ refresh xoay vòng và thu hồi phiên. | Tài khoản hợp lệ nhận token; sai thông tin hoặc bị khóa không nhận token; refresh đã dùng bị từ chối và thu hồi phiên liên quan. |
 | FR-01.03 | Hệ thống phải vô hiệu hóa phiên hiện tại khi người dùng đăng xuất. | Yêu cầu dùng lại phiên đã đăng xuất bị từ chối. |
 | FR-01.04 | Hệ thống phải gửi liên kết đặt lại mật khẩu tới email của tài khoản khi nhận yêu cầu khôi phục hợp lệ. | Liên kết được gửi tới đúng địa chỉ; phản hồi công khai tuân thủ NFR-09. |
 | FR-01.05 | Hệ thống phải thay mật khẩu khi nhận mật khẩu mới hợp lệ kèm token khôi phục còn hiệu lực và chưa sử dụng. | Token hợp lệ đổi được mật khẩu; token sai, hết hạn hoặc đã dùng bị từ chối. |

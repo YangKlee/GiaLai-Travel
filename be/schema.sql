@@ -65,11 +65,11 @@ CREATE TABLE user_region_scopes (
     FOREIGN KEY (region_id) REFERENCES regions(id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Chi luu hash token, khong luu token ro.
+-- JWT access token chua sid = auth_sessions.id; kiem tra phien/user moi request.
+-- expires_at la han tuyet doi cua phien refresh, khong truot khi rotate.
 CREATE TABLE auth_sessions (
     id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
     user_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-    token_hash BINARY(32) NOT NULL UNIQUE,
     expires_at DATETIME(6) NOT NULL,
     revoked_at DATETIME(6) NULL,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -77,6 +77,22 @@ CREATE TABLE auth_sessions (
     KEY ix_session_user (user_id, expires_at),
     CONSTRAINT ck_session_expiry CHECK (expires_at > created_at),
     CONSTRAINT ck_auth_sessions_guid CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Refresh token opaque ngau nhien; chi luu SHA-256, giu token da dung de phat hien replay.
+CREATE TABLE auth_refresh_tokens (
+    id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+    session_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    token_hash BINARY(32) NOT NULL UNIQUE,
+    expires_at DATETIME(6) NOT NULL,
+    used_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (session_id) REFERENCES auth_sessions(id),
+    KEY ix_refresh_session (session_id, expires_at),
+    KEY ix_refresh_expiry (expires_at),
+    CONSTRAINT ck_refresh_expiry CHECK (expires_at > created_at),
+    CONSTRAINT ck_refresh_used CHECK (used_at IS NULL OR (used_at >= created_at AND used_at < expires_at)),
+    CONSTRAINT ck_auth_refresh_tokens_guid CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Token khoi phuc dung mot lan; TTL mac dinh 15 phut do backend cap.

@@ -21,6 +21,7 @@
 ### BE-03 - Migration, fixture và bootstrap quản trị (M)
 
 - [ ] Lập sổ migration và baseline schema; kiểm tra DB đã import để không khởi tạo lặp; fixture chỉ dành dev/test; CLI tạo admin từ thông tin nhập/env tạm, băm mật khẩu, không seed tài khoản công khai.
+- [ ] Kiểm thử migration [001 JWT](../../be/migrations/001-jwt-auth.sql) trên bản sao baseline GUID; đối chiếu schema mới 59 bảng, thu hồi phiên cũ và quy trình restore. Không chạy lại migration trên DB tạo từ schema mới. Gắn model scaffold với schema sau migration và review generated/JSON/BIGINT/FK trước sử dụng.
 - Phụ thuộc: BE-02. Truy vết: FR-18; NFR-06, NFR-07, NFR-23.
 - Nghiệm thu: DB mới và DB baseline đều có quy trình nâng cấp; chạy migration lặp không phá dữ liệu; không có mật khẩu mặc định; tài khoản runtime không cần quyền DDL.
 
@@ -32,11 +33,12 @@
 
 ## M1 - Danh tính và quyền dữ liệu
 
-### BE-05 - Đăng ký, đăng nhập, phiên và phân quyền (L)
+### BE-05 - Đăng ký, đăng nhập JWT, refresh và phân quyền (L)
 
-- [ ] Tạo `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/me`; chuẩn hóa email theo `email_key`; băm mật khẩu bằng thuật toán chuyên dụng; hash token phiên trong DB; cookie và CSRF; middleware active user, role, owner, region/partner scope.
+- [ ] Tạo `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` theo [thiết kế JWT](auth-jwt.md); access JWT RS256 trong Bearer, refresh opaque hash trong DB/cookie HttpOnly; kiểm claims/chữ ký, session/user và quyền hiện hành mỗi request; chuẩn hóa email theo `email_key`, băm mật khẩu chuyên dụng; Origin/custom header chống CSRF cho login/refresh/logout.
+- [ ] Rotation một lần trong transaction khóa user → session → token; lưu lịch sử hash để phát hiện reuse và thu hồi session; xử lý hết hạn, key rotation, logout khi access hết hạn và DB lỗi; bổ sung cấu hình auth qua secret store, không commit khóa thật.
 - Phụ thuộc: BE-01 đến BE-04, X-01 (chính sách auth). Truy vết: FR-01.01–03, FR-18.01–02; NFR-07–09; UC-01.
-- Nghiệm thu: email trùng/cạnh tranh không tạo đôi; logout/khóa/cấp thu hồi role hiệu lực ở request kế tiếp; không nâng quyền qua payload; truy cập chéo bị từ chối; CSRF/rate limit được thử.
+- Nghiệm thu: email trùng/cạnh tranh không tạo đôi; JWT giả/sai alg/iss/aud/typ/hết hạn bị chặn; logout/khóa/reset/thu hồi role hiệu lực ở request kế tiếp; refresh replay/cạnh tranh thu hồi đúng session; không nâng quyền qua payload; truy cập chéo bị từ chối; CSRF/rate limit và DB lỗi được thử.
 
 ### BE-06 - Khôi phục mật khẩu qua email (M)
 
