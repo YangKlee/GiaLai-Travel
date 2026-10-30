@@ -56,7 +56,7 @@ function includePublishedPlace(models) {
       association: models.Places.associations.region,
       required: true,
       attributes: ['id', 'name'],
-      where: { phase: 1 },
+      where: { phase: { [Op.in]: [1, 2] } },
     },
     includePublishedContent(models, 'PLACE'),
   ];
