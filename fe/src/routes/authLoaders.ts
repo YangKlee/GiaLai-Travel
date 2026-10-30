@@ -16,6 +16,9 @@ export async function accountLoader({ request }: LoaderFunctionArgs) {
   if (useAuthStore.getState().phase !== 'authenticated')
     return redirect(`${APP_PATHS.LOGIN}?returnTo=${encodeURIComponent(APP_PATHS.ACCOUNT)}`);
   const response = await get<{ data: { user: AuthUser } }>('/api/v1/auth/me', request.signal);
-  useAuthStore.setState({ user: response.data.user });
+  const current = useAuthStore.getState();
+  if (current.phase !== 'authenticated') return redirect(APP_PATHS.LOGIN);
+  if (current.user?.id === response.data.user.id)
+    useAuthStore.setState({ user: response.data.user });
   return null;
 }

@@ -38,10 +38,15 @@ Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [
 
 ### BE-05 - Đăng ký, đăng nhập JWT, refresh và phân quyền (L)
 
-- [ ] Tạo `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` theo [thiết kế JWT](auth-jwt.md); access JWT RS256 trong Bearer, refresh opaque hash trong DB/cookie HttpOnly; kiểm claims/chữ ký, session/user và quyền hiện hành mỗi request; chuẩn hóa email theo `email_key`, băm mật khẩu chuyên dụng; Origin/custom header chống CSRF cho login/refresh/logout.
+- [x] Tạo `/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me` theo [thiết kế JWT](auth-jwt.md); access JWT RS256 trong Bearer, refresh opaque hash trong DB/cookie HttpOnly; kiểm claims/chữ ký, session/user và quyền hiện hành mỗi request; chuẩn hóa email theo `email_key`, băm mật khẩu chuyên dụng; Origin/custom header chống CSRF cho login/refresh/logout.
 - [ ] Rotation một lần trong transaction khóa user → session → token; lưu lịch sử hash để phát hiện reuse và thu hồi session; xử lý hết hạn, key rotation, logout khi access hết hạn và DB lỗi; bổ sung cấu hình auth qua secret store, không commit khóa thật.
 - Phụ thuộc: BE-01 đến BE-04, X-01 (chính sách auth). Truy vết: FR-01.01–03, FR-18.01–02; NFR-07–09; UC-01.
 - Nghiệm thu: email trùng/cạnh tranh không tạo đôi; JWT giả/sai alg/iss/aud/typ/hết hạn bị chặn; logout/khóa/reset/thu hồi role hiệu lực ở request kế tiếp; refresh replay/cạnh tranh thu hồi đúng session; không nâng quyền qua payload; truy cập chéo bị từ chối; CSRF/rate limit và DB lỗi được thử.
+- Tiến độ: API cốt lõi dùng Sequelize models, transaction khóa user → session → token,
+  JWT keyring/RS256, rotation/replay, logout, current roles, rate limit và audit đã có.
+  7 ca auth integration MariaDB và browser E2E với FE đã đạt local; lỗi ghi user/role
+  hoặc session/token rollback nguyên tử. Reset/thu hồi toàn bộ phiên theo workflow
+  BE-06/14 và nghiệm thu key rotation/HTTPS trên hosting còn tiếp tục; chưa đóng toàn X-03.
 
 ### BE-06 - Khôi phục mật khẩu qua email (M)
 

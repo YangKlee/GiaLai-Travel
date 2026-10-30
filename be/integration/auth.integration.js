@@ -90,6 +90,13 @@ test('Auth/MariaDB: logout is idempotent, roles are current and account lock is 
 
 test('Auth/MariaDB: DB failures fail closed; partial login writes roll back', async (t) => {
   const f = await authFixture(t); await f.register();
+  const roles = f.database.models.UserRoles; const createRole = roles.create;
+  try {
+    roles.create = async () => { throw new Error('injected-role-failure'); };
+    const failed = await f.request('/register', { body: { ...f.credentials, email: 'rollback@example.test' } });
+    assert.equal(failed.status, 503);
+    assert.equal(await f.database.models.Users.count({ where: { email_key: 'rollback@example.test' } }), 0);
+  } finally { roles.create = createRole; }
   const model = f.database.models.AuthRefreshTokens;
   const original = model.create;
   try {
@@ -104,6 +111,15 @@ test('Auth/MariaDB: DB failures fail closed; partial login writes roll back', as
     sessions.findOne = async () => { throw new Error('secret-connection'); };
     assert.equal((await f.request('/me', { method: 'GET', access: session.data.accessToken })).status, 503);
   } finally { sessions.findOne = read; }
+});
+
+test('Auth/MariaDB: expired DB sessions and refresh tokens are rejected despite a valid signed JWT', async (t) => {
+  const f = await authFixture(t); await f.register(); const session = await f.login();
+  const created = new Date(Date.now() - 3 * 86400_000); const expiry = new Date(Date.now() - 86400_000);
+  await f.database.models.AuthSessions.update({ created_at: created, expires_at: expiry }, { where: {} });
+  await f.database.models.AuthRefreshTokens.update({ created_at: created, expires_at: expiry }, { where: {} });
+  assert.equal((await f.request('/me', { method: 'GET', access: session.data.accessToken })).status, 401);
+  assert.equal((await f.request('/refresh', { cookie: session.cookie })).status, 401);
 });
 
 test('Auth/MariaDB: repeated failed logins are rate limited with Retry-After', async (t) => {

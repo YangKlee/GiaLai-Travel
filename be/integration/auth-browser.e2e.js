@@ -95,10 +95,40 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
       if (++attempts === 1) await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'ACCESS_TOKEN_EXPIRED', message: 'Expired' } }) });
       else await route.continue();
     });
-    await second.goto(base + paths.ACCOUNT);
-    await expect(second.getByRole('heading', { name: 'Tài khoản của tôi', exact: true })).toBeVisible();
+    await second.evaluate(async () => { const api = await import('/src/services/api.ts'); await api.get('/api/v1/auth/me'); });
     assert.equal(attempts, 2);
     await second.unroute('**/api/v1/auth/me');
+    let expired = 0; let refreshes = 0;
+    await second.route('**/api/v1/auth/me', async (route) => {
+      if (++expired <= 4) await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'ACCESS_TOKEN_EXPIRED', message: 'Expired' } }) });
+      else await route.continue();
+    });
+    await second.route('**/api/v1/auth/refresh', async (route) => { refreshes++; await route.continue(); });
+    await second.evaluate(async () => {
+      const api = await import('/src/services/api.ts');
+      await Promise.all(Array.from({ length: 4 }, () => api.get('/api/v1/auth/me')));
+    });
+    assert.equal(refreshes, 1); assert.equal(expired, 8);
+    await second.unroute('**/api/v1/auth/me'); await second.unroute('**/api/v1/auth/refresh');
+    // Server rotates successfully, but the browser loses the response: require login.
+    await second.route('**/api/v1/auth/me', async (route) => route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { code: 'ACCESS_TOKEN_EXPIRED', message: 'Expired' } }) }));
+    await second.route('**/api/v1/auth/refresh', async (route) => { await route.fetch(); await route.abort(); });
+    const failed = await second.evaluate(async () => {
+      const api = await import('/src/services/api.ts');
+      try { await api.get('/api/v1/auth/me'); return false; } catch { return true; }
+    });
+    assert.ok(failed);
+    await expect(second.getByRole('heading', { name: 'Vui lòng đăng nhập lại', exact: true })).toBeVisible();
+    await second.unroute('**/api/v1/auth/me'); await second.unroute('**/api/v1/auth/refresh');
+    await second.reload();
+    await expect(second.getByRole('heading', { name: 'Đăng nhập', exact: true })).toBeVisible();
+    await signIn(second);
+    await second.route('**/api/v1/auth/logout', (route) => route.abort());
+    await second.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+    await expect(second.getByText(/Máy chủ chưa xác nhận đăng xuất/)).toBeVisible();
+    await second.unroute('**/api/v1/auth/logout');
+    await second.reload();
+    await expect(second.getByRole('heading', { name: 'Đăng nhập', exact: true })).toBeVisible();
     const guest = await browser.newContext({ viewport: { width: 360, height: 800 } });
     const mobile = await guest.newPage();
     await mobile.goto(base + paths.LOGIN);
@@ -106,6 +136,14 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
     assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
     assert.ok(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await mobile.screenshot({ path: join(screenshots, 'login-mobile.png'), fullPage: true });
+    await mobile.getByRole('link', { name: 'Đăng ký ngay', exact: true }).click();
+    await mobile.getByLabel('Tên hiển thị', { exact: true }).fill(displayName);
+    await mobile.getByLabel('Email', { exact: true }).fill(email);
+    await mobile.getByLabel('Mật khẩu', { exact: true }).fill(password);
+    await mobile.getByRole('button', { name: 'Tạo tài khoản', exact: true }).click();
+    await expect(mobile.getByRole('alert')).toContainText('Email này đã được đăng ký.');
+    await expect(mobile.getByLabel('Email', { exact: true })).toHaveAttribute('aria-invalid', 'true');
+    assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
   } finally {
     await browser?.close();
     if (vite && vite.exitCode === null) { const exited = once(vite, 'exit'); vite.kill(); await exited; }

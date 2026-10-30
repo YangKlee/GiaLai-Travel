@@ -42,6 +42,12 @@ Tuân theo [AGENTS](../../fe/AGENTS.md), [DESIGN](../../fe/DESIGN.md), [essentia
 - [ ] Form auth theo policy JWT; reload bootstrap bằng `/auth/refresh` rồi `/auth/me`, route guard theo quyền BE; khôi phục trang đích an toàn; logout gọi BE kể cả access hết hạn rồi xóa token/state/cache riêng và báo các tab; refresh thất bại dừng thao tác và yêu cầu login lại. Không persist token vào Zustand storage hoặc cache offline.
 - Phụ thuộc: FE-02/03; API BE-05. Truy vết: FR-01.01–03; NFR-07–09; UC-01.
 - Nghiệm thu: email trùng/sai mật khẩu/locked/rate limit hiển thị đúng; nhiều request 401 không gây nhiều refresh; 403 không refresh; không lặp vô hạn, mất response rotate yêu cầu login lại; không cho return URL chuyển đến domain tùy ý; back/reload và nhiều tab sau logout không lộ dữ liệu người trước; API trực tiếp vẫn bị BE chặn.
+- Tiến độ: đã có form đăng ký/login, account page, bootstrap refresh → me qua loader,
+  token trong bộ nhớ, single-flight/Web Locks/BroadcastChannel, retry đúng một lần và
+  reset state khi đổi phiên. Browser E2E MariaDB đã kiểm email trùng/field error,
+  login/reload, 4 request hết hạn dùng một refresh, refresh hai tab, logout nhiều tab,
+  unsafe return URL và mất phản hồi refresh/logout. Cờ logout localStorage chỉ là boolean,
+  không chứa token. Nghiệm thu browser matrix/X-03/hosting còn mở.
 
 ### FE-06 - Khôi phục mật khẩu (S)
 

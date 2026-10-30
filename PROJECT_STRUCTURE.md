@@ -44,16 +44,19 @@ GiaLai-Travel/
 
 ```text
 be/
-├── demo/                            # Server và repository mẫu, không kết nối DB
+├── demo/                            # Danh mục mẫu; server-auth dùng DB local cho tài khoản
 ├── src/
 │   ├── server.js                    # Đọc config, tạo DB, chạy/dừng HTTP server
 │   ├── app.js                       # Tạo Express app và gắn middleware/router
 │   ├── config/
 │   │   ├── env.js                   # Đọc và kiểm tra biến môi trường
+│   │   ├── auth.js                  # Cấu hình JWT/RSA keyring và cookie
+│   │   ├── key-files.js             # Sinh khóa local, từ chối ghi đè
 │   │   └── logger.js                # Khởi tạo logger Pino
 │   ├── db/
 │   │   ├── database.js              # Sequelize instance/pool UTC và transaction
 │   │   ├── model-runtime.js         # Model subclasses và chuẩn hóa default timestamp
+│   │   ├── migrations.js            # Ledger, baseline, checksum và khóa migration
 │   │   └── models/
 │   │       ├── init-models.js       # Khởi tạo Sequelize models và quan hệ
 │   │       └── *.js                 # Models theo bảng: users, bookings, places...
@@ -65,6 +68,7 @@ be/
 │   ├── modules/
 │   │   ├── README.md               # Quy ước tổ chức module nghiệp vụ
 │   │   ├── catalog/                # Routes/schema/controller/service/repository POI
+│   │   ├── auth/                   # Models auth, JWT, rotation/replay và bootstrap admin
 │   │   └── health/
 │   │       └── health.controller.js # Liveness và readiness CSDL
 │   └── shared/
@@ -74,6 +78,10 @@ be/
 │       ├── pagination.js            # Tiện ích phân trang
 │       └── validation.js            # Validation dùng chung
 ├── scripts/
+│   ├── migrate.js                   # CLI status/init/baseline/up
+│   ├── bootstrap-admin.js           # Tạo admin từ env tạm
+│   ├── setup-demo-auth.js           # Dựng demo tài khoản với DB local riêng
+│   ├── auth-keys.js                 # Sinh khóa RSA local
 │   ├── check-database.js            # Kiểm tra kết nối và cấu trúc DB, chỉ đọc
 │   └── scaffold-models.js           # Sinh Sequelize models từ DB hiện có
 ├── test/
@@ -83,6 +91,7 @@ be/
 │   ├── catalog.test.js              # API danh mục, validation, lỗi DB và SQL binding
 │   ├── contract.test.js             # Cú pháp và references OpenAPI
 │   └── validation.test.js           # Kiểm thử validation và tiện ích
+├── integration/                     # MariaDB, migration, ORM/auth và browser E2E
 ├── migrations/
 │   ├── README.md                    # Hướng dẫn áp dụng migration
 │   └── 001-jwt-auth.sql             # Migration cấu trúc xác thực JWT
@@ -101,7 +110,10 @@ be/
 3. `routes/index.js` chuyển request đến controller tương ứng.
 4. Middleware cuối xử lý route không tồn tại và chuẩn hóa lỗi.
 
-Hiện có `GET /api/health`, `GET /api/ready` và các alias `/api/v1/health`, `/api/v1/ready`. Health kiểm tra ứng dụng còn hoạt động; readiness kiểm tra truy cập CSDL. API khám phá gồm `/api/v1/catalog`, `/api/v1/places` và `/api/v1/places/:id`, chỉ đọc nội dung công bố tiếng Việt thuộc vùng giai đoạn 1. API đăng nhập, lưu lịch trình và đặt dịch vụ chưa được triển khai.
+Hiện có health/readiness, API khám phá `/api/v1/catalog`, `/api/v1/places`, `/api/v1/places/:id`
+và tài khoản `/api/v1/auth/{status,register,login,refresh,logout,me}`. Auth dùng Sequelize
+models, access JWT RS256 và refresh cookie HttpOnly; quyền/session hiện hành kiểm từ DB.
+Lưu lịch trình và đặt dịch vụ chưa triển khai.
 
 Runtime dùng Sequelize và các models đã scaffold. Repository nghiệp vụ dùng model APIs/associations; service truyền Sequelize transaction khi ghi nhiều bảng. Không viết query SQL thủ công trong module nghiệp vụ, không gọi `sync()` khi chạy app. Tình trạng migration và xác thực theo [tiến độ](docs/implementation/demo-progress.md).
 
@@ -137,12 +149,13 @@ fe/
 │   │   ├── ui/               # Button (cva/cn), Badge
 │   │   └── common/           # Loading và nhãn dữ liệu demo
 │   ├── constants/path.ts     # APP_PATHS và ROUTE_SEGMENTS
-│   ├── layouts/              # MainLayout và ErrorLayout, eager imports
+│   ├── layouts/              # Main/Auth/Tourist/Error layouts, eager imports
 │   ├── routes/               # Router composition, route modules, loaders, Suspense
 │   ├── features/
 │   │   ├── explore/          # Trang danh sách/chi tiết, card, kiểu dữ liệu API
 │   │   ├── trips/            # Bản nháp chuyến đi trong phiên mở trang
-│   │   └── errors/           # Trang 401/403/404/500 và lỗi loader
+│   │   ├── errors/           # Trang 401/403/404/500 và lỗi loader
+│   │   └── auth/             # Form đăng ký/login và account page
 │   ├── services/             # Axios client, API danh mục và fixture chỉ dùng test
 │   ├── store/                # Zustand bản nháp; tách dữ liệu demo/live
 │   ├── utils/                # cn, tiền VND chính xác, ngày VN, kiểm URL nguồn
@@ -161,7 +174,11 @@ fe/
 
 Luồng chạy: `index.html` → `src/main.tsx` → RouterProvider → layout → trang lazy. Route loader gọi API qua `services/` trước khi render; các request nhận AbortSignal để hủy khi điều hướng. Loader lỗi đi qua error boundary. Dev server Vite chạy cổng `5173`, chuyển tiếp `/api` đến backend cổng `3000` theo mặc định.
 
-Các route đã mở: `/explore`, `/places/:id`, `/trips`; `/` chuyển sang khám phá. `/admin/*` hiển thị chưa khả dụng, chưa có quyền quản trị giả. Zustand giữ bản nháp chỉ trong bộ nhớ, không persist token hoặc lưu lịch lên server; reload sẽ xóa bản nháp.
+Các route đã mở: `/explore`, `/places/:id`, `/trips`, `/login`, `/register`, `/account`;
+`/` chuyển sang khám phá. `/admin/*` chưa mở tính năng quản trị. Zustand giữ bản nháp và
+user trong bộ nhớ; access token ở services memory, refresh trong cookie HttpOnly.
+Logout/đổi user xóa state và thông báo tab khác, không phát tán token. Reload xóa bản
+nháp; phiên tài khoản bootstrap qua refresh → me khi hợp lệ.
 
 ### Định hướng mở rộng
 
@@ -215,12 +232,14 @@ Chạy từ thư mục gốc repository:
 | `npm ci` | Cài dependency theo lockfile cho cả BE và FE |
 | `npm run dev` | Chạy đồng thời backend và frontend |
 | `npm run dev:demo` | Chạy FE và API mẫu tách biệt, không cần CSDL |
+| `npm run setup:demo:auth` / `npm run dev:demo:auth` | Khởi tạo rồi chạy demo tài khoản thật trên DB local |
 | `npm run dev:be` | Chạy backend ở chế độ watch |
 | `npm run dev:fe` | Chạy Vite dev server |
 | `npm start` | Chạy backend |
 | `npm test` | Chạy BE và FE unit tests |
 | `npm run test:be` / `npm run test:fe` | Chạy riêng từng workspace |
 | `npm run test:e2e` | Playwright tự chạy API demo và Vite, kiểm tra desktop/mobile |
+| `npm run test:integration` / `npm run test:e2e:auth` | Kiểm MariaDB thật và browser account/multi-tab |
 | `npm run lint` | Chạy ESLint frontend |
 | `npm run build` | Build frontend vào `fe/dist/` |
 | `npm run preview -w fe` | Xem thử bản build frontend |

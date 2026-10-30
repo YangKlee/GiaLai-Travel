@@ -22,6 +22,7 @@ test('JWT accepts only correct keys, header and complete bounded claims', async 
     { payload: { ...claims, sid: 'wrong' } }, { payload: { ...claims, iat: claims.iat + 1000, exp: claims.exp + 1000 } },
     { payload: { ...claims, exp: claims.exp + 1 } }, { header: { typ: 'JWT' } },
     { header: { kid: 'unknown' } }, { header: { jku: 'https://example.test/keys' } },
+    { payload: { ...claims, sid: undefined } }, { payload: { ...claims, exp: undefined } },
   ]) {
     const token = await new SignJWT(change.payload || claims).setProtectedHeader({ alg: 'RS256', typ: 'at+jwt', kid: config.kid, ...change.header }).sign(config.privateKey);
     await assert.rejects(service.verify(token), (error) => error.status === 401 && error.code === 'INVALID_ACCESS_TOKEN');
@@ -29,4 +30,9 @@ test('JWT accepts only correct keys, header and complete bounded claims', async 
   const expired = await new SignJWT({ ...claims, iat: claims.iat - 1000, exp: claims.iat - 1 }).setProtectedHeader({ alg: 'RS256', typ: 'at+jwt', kid: config.kid }).sign(config.privateKey);
   await assert.rejects(service.verify(expired), (error) => error.code === 'ACCESS_TOKEN_EXPIRED');
   await assert.rejects(service.verify('not.a.jwt'), (error) => error.status === 401);
+  const wrong = tokenFixture();
+  const forged = await new SignJWT(claims).setProtectedHeader({ alg: 'RS256', typ: 'at+jwt', kid: config.kid }).sign(wrong.privateKey);
+  await assert.rejects(service.verify(forged), (error) => error.code === 'INVALID_ACCESS_TOKEN');
+  const hmac = await new SignJWT(claims).setProtectedHeader({ alg: 'HS256', typ: 'at+jwt', kid: config.kid }).sign(new Uint8Array(32));
+  await assert.rejects(service.verify(hmac), (error) => error.code === 'INVALID_ACCESS_TOKEN');
 });

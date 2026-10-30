@@ -58,8 +58,15 @@ HTTP. Production cần HTTPS tại reverse proxy và secret riêng theo môi tr�
 Chỉ nhận host loopback, không load `.env` hosting. Bộ test tạo/xóa database ngẫu nhiên
 `gialai_test_*` thuộc lần chạy. Cần tài khoản tạo DB test; không chạy trên DB production.
 
-Đã có [migration runner](migrations/README.md), scrypt password helper và CLI bootstrap
-admin. Phần JWT/refresh/CSRF tiếp tục theo [thiết kế](../docs/implementation/auth-jwt.md).
+Đã có [migration runner](migrations/README.md), scrypt password helper, CLI bootstrap
+admin và [JWT/refresh/CSRF](../docs/implementation/auth-jwt.md). Bật auth bằng `AUTH_ENABLED=true`
+và khóa RSA qua file; cookie production bắt buộc Secure. Chạy demo tài khoản local bằng
+`npm run setup:demo:auth` rồi `npm run dev:demo:auth` tại gốc. Runtime demo chỉ có DML,
+không tự sửa schema; cấu hình riêng `be/.env.demo-auth` được Git ignore, không ghi đè `.env`.
+
+`npm run test:e2e:auth` dùng MariaDB local và Chromium, tự dựng API/Vite tại cổng 5180,
+kiểm nhiều tab, phiên hết hạn/lỗi mạng và form tiếp cận. Tất cả DB test được tạo ngẫu nhiên
+và xóa bằng tài khoản test, không dùng DB hosting. Limiter hiện là memory store cho một process.
 
 Tạo quản trị viên bằng thông tin do người vận hành cấp qua env tạm
 `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`, `BOOTSTRAP_ADMIN_NAME`, sau đó

@@ -1,7 +1,36 @@
 # Thiết kế đăng nhập JWT
 
-Ngày cập nhật: 30/10/2026. D-22 xác nhận dùng JWT; các thời hạn và lựa chọn kỹ thuật
-dưới đây là baseline đề xuất cho BE-05/FE-05, chưa phải chức năng đã triển khai.
+Ngày cập nhật: 30/10/2026. D-22 xác nhận dùng JWT. BE-05/FE-05 đã triển khai luồng
+đăng ký/login/refresh/logout/me với baseline access 15 phút, refresh 7 ngày và kiểm
+MariaDB/Chromium local; chưa nghiệm thu cấu hình hosting/HTTPS hay toàn bộ X-03.
+
+## Chạy và kiểm tra
+
+- `npm run setup:demo:auth`: dựng DB local mới và user runtime chỉ có DML trên
+  `127.0.0.1:3307`, sinh khóa RSA và `be/.env.demo-auth` được Git ignore. Tài khoản
+  CSDL quản trị local tùy chọn qua `DEMO_DB_PORT/USER/PASSWORD`; không load `.env` hosting.
+- `npm run dev:demo:auth`: danh mục mẫu và tài khoản thật lưu trong DB local.
+  Đăng ký trong giao diện; không seed mật khẩu hay tài khoản ứng dụng mặc định.
+- API dùng CSDL thật qua `npm run dev` chỉ bật auth khi `AUTH_ENABLED=true`, có
+  `AUTH_KEY_ID` và `AUTH_PRIVATE_KEY_FILE`. `npm run auth:keys -w be` tạo khóa local
+  với chế độ không ghi đè. `AUTH_PREVIOUS_PUBLIC_KEYS_FILE` tùy chọn là JSON map
+  `kid` → PEM public key cũ. Không đưa private key vào Git.
+- `npm run test:integration`: các ca MariaDB thật. `npm run test:e2e:auth` tự dựng
+  DB test biệt lập, API và Vite cổng 5180; cần cài Chromium qua Playwright trước.
+- Tất cả nghiệp vụ dùng Sequelize models/transaction từ scaffold. Không viết SQL
+  thủ công trong repository/service auth.
+
+Mật khẩu baseline local 12–128 ký tự, băm scrypt N=131072/r=8/p=1, salt ngẫu nhiên.
+Login giới hạn 5 lần thất bại/email+IP trong 15 phút và 30 request/IP; đăng ký
+10 request/IP/giờ. Limiter trong bộ nhớ cho một process; môi trường nhiều process
+cần store dùng chung trước nghiệm thu vận hành.
+
+FE chỉ giữ access token trong bộ nhớ. Web Locks phối hợp cookie refresh giữa tab;
+BroadcastChannel thông báo đổi phiên/logout, không truyền token. Khi không có Web
+Locks, rotation nghiêm ngặt vẫn có thể yêu cầu đăng nhập lại. Một cờ boolean logout
+không chứa bí mật được lưu localStorage để ngăn tự khôi phục cookie sau logout
+không được máy chủ xác nhận. Mọi lỗi refresh/mất response rotate dừng retry và
+yêu cầu login lại. Profile/response cũ không được ghi trở lại sau đổi tài khoản.
 
 ## Token và xác thực
 
@@ -27,9 +56,9 @@ dưới đây là baseline đề xuất cho BE-05/FE-05, chưa phải chức nă
   khóa thật vào SQL hay `.env.example`. Rotation giữ public key cũ đủ hạn access
   token; sự cố lộ khóa phải thu hồi phiên liên quan và loại khóa bị lộ.
 
-## Hợp đồng API dự kiến
+## Hợp đồng API đã triển khai
 
-Tất cả nằm dưới `/api/v1`; phải bổ sung OpenAPI trong X-02 trước tích hợp.
+Tất cả nằm dưới `/api/v1`, contract tại [OpenAPI](../../be/openapi.yaml).
 
 | Endpoint | Hành vi |
 | --- | --- |

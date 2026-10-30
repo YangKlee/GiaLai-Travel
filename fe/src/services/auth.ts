@@ -2,7 +2,12 @@ import { createHttpClient } from './http';
 import { ApiError, toApiError } from './api-error';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTripDraftStore } from '@/store/useTripDraftStore';
-import type { LoginInput, RegistrationInput, SessionResponse } from '@/features/auth/types/auth';
+import type {
+  AuthUser,
+  LoginInput,
+  RegistrationInput,
+  SessionResponse,
+} from '@/features/auth/types/auth';
 
 const client = createHttpClient();
 const csrf = { 'X-CSRF-Protection': '1' };
@@ -105,12 +110,19 @@ export async function bootstrapAuth(): Promise<void> {
         clearAuthSession();
         return;
       }
+      let version = generation;
       try {
         await refreshSession();
+        version = generation;
+        const profile = await client.get<{ data: { user: AuthUser } }>('/api/v1/auth/me', {
+          headers: { Authorization: 'Bearer ' + accessToken },
+        });
+        if (version === generation) useAuthStore.setState({ user: profile.data.data.user });
       } catch {
-        /* An anonymous browser normally has no refresh cookie. */
+        if (version === generation) clearAuthSession();
       }
     } catch {
+      clearAuthSession();
       useAuthStore.setState({ enabled: null, phase: 'unavailable', user: null });
     }
   })();
