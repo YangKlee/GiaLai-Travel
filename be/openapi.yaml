@@ -2,7 +2,8 @@ openapi: 3.1.0
 info:
   title: GiaLaiTravel API
   version: 0.1.0
-  description: Health and public place discovery. Demo server returns dataset=demo and never connects to the application database.
+  description: Health and public place discovery. Demo server returns dataset=demo
+    and never connects to the application database.
 servers:
   - url: http://localhost:3000
 paths:
@@ -11,214 +12,527 @@ paths:
       operationId: getCatalog
       summary: Categories and regions containing published phase-1 places
       responses:
-        '200':
+        "200":
           description: Available filters
           content:
             application/json:
               schema:
                 type: object
-                required: [data, dataset]
+                required:
+                  - data
+                  - dataset
                 properties:
                   dataset:
-                    $ref: '#/components/schemas/Dataset'
+                    $ref: "#/components/schemas/Dataset"
                   data:
                     type: object
-                    required: [categories, regions]
+                    required:
+                      - categories
+                      - regions
                     properties:
                       categories:
                         type: array
                         items:
                           type: object
-                          required: [code, name]
+                          required:
+                            - code
+                            - name
                           properties:
                             code:
-                              $ref: '#/components/schemas/Category'
+                              $ref: "#/components/schemas/Category"
                             name:
                               type: string
                       regions:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Region'
-        '503':
-          $ref: '#/components/responses/CatalogUnavailable'
+                          $ref: "#/components/schemas/Region"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
   /api/v1/places:
     get:
       operationId: listPlaces
-      summary: Published Vietnamese places; unknown prices excluded when a price filter is supplied
+      summary: Published Vietnamese places; unknown prices excluded when a price
+        filter is supplied
       parameters:
-        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
-        - { name: category, in: query, schema: { $ref: '#/components/schemas/Category' } }
-        - { name: regionId, in: query, schema: { type: string, format: uuid } }
-        - { name: minPrice, in: query, schema: { type: string, pattern: '^(0|[1-9][0-9]{0,19})$' }, description: Integer VND up to unsigned BIGINT; must not exceed maxPrice }
-        - { name: maxPrice, in: query, schema: { type: string, pattern: '^(0|[1-9][0-9]{0,19})$' } }
-        - { name: sort, in: query, schema: { type: string, enum: [name, price-asc], default: name } }
-        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 1000000, default: 1 } }
-        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/Category"
+        - name: regionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: minPrice
+          in: query
+          schema:
+            type: string
+            pattern: ^(0|[1-9][0-9]{0,19})$
+          description: Integer VND up to unsigned BIGINT; must not exceed maxPrice
+        - name: maxPrice
+          in: query
+          schema:
+            type: string
+            pattern: ^(0|[1-9][0-9]{0,19})$
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              - name
+              - price-asc
+            default: name
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
-        '200':
+        "200":
           description: Filtered places; stable ID tie-breaker, unknown prices last
           content:
             application/json:
               schema:
                 type: object
-                required: [data, meta, dataset]
+                required:
+                  - data
+                  - meta
+                  - dataset
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Place'
+                      $ref: "#/components/schemas/Place"
                   meta:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
                   dataset:
-                    $ref: '#/components/schemas/Dataset'
-        '422':
-          $ref: '#/components/responses/InvalidCatalogRequest'
-        '503':
-          $ref: '#/components/responses/CatalogUnavailable'
+                    $ref: "#/components/schemas/Dataset"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
   /api/v1/places/{id}:
     get:
       operationId: getPlace
       summary: Published place detail; hidden, draft and missing IDs all return 404
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
-        '200':
-          description: Place and known opening intervals (weekday 0 is Sunday, Vietnam local time)
+        "200":
+          description: Place and known opening intervals (weekday 0 is Sunday, Vietnam
+            local time)
           content:
             application/json:
               schema:
                 type: object
-                required: [data, dataset]
+                required:
+                  - data
+                  - dataset
                 properties:
                   dataset:
-                    $ref: '#/components/schemas/Dataset'
+                    $ref: "#/components/schemas/Dataset"
                   data:
                     allOf:
-                      - $ref: '#/components/schemas/Place'
+                      - $ref: "#/components/schemas/Place"
                       - type: object
-                        required: [openingHours]
+                        required:
+                          - openingHours
                         properties:
                           openingHours:
                             type: array
-                            description: Empty means unknown, never open all day. Closure exceptions are not yet exposed; not a real-time availability guarantee.
+                            description: Empty means unknown, never open all day. Closure exceptions are not
+                              yet exposed; not a real-time availability
+                              guarantee.
                             items:
                               type: object
-                              required: [weekday, opensAt, closesAt, crossesMidnight]
+                              required:
+                                - weekday
+                                - opensAt
+                                - closesAt
+                                - crossesMidnight
                               properties:
-                                weekday: { type: integer, minimum: 0, maximum: 6 }
-                                opensAt: { type: string }
-                                closesAt: { type: string }
-                                crossesMidnight: { type: boolean }
-        '404':
+                                weekday:
+                                  type: integer
+                                  minimum: 0
+                                  maximum: 6
+                                opensAt:
+                                  type: string
+                                closesAt:
+                                  type: string
+                                crossesMidnight:
+                                  type: boolean
+        "404":
           description: Place not available
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
-        '422':
-          $ref: '#/components/responses/InvalidCatalogRequest'
-        '503':
-          $ref: '#/components/responses/CatalogUnavailable'
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
   /api/health:
     get:
       operationId: getLiveness
       summary: HTTP process liveness, independent of database availability
       responses:
-        '200':
+        "200":
           description: Process is running
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Liveness'
+                $ref: "#/components/schemas/Liveness"
   /api/v1/health:
     get:
       operationId: getVersionedLiveness
       responses:
-        '200':
+        "200":
           description: Process is running
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Liveness'
+                $ref: "#/components/schemas/Liveness"
   /api/ready:
     get:
       operationId: getReadiness
       summary: Check database connectivity; does not verify the complete schema
       responses:
-        '200':
-          $ref: '#/components/responses/Ready'
-        '503':
-          $ref: '#/components/responses/NotReady'
+        "200":
+          $ref: "#/components/responses/Ready"
+        "503":
+          $ref: "#/components/responses/NotReady"
   /api/v1/ready:
     get:
       operationId: getVersionedReadiness
       responses:
-        '200':
-          $ref: '#/components/responses/Ready'
-        '503':
-          $ref: '#/components/responses/NotReady'
+        "200":
+          $ref: "#/components/responses/Ready"
+        "503":
+          $ref: "#/components/responses/NotReady"
+  /api/v1/auth/status:
+    get:
+      operationId: getAuthStatus
+      summary: Whether account features are configured on this server
+      responses:
+        "200":
+          description: Auth capability flag
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - enabled
+                    properties:
+                      enabled:
+                        type: boolean
+  /api/v1/auth/register:
+    post:
+      operationId: register
+      summary: Create a TOURIST account without logging in
+      parameters:
+        - &a1
+          name: X-CSRF-Protection
+          in: header
+          required: true
+          schema:
+            type: string
+            const: "1"
+          description: Origin must exactly match the configured browser allowlist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Registration"
+      responses:
+        "201":
+          description: Success; token responses are no-store. Refresh cookie is HttpOnly,
+            SameSite=Lax, Path=/api/v1/auth; Secure in production.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredUser"
+        "401": &a2
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403": &a3
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409": &a4
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422": &a5
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429": &a6
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503": &a7
+          description: Authentication error; standard code, fields and requestId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: Validate credentials and create a seven-day session
+      parameters:
+        - *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Login"
+      responses:
+        "200":
+          description: Success; token responses are no-store. Refresh cookie is HttpOnly,
+            SameSite=Lax, Path=/api/v1/auth; Secure in production.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401": *a2
+        "403": *a3
+        "409": *a4
+        "422": *a5
+        "429": *a6
+        "503": *a7
+  /api/v1/auth/refresh:
+    post:
+      operationId: refresh
+      summary: Rotate the opaque refresh cookie once. Reuse revokes the session.
+      parameters:
+        - *a1
+      responses:
+        "200":
+          description: Success; token responses are no-store. Refresh cookie is HttpOnly,
+            SameSite=Lax, Path=/api/v1/auth; Secure in production.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401": *a2
+        "403": *a3
+        "409": *a4
+        "422": *a5
+        "429": *a6
+        "503": *a7
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke the cookie session even if the access JWT has expired
+      parameters:
+        - *a1
+      responses:
+        "204":
+          description: Session revoked and cookie cleared; idempotent.
+        "401": *a2
+        "403": *a3
+        "409": *a4
+        "422": *a5
+        "429": *a6
+        "503": *a7
+  /api/v1/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Validate JWT, current DB session, account status and current roles
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user; no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - user
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/AuthUser"
+        "401": *a2
+        "503": *a7
 components:
   responses:
     InvalidCatalogRequest:
       description: Invalid filter or ID; includes field errors and request ID
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema:
+            $ref: "#/components/schemas/Error"
     CatalogUnavailable:
       description: Catalog database unavailable; no automatic demo fallback
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema:
+            $ref: "#/components/schemas/Error"
     Ready:
       description: Database reachable
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Readiness'
+            $ref: "#/components/schemas/Readiness"
     NotReady:
       description: Database unreachable or unconfigured; response omits connection details
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Readiness'
+            $ref: "#/components/schemas/Readiness"
   schemas:
     Dataset:
       type: string
-      enum: [live, demo]
+      enum:
+        - live
+        - demo
     Category:
       type: string
-      enum: [NATURE, CULTURE, FOOD, STAY, ADVENTURE, OTHER]
+      enum:
+        - NATURE
+        - CULTURE
+        - FOOD
+        - STAY
+        - ADVENTURE
+        - OTHER
     Region:
       type: object
-      required: [id, name]
+      required:
+        - id
+        - name
       properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
     Pagination:
       type: object
-      required: [page, pageSize, total, totalPages]
+      required:
+        - page
+        - pageSize
+        - total
+        - totalPages
       properties:
-        page: { type: integer, minimum: 1 }
-        pageSize: { type: integer, minimum: 1, maximum: 100 }
-        total: { type: integer, minimum: 0 }
-        totalPages: { type: integer, minimum: 0 }
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     Place:
       type: object
-      required: [id, title, description, category, region, latitude, longitude, referencePriceVnd, typicalDurationMinutes, sourceReference, updatedAt]
+      required:
+        - id
+        - title
+        - description
+        - category
+        - region
+        - latitude
+        - longitude
+        - referencePriceVnd
+        - typicalDurationMinutes
+        - sourceReference
+        - updatedAt
       properties:
-        id: { type: string, format: uuid }
-        title: { type: string }
-        description: { type: string, description: Plain text; never render as HTML }
-        category: { $ref: '#/components/schemas/Category' }
-        region: { $ref: '#/components/schemas/Region' }
-        latitude: { type: [number, 'null'], minimum: -90, maximum: 90 }
-        longitude: { type: [number, 'null'], minimum: -180, maximum: 180 }
-        referencePriceVnd: { type: [string, 'null'], pattern: '^(0|[1-9][0-9]*)$' }
-        typicalDurationMinutes: { type: [integer, 'null'], minimum: 1 }
-        sourceReference: { type: [string, 'null'], description: Source text or HTTP URL; demo values are null }
-        updatedAt: { type: string, format: date-time }
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          description: Plain text; never render as HTML
+        category:
+          $ref: "#/components/schemas/Category"
+        region:
+          $ref: "#/components/schemas/Region"
+        latitude:
+          type:
+            - number
+            - "null"
+          minimum: -90
+          maximum: 90
+        longitude:
+          type:
+            - number
+            - "null"
+          minimum: -180
+          maximum: 180
+        referencePriceVnd:
+          type:
+            - string
+            - "null"
+          pattern: ^(0|[1-9][0-9]*)$
+        typicalDurationMinutes:
+          type:
+            - integer
+            - "null"
+          minimum: 1
+        sourceReference:
+          type:
+            - string
+            - "null"
+          description: Source text or HTTP URL; demo values are null
+        updatedAt:
+          type: string
+          format: date-time
     Liveness:
       type: object
-      required: [status, service]
+      required:
+        - status
+        - service
       properties:
         status:
           const: ok
@@ -226,28 +540,40 @@ components:
           const: gialai-travel-api
     Readiness:
       type: object
-      required: [status, service, checks]
+      required:
+        - status
+        - service
+        - checks
       properties:
         status:
-          enum: [ready, not_ready]
+          enum:
+            - ready
+            - not_ready
         service:
           const: gialai-travel-api
         checks:
           type: object
-          required: [database]
+          required:
+            - database
           properties:
             database:
-              enum: [up, down]
+              enum:
+                - up
+                - down
         requestId:
           type: string
           format: uuid
     Error:
       type: object
-      required: [error]
+      required:
+        - error
       properties:
         error:
           type: object
-          required: [code, message, requestId]
+          required:
+            - code
+            - message
+            - requestId
           properties:
             code:
               type: string
@@ -260,9 +586,121 @@ components:
               type: array
               items:
                 type: object
-                required: [field, message]
+                required:
+                  - field
+                  - message
                 properties:
                   field:
                     type: string
                   message:
                     type: string
+    AuthUser:
+      type: object
+      required:
+        - id
+        - email
+        - displayName
+        - roles
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+              - TOURIST
+              - ADMIN
+              - PARTNER
+              - CONTRIBUTOR
+              - B2G
+    Login:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    Registration:
+      type: object
+      additionalProperties: false
+      required:
+        - email
+        - password
+        - displayName
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 150
+    RegisteredUser:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - email
+            - displayName
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+            displayName:
+              type: string
+    AuthSession:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - accessToken
+            - tokenType
+            - expiresIn
+            - user
+          properties:
+            accessToken:
+              type: string
+              description: Memory-only bearer token; never persist in browser storage.
+            tokenType:
+              const: Bearer
+            expiresIn:
+              type: integer
+              minimum: 1
+              maximum: 900
+            user:
+              $ref: "#/components/schemas/AuthUser"
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT RS256 (typ=at+jwt)

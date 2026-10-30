@@ -12,6 +12,10 @@ vi.mock('@/services/catalog', () => ({
   getPlaces: vi.fn(),
   getPlace: vi.fn(),
 }));
+vi.mock('@/services/auth', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/auth')>()),
+  bootstrapAuth: vi.fn(async () => {}),
+}));
 beforeEach(() => {
   vi.mocked(getCatalog).mockResolvedValue(catalogFixture);
   vi.mocked(getPlaces).mockResolvedValue(placesFixture);

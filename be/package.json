@@ -14,13 +14,18 @@
     "db:check": "node --env-file-if-exists=.env scripts/check-database.js",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.js",
     "admin:create": "node --env-file-if-exists=.env scripts/bootstrap-admin.js",
+    "auth:keys": "node scripts/auth-keys.js",
     "test:integration": "node scripts/integration-tests.js",
+    "test:e2e:auth": "node --test integration/auth-browser.e2e.js",
     "db:scaffold": "node --env-file-if-exists=.env scripts/scaffold-models.js"
   },
   "dependencies": {
+    "cookie": "^1.1.1",
     "cors": "^2.8.5",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.2",
     "helmet": "^8.3.0",
+    "jose": "^6.2.14",
     "mysql2": "^3.24.6",
     "pino": "^10.4.0",
     "sequelize": "^6.37.8",

@@ -2,8 +2,13 @@
   "name": "gialai-travel",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["be", "fe"],
-  "engines": { "node": "20.20.2" },
+  "workspaces": [
+    "be",
+    "fe"
+  ],
+  "engines": {
+    "node": "20.20.2"
+  },
   "scripts": {
     "dev": "concurrently -k -n be,fe \"npm run dev -w be\" \"npm run dev -w fe\"",
     "dev:demo": "concurrently -k -n be,fe \"npm run dev:demo -w be\" \"npm run dev -w fe\"",
@@ -16,7 +21,10 @@
     "test:be": "npm run test -w be",
     "test:fe": "npm run test -w fe",
     "test:integration": "npm run test:integration -w be",
-    "test:e2e": "npm run test:e2e -w fe"
+    "test:e2e": "npm run test:e2e -w fe",
+    "test:e2e:auth": "npm run test:e2e:auth -w be"
   },
-  "devDependencies": { "concurrently": "^9.2.1" }
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

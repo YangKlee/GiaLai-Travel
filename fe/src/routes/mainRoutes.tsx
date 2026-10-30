@@ -6,6 +6,8 @@ import { APP_PATHS, ROUTE_SEGMENTS } from '@/constants/path';
 import { RouteSuspense } from './RouteSuspense';
 import { exploreLoader, placeLoader, tripsLoader } from './catalogLoaders';
 import { PageLoadingState } from '@/components/common/PageLoadingState';
+import { sessionLoader } from './authLoaders';
+import { authRoutes } from './authRoutes';
 
 const ExplorePage = lazy(() => import('@/features/explore/pages/ExplorePage'));
 const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
@@ -18,6 +20,7 @@ export const mainRoutes: RouteObject[] = [
   {
     path: APP_PATHS.HOME,
     element: <MainLayout />,
+    loader: sessionLoader,
     hydrateFallbackElement: <PageLoadingState />,
     errorElement: (
       <RouteSuspense>
@@ -25,6 +28,7 @@ export const mainRoutes: RouteObject[] = [
       </RouteSuspense>
     ),
     children: [
+      ...authRoutes,
       { index: true, element: <Navigate to={APP_PATHS.EXPLORE} replace /> },
       {
         path: ROUTE_SEGMENTS.EXPLORE,

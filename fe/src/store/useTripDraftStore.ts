@@ -12,9 +12,17 @@ interface TripDraftStore {
   remove: (dataset: Dataset, id: string) => void;
   move: (dataset: Dataset, id: string, direction: -1 | 1) => void;
   rename: (dataset: Dataset, name: string) => void;
+  reset: () => void;
 }
 
 export const useTripDraftStore = create<TripDraftStore>((set) => ({
+  reset: () =>
+    set({
+      drafts: {
+        demo: { name: 'Một ngày ở Gia Lai', places: [] },
+        live: { name: 'Một ngày ở Gia Lai', places: [] },
+      },
+    }),
   // Public snapshots only; in memory, cleared on page reload. No account or token data.
   drafts: {
     demo: { name: 'Một ngày ở Gia Lai', places: [] },

@@ -8,17 +8,17 @@ import { createApiRouter } from './routes/index.js';
 
 export function createApp({
   clientOrigin = 'http://localhost:5173', trustProxyHops = 0,
-  database, catalogRepository, logger = createLogger('silent'),
+  database, catalogRepository, auth, logger = createLogger('silent'),
 } = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
   app.use(requestContext(logger));
   app.use(helmet());
-  app.use(cors({ origin: clientOrigin }));
+  app.use(cors({ origin: clientOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
 
-  app.use('/api', createApiRouter({ database, catalogRepository, logger }));
+  app.use('/api', createApiRouter({ database, catalogRepository, auth, logger }));
   app.use(notFound);
   app.use(errorHandler(logger));
 

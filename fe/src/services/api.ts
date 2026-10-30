@@ -1,62 +1,44 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
+import { createHttpClient } from './http';
+import { toApiError } from './api-error';
+import { clearAuthSession, getAccessToken, refreshSession } from './auth';
+export { ApiError } from './api-error';
+export type { FieldError } from './api-error';
 
-export interface FieldError {
-  field: string;
-  message: string;
-}
-interface ErrorEnvelope {
-  error?: { code?: string; message?: string; fields?: FieldError[]; requestId?: string };
-}
-
-export class ApiError extends Error {
-  readonly status: number;
-  readonly code: string;
-  readonly fields: FieldError[];
-  readonly requestId?: string;
-  constructor(
-    status: number,
-    code: string,
-    message: string,
-    fields: FieldError[] = [],
-    requestId?: string,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.code = code;
-    this.fields = fields;
-    this.requestId = requestId;
-  }
-}
-
-const client = axios.create({
-  baseURL: (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, ''),
-  timeout: 12_000,
-  headers: { Accept: 'application/json' },
+const client = createHttpClient();
+type RetryConfig = InternalAxiosRequestConfig & { authRetried?: boolean };
+client.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) config.headers.set('Authorization', 'Bearer ' + token);
+  return config;
 });
-
-// Public read client: no retry or session persistence. Auth will add its own refresh flow.
 client.interceptors.response.use(
   (response) => response,
-  (error: unknown) => {
-    if (axios.isCancel(error)) return Promise.reject(error);
-    if (axios.isAxiosError<ErrorEnvelope>(error)) {
-      const detail = error.response?.data?.error;
-      return Promise.reject(
-        new ApiError(
-          error.response?.status ?? 0,
-          detail?.code ?? 'NETWORK_ERROR',
-          detail?.message ?? 'Chưa kết nối được máy chủ. Hãy kiểm tra kết nối và thử lại.',
-          detail?.fields,
-          detail?.requestId,
-        ),
-      );
+  async (error: unknown) => {
+    if (axios.isCancel(error)) throw error;
+    if (
+      axios.isAxiosError<{ error?: { code?: string } }>(error) &&
+      error.response?.status === 401
+    ) {
+      const config = error.config as RetryConfig | undefined;
+      if (
+        error.response.data?.error?.code === 'ACCESS_TOKEN_EXPIRED' &&
+        config &&
+        !config.authRetried
+      ) {
+        config.authRetried = true;
+        await refreshSession();
+        // Reuse the same config/body/idempotency header, exactly once.
+        config.headers.set('Authorization', 'Bearer ' + getAccessToken());
+        return client.request(config);
+      }
+      clearAuthSession('Phi?n ?? k?t th?c. Vui l?ng ??ng nh?p l?i.');
     }
-    return Promise.reject(new ApiError(0, 'UNKNOWN_ERROR', 'Chưa tải được nội dung.'));
+    throw toApiError(error);
   },
 );
 
 export async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await client.get<T>(path, { signal });
-  return response.data;
+  return (await client.get<T>(path, { signal })).data;
 }

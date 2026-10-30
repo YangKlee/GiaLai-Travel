@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   workers: 2,
-  use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure' },
+  use: { baseURL: 'http://127.0.0.1:5181', trace: 'retain-on-failure' },
   projects: [
     {
       name: 'desktop',
@@ -17,13 +17,14 @@ export default defineConfig({
   webServer: [
     {
       command: `"${process.execPath}" ../be/demo/server.js`,
-      url: 'http://127.0.0.1:3000/api/health',
+      url: 'http://127.0.0.1:3002/api/health',
       reuseExistingServer: false,
-      env: { NODE_ENV: 'test', PORT: '3000' },
+      env: { NODE_ENV: 'test', PORT: '3002' },
     },
     {
-      command: `"${process.execPath}" ../node_modules/vite/bin/vite.js --host 127.0.0.1`,
-      url: 'http://127.0.0.1:5173',
+      command: `"${process.execPath}" ../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5181`,
+      url: 'http://127.0.0.1:5181',
+      env: { API_PROXY_TARGET: 'http://127.0.0.1:3002' },
       reuseExistingServer: false,
     },
   ],

@@ -2,12 +2,14 @@ import { createApp } from './app.js';
 import { loadConfig } from './config/env.js';
 import { createLogger } from './config/logger.js';
 import { createDatabase } from './db/database.js';
+import { loadAuthConfig } from './config/auth.js';
 
 const config = loadConfig();
+const auth = loadAuthConfig(config);
 const logger = createLogger(config.logLevel);
 const database = createDatabase(config.database);
 
-const app = createApp({ clientOrigin: config.clientOrigins, trustProxyHops: config.trustProxyHops, database, logger });
+const app = createApp({ clientOrigin: config.clientOrigins, trustProxyHops: config.trustProxyHops, database, auth, logger });
 const server = app.listen(config.port);
 server.requestTimeout = 60_000;
 server.headersTimeout = 15_000;

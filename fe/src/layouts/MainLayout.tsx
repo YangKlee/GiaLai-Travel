@@ -1,9 +1,11 @@
-import { Compass, MapPinned, Mountain, ArrowUpRight } from 'lucide-react';
+import { Compass, MapPinned, Mountain, ArrowUpRight, UserRound } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigation } from 'react-router-dom';
 import { APP_PATHS } from '@/constants/path';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function MainLayout() {
   const navigation = useNavigation();
+  const user = useAuthStore((state) => state.user);
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -24,6 +26,10 @@ export function MainLayout() {
             <NavLink to={APP_PATHS.EXPLORE}>
               <Compass size={18} aria-hidden="true" />
               Khám phá
+            </NavLink>
+            <NavLink to={user ? APP_PATHS.ACCOUNT : APP_PATHS.LOGIN}>
+              <UserRound size={18} aria-hidden="true" />
+              {user ? 'Tài khoản' : 'Đăng nhập'}
             </NavLink>
             <NavLink to={APP_PATHS.TRIPS}>
               <MapPinned size={18} aria-hidden="true" />
