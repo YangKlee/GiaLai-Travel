@@ -4,6 +4,7 @@ import { createCatalogRouter } from '../modules/catalog/catalog.routes.js';
 import { createAuthRouter } from '../modules/auth/auth.routes.js';
 import { createAuthService } from '../modules/auth/auth.service.js';
 import { createUsersRouter } from '../modules/users/users.routes.js';
+import { createContentRouter } from '../modules/content/content.routes.js';
 
 export function createApiRouter(dependencies) {
   const router = Router();
@@ -22,5 +23,8 @@ export function createApiRouter(dependencies) {
   router.use('/v1', createCatalogRouter(dependencies));
   router.use('/v1/auth', createAuthRouter({ ...dependencies, authService }));
   router.use('/v1/me', createUsersRouter({ ...dependencies, authService }));
+  if (dependencies.database && authService) {
+    router.use('/v1/admin', createContentRouter({ ...dependencies, authService }));
+  }
   return router;
 }

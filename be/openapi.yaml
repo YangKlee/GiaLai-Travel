@@ -615,6 +615,343 @@ paths:
         "410": *a2
         "422": *a5
         "503": *a7
+  /api/v1/places/{id}/audio-guides:
+    get:
+      operationId: listPlaceAudioGuides
+      summary: List published audio guides and transcripts for a place
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published audio guides for the place
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - dataset
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  dataset:
+                    $ref: "#/components/schemas/Dataset"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/events:
+    get:
+      operationId: listEvents
+      summary: List published events in Gia Lai
+      responses:
+        "200":
+          description: Paginated published events
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - dataset
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+                  dataset:
+                    $ref: "#/components/schemas/Dataset"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/events/{id}:
+    get:
+      operationId: getEventDetail
+      summary: Get published event details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Event details
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/services:
+    get:
+      operationId: listServices
+      summary: List published partner services and available slots
+      responses:
+        "200":
+          description: Paginated published services
+          content:
+            application/json:
+              schema:
+                type: object
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/services/{id}:
+    get:
+      operationId: getServiceDetail
+      summary: Get published service details and slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Service details and slots
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/admin/meta:
+    get:
+      operationId: getAdminContentMeta
+      summary: Get regions, partners, places and media assets for Admin CMS
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Admin CMS metadata
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+  /api/v1/admin/media-assets:
+    post:
+      operationId: createAdminMediaAsset
+      summary: Validate and register a media asset (image/audio/document)
+      security:
+        - BearerAuth: []
+      responses:
+        "201":
+          description: Created media asset
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "422": *a5
+  /api/v1/admin/contents:
+    get:
+      operationId: listAdminContents
+      summary: List content items and their revision history
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Paginated content items
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+    post:
+      operationId: createAdminContent
+      summary: Create a content item and its initial revision
+      security:
+        - BearerAuth: []
+      responses:
+        "201":
+          description: Created content item
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "422": *a5
+  /api/v1/admin/contents/{id}:
+    get:
+      operationId: getAdminContent
+      summary: Get content item and all revisions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Content item detail
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404": *a2
+  /api/v1/admin/contents/{id}/revisions:
+    post:
+      operationId: createAdminContentRevision
+      summary: Create a new immutable revision without altering the published projection
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Updated content item with new revision
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "422": *a5
+  /api/v1/admin/contents/{id}/revisions/{revisionId}/submit:
+    post:
+      operationId: submitAdminContentRevision
+      summary: Submit a DRAFT revision to PENDING review queue
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated content item
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "409": *a4
+  /api/v1/admin/contents/{id}/revisions/{revisionId}/review:
+    post:
+      operationId: reviewAdminContentRevision
+      summary: Approve (publishing projection atomically) or reject a content revision
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Reviewed content item
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "409": *a4
+        "422": *a5
+  /api/v1/admin/contents/{id}/visibility:
+    post:
+      operationId: updateAdminContentVisibility
+      summary: Change content visibility (PUBLIC, HIDDEN, DRAFT)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated content item visibility
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "409": *a4
+  /api/v1/admin/places/{id}/closures:
+    post:
+      operationId: createAdminPlaceClosure
+      summary: Record a verified temporary closure for a place
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Created place closure
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "422": *a5
 components:
   responses:
     InvalidCatalogRequest:

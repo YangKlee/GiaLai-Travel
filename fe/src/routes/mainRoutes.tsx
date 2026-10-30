@@ -4,14 +4,26 @@ import type { RouteObject } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
 import { APP_PATHS, ROUTE_SEGMENTS } from '@/constants/path';
 import { RouteSuspense } from './RouteSuspense';
-import { exploreLoader, placeLoader, tripsLoader } from './catalogLoaders';
+import {
+  adminContentLoader,
+  eventDetailLoader,
+  eventsLoader,
+  exploreLoader,
+  placeLoader,
+  serviceDetailLoader,
+  tripsLoader,
+} from './catalogLoaders';
 import { PageLoadingState } from '@/components/common/PageLoadingState';
 import { sessionLoader } from './authLoaders';
 import { authRoutes } from './authRoutes';
 
 const ExplorePage = lazy(() => import('@/features/explore/pages/ExplorePage'));
-const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
 const PlaceDetailPage = lazy(() => import('@/features/explore/pages/PlaceDetailPage'));
+const EventsPage = lazy(() => import('@/features/explore/pages/EventsPage'));
+const EventDetailPage = lazy(() => import('@/features/explore/pages/EventDetailPage'));
+const ServiceDetailPage = lazy(() => import('@/features/explore/pages/ServiceDetailPage'));
+const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
+const AdminContentPage = lazy(() => import('@/features/admin/pages/AdminContentPage'));
 const ServerErrorPage = lazy(() =>
   import('@/features/errors/pages/ErrorPages').then((m) => ({ default: m.ServerErrorPage })),
 );
@@ -59,11 +71,67 @@ export const mainRoutes: RouteObject[] = [
         ),
       },
       {
+        path: ROUTE_SEGMENTS.EVENTS,
+        loader: eventsLoader,
+        element: (
+          <RouteSuspense>
+            <EventsPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.EVENT_DETAIL,
+        loader: eventDetailLoader,
+        element: (
+          <RouteSuspense>
+            <EventDetailPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.SERVICE_DETAIL,
+        loader: serviceDetailLoader,
+        element: (
+          <RouteSuspense>
+            <ServiceDetailPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
         path: ROUTE_SEGMENTS.TRIPS,
         loader: tripsLoader,
         element: (
           <RouteSuspense>
             <TripsPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.ADMIN,
+        loader: adminContentLoader,
+        element: (
+          <RouteSuspense>
+            <AdminContentPage />
           </RouteSuspense>
         ),
         errorElement: (

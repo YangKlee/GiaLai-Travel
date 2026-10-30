@@ -1,4 +1,12 @@
-import { Compass, MapPinned, Mountain, ArrowUpRight, UserRound } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Compass,
+  MapPinned,
+  Mountain,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+} from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigation } from 'react-router-dom';
 import { APP_PATHS } from '@/constants/path';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -6,6 +14,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 export function MainLayout() {
   const navigation = useNavigation();
   const user = useAuthStore((state) => state.user);
+  const isAdmin = Boolean(user?.roles.includes('ADMIN'));
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -27,6 +36,10 @@ export function MainLayout() {
               <Compass size={18} aria-hidden="true" />
               Khám phá
             </NavLink>
+            <NavLink to={APP_PATHS.EVENTS}>
+              <Sparkles size={18} aria-hidden="true" />
+              Sự kiện
+            </NavLink>
             <NavLink to={user ? APP_PATHS.ACCOUNT : APP_PATHS.LOGIN}>
               <UserRound size={18} aria-hidden="true" />
               {user ? 'Tài khoản' : 'Đăng nhập'}
@@ -35,6 +48,12 @@ export function MainLayout() {
               <MapPinned size={18} aria-hidden="true" />
               Chuyến đi của tôi
             </NavLink>
+            {isAdmin && (
+              <NavLink to={APP_PATHS.ADMIN}>
+                <ShieldCheck size={18} aria-hidden="true" />
+                Quản trị
+              </NavLink>
+            )}
           </nav>
           <span className="header-note">
             Cao nguyên đang chờ <ArrowUpRight size={16} aria-hidden="true" />

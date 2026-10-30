@@ -31,7 +31,7 @@ export async function appendAudit(database, transaction, {
 }) {
   return database.models.AuditLogs.create({
     id: randomUUID(), actor_id: actorId, action, target_type: targetType,
-    target_id: targetId, result, correlation_id: requestId,
+    target_id: targetId, result, correlation_id: requestId || randomUUID(),
     redacted_metadata: metadata ? redactMetadata(metadata) : null,
   }, { transaction });
 }

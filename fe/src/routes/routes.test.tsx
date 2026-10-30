@@ -5,7 +5,26 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { appRoutes } from './appRoutes';
 import { APP_PATHS } from '@/constants/path';
 import { catalogFixture, placesFixture } from '@/services/__fixtures__/catalog';
-import { getCatalog, getPlaces } from '@/services/catalog';
+import {
+  getCatalog,
+  getEvent,
+  getEvents,
+  getPlace,
+  getPlaceAudioGuides,
+  getPlaces,
+  getService,
+  getServices,
+} from '@/services/catalog';
+import {
+  createAdminContent,
+  createAdminMediaAsset,
+  createAdminRevision,
+  getAdminContentMeta,
+  listAdminContents,
+  reviewAdminRevision,
+  submitAdminRevision,
+  updateAdminContentVisibility,
+} from '@/services/admin';
 import { requestPasswordReset, resetPassword } from '@/services/auth';
 import {
   createMyPrivacyRequest,
@@ -25,6 +44,21 @@ vi.mock('@/services/catalog', () => ({
   getCatalog: vi.fn(),
   getPlaces: vi.fn(),
   getPlace: vi.fn(),
+  getPlaceAudioGuides: vi.fn(),
+  getEvents: vi.fn(),
+  getEvent: vi.fn(),
+  getServices: vi.fn(),
+  getService: vi.fn(),
+}));
+vi.mock('@/services/admin', () => ({
+  getAdminContentMeta: vi.fn(),
+  listAdminContents: vi.fn(),
+  createAdminContent: vi.fn(),
+  createAdminRevision: vi.fn(),
+  submitAdminRevision: vi.fn(),
+  reviewAdminRevision: vi.fn(),
+  updateAdminContentVisibility: vi.fn(),
+  createAdminMediaAsset: vi.fn(),
 }));
 vi.mock('@/services/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/auth')>()),
@@ -332,5 +366,246 @@ describe('Điều hướng ứng dụng', () => {
     await user.click(screen.getByRole('button', { name: 'Tải gói dữ liệu JSON' }));
     expect(await screen.findByLabelText('Gói dữ liệu cá nhân đã xuất')).toBeInTheDocument();
     router.dispose();
+  });
+
+  it('hiển thị thuyết minh âm thanh, sự kiện, dịch vụ và khu vực quản trị CMS cho ADMIN', async () => {
+    const user = userEvent.setup();
+    const firstPlace = placesFixture.data[0];
+    vi.mocked(getPlace).mockResolvedValue({
+      dataset: 'live',
+      data: {
+        ...firstPlace,
+        openingHours: [
+          { weekday: 1, opensAt: '07:00:00', closesAt: '17:30:00', crossesMidnight: false },
+        ],
+        closures: [],
+        audioGuides: [
+          {
+            id: 'ag-1',
+            placeId: firstPlace.id,
+            title: 'Huyền thoại Biển Hồ T’Nưng',
+            description: 'Thuyết minh tiếng Việt.',
+            transcript: 'Biển Hồ Pleiku được hình thành từ miệng núi lửa cổ.',
+            languageCode: 'vi',
+            audioUrl:
+              'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=',
+            premiumOnly: false,
+            sourceReference: 'Sở Du lịch Gia Lai',
+          },
+        ],
+        events: [
+          {
+            id: 'ev-1',
+            placeId: firstPlace.id,
+            placeTitle: firstPlace.title,
+            region: firstPlace.region,
+            title: 'Không gian Cồng chiêng Tây Nguyên cuối tuần',
+            description: 'Biểu diễn cồng chiêng tại Biển Hồ.',
+            startsAt: '2026-11-01T19:00:00.000Z',
+            endsAt: '2026-11-01T21:00:00.000Z',
+            eventStatus: 'SCHEDULED',
+            sourceReference: 'Lịch sự kiện Pleiku',
+            updatedAt: '2026-10-30T00:00:00.000Z',
+          },
+        ],
+        services: [
+          {
+            id: 'sv-1',
+            placeId: firstPlace.id,
+            placeTitle: firstPlace.title,
+            partnerId: 'pt-1',
+            partnerName: 'HTX Du lịch Pleiku',
+            title: 'Tour bình minh Biển Hồ',
+            description: 'Trải nghiệm ngắm bình minh và thưởng thức cà phê.',
+            serviceType: 'EXPERIENCE',
+            priceUnit: 'khách',
+            unitPriceVnd: '250000',
+            active: true,
+            sourceReference: 'Bảng giá HTX Pleiku',
+            updatedAt: '2026-10-30T00:00:00.000Z',
+            slots: [
+              {
+                id: 'sl-1',
+                serviceId: 'sv-1',
+                startsAt: '2026-11-02T05:30:00.000Z',
+                endsAt: '2026-11-02T09:00:00.000Z',
+                capacity: 12,
+                heldQuantity: 0,
+                soldQuantity: 2,
+                availableQuantity: 10,
+              },
+            ],
+          },
+        ],
+      },
+    });
+    vi.mocked(getPlaceAudioGuides).mockResolvedValue({ data: [], dataset: 'live' });
+    vi.mocked(getEvents).mockResolvedValue({
+      dataset: 'live',
+      data: [
+        {
+          id: 'ev-1',
+          placeId: firstPlace.id,
+          placeTitle: firstPlace.title,
+          region: firstPlace.region,
+          title: 'Không gian Cồng chiêng Tây Nguyên cuối tuần',
+          description: 'Biểu diễn cồng chiêng tại Biển Hồ.',
+          startsAt: '2026-11-01T19:00:00.000Z',
+          endsAt: '2026-11-01T21:00:00.000Z',
+          eventStatus: 'SCHEDULED',
+          sourceReference: 'Lịch sự kiện Pleiku',
+          updatedAt: '2026-10-30T00:00:00.000Z',
+        },
+      ],
+      meta: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+    });
+    vi.mocked(getEvent).mockResolvedValue({
+      dataset: 'live',
+      data: {
+        id: 'ev-1',
+        placeId: firstPlace.id,
+        placeTitle: firstPlace.title,
+        region: firstPlace.region,
+        title: 'Không gian Cồng chiêng Tây Nguyên cuối tuần',
+        description: 'Biểu diễn cồng chiêng tại Biển Hồ.',
+        startsAt: '2026-11-01T19:00:00.000Z',
+        endsAt: '2026-11-01T21:00:00.000Z',
+        eventStatus: 'SCHEDULED',
+        sourceReference: 'Lịch sự kiện Pleiku',
+        updatedAt: '2026-10-30T00:00:00.000Z',
+      },
+    });
+    vi.mocked(getServices).mockResolvedValue({
+      dataset: 'live',
+      data: [],
+      meta: { page: 1, pageSize: 12, total: 0, totalPages: 1 },
+    });
+    vi.mocked(getService).mockResolvedValue({
+      dataset: 'live',
+      data: {
+        id: 'sv-1',
+        placeId: firstPlace.id,
+        placeTitle: firstPlace.title,
+        partnerId: 'pt-1',
+        partnerName: 'HTX Du lịch Pleiku',
+        title: 'Tour bình minh Biển Hồ',
+        description: 'Trải nghiệm ngắm bình minh và thưởng thức cà phê.',
+        serviceType: 'EXPERIENCE',
+        priceUnit: 'khách',
+        unitPriceVnd: '250000',
+        active: true,
+        sourceReference: 'Bảng giá HTX Pleiku',
+        updatedAt: '2026-10-30T00:00:00.000Z',
+        slots: [],
+      },
+    });
+
+    const placeRouter = createMemoryRouter(appRoutes, {
+      initialEntries: [`/places/${firstPlace.id}`],
+    });
+    const placeView = render(<RouterProvider router={placeRouter} />);
+    expect(await screen.findByText('Huyền thoại Biển Hồ T’Nưng')).toBeInTheDocument();
+    expect(
+      screen.getByText('Biển Hồ Pleiku được hình thành từ miệng núi lửa cổ.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Tour bình minh Biển Hồ')).toBeInTheDocument();
+    placeRouter.dispose();
+    placeView.unmount();
+
+    useAuthStore.setState({
+      enabled: true,
+      phase: 'authenticated',
+      user: {
+        id: 'admin-1',
+        email: 'admin@example.test',
+        displayName: 'Biên tập viên Admin',
+        roles: ['ADMIN'],
+      },
+      note: null,
+    });
+    vi.mocked(getAdminContentMeta).mockResolvedValue({
+      regions: [{ id: firstPlace.region.id, name: firstPlace.region.name, code: 'PLEIKU' }],
+      places: [
+        {
+          id: firstPlace.id,
+          contentId: 'cnt-place-1',
+          category: firstPlace.category,
+          regionId: firstPlace.region.id,
+          title: firstPlace.title,
+        },
+      ],
+      partners: [
+        { id: 'pt-1', contentId: 'cnt-partner-1', status: 'ACTIVE', title: 'HTX Du lịch Pleiku' },
+      ],
+      mediaAssets: [],
+    });
+    const pendingContentItem = {
+      id: 'cnt-1',
+      kind: 'EVENT' as const,
+      visibility: 'DRAFT' as const,
+      publishedRevisionId: null,
+      projectionId: null,
+      title: 'Lễ hội Cồng chiêng mùa thu',
+      latestStatus: 'PENDING' as const,
+      createdBy: 'admin-1',
+      createdAt: '2026-10-30T02:00:00.000Z',
+      updatedAt: '2026-10-30T02:00:00.000Z',
+      revisions: [
+        {
+          id: 'rev-1',
+          contentId: 'cnt-1',
+          revisionNo: 1,
+          status: 'PENDING' as const,
+          sourceReference: 'https://gialai.gov.vn/le-hoi',
+          title: 'Lễ hội Cồng chiêng mùa thu',
+          body: 'Sự kiện văn hóa cồng chiêng tại Pleiku.',
+          transcript: null,
+          audioAssetId: null,
+          payload: {},
+          submittedBy: 'admin-1',
+          reviewedBy: null,
+          reviewedAt: null,
+          rejectionReason: null,
+          createdAt: '2026-10-30T02:00:00.000Z',
+        },
+      ],
+    };
+    vi.mocked(listAdminContents).mockResolvedValue({
+      data: [pendingContentItem],
+      meta: { page: 1, pageSize: 25, total: 1, totalPages: 1 },
+    });
+    vi.mocked(reviewAdminRevision).mockResolvedValue({
+      ...pendingContentItem,
+      visibility: 'PUBLIC',
+      publishedRevisionId: 'rev-1',
+      latestStatus: 'PUBLISHED',
+      revisions: [
+        {
+          ...pendingContentItem.revisions[0],
+          status: 'PUBLISHED',
+          reviewedBy: 'admin-1',
+          reviewedAt: '2026-10-30T02:05:00.000Z',
+        },
+      ],
+    });
+    vi.mocked(createAdminContent).mockResolvedValue(pendingContentItem);
+    vi.mocked(createAdminRevision).mockResolvedValue(pendingContentItem);
+    vi.mocked(submitAdminRevision).mockResolvedValue(pendingContentItem);
+    vi.mocked(updateAdminContentVisibility).mockResolvedValue(pendingContentItem);
+    vi.mocked(createAdminMediaAsset).mockResolvedValue({} as never);
+
+    const adminRouter = createMemoryRouter(appRoutes, { initialEntries: [APP_PATHS.ADMIN] });
+    render(<RouterProvider router={adminRouter} />);
+    expect(
+      await screen.findByRole('heading', { name: 'Quản trị nội dung & Hàng đợi duyệt' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Lễ hội Cồng chiêng mùa thu')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Duyệt công bố #1' }));
+    expect(
+      await screen.findByText(
+        'Đã duyệt công bố "Lễ hội Cồng chiêng mùa thu" và đồng bộ bảng hiển thị công khai.',
+      ),
+    ).toBeInTheDocument();
+    adminRouter.dispose();
   });
 });

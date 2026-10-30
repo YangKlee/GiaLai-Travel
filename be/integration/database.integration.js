@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { randomUUID } from 'node:crypto';
+import { generateKeyPairSync, randomUUID } from 'node:crypto';
 import mysql from 'mysql2/promise';
 import { fn } from 'sequelize';
 import { createDatabase } from '../src/db/database.js';
@@ -141,4 +141,359 @@ test('MariaDB: admin bootstrap is explicit, hashed, atomic and never promotes an
   assert.equal(await database.models.AuditLogs.count({ where: { action: 'ADMIN_BOOTSTRAP' } }), 1);
   await assert.rejects(bootstrapAdmin(database, credentials), /ACCOUNT_ALREADY_EXISTS_NO_ROLE_CHANGED/);
   assert.equal(await database.models.Users.count(), 1);
+});
+
+test('MariaDB: CMS content revision workflow, media validation, audio guides, events and partner services', async (t) => {
+  const { database } = await isolatedDatabase(t);
+  const regionId = randomUUID();
+  await database.models.Regions.create({ id: regionId, code: 'PLEIKU', name: 'Pleiku & phụ cận' });
+
+  const adminCredentials = {
+    email: 'cms-admin@example.test',
+    password: 'Admin-CMS-password-🌿!',
+    displayName: 'Biên tập viên CMS',
+  };
+  await bootstrapAdmin(database, adminCredentials);
+
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const auth = {
+    privateKey,
+    publicKeys: new Map([['integration', publicKey]]),
+    kid: 'integration',
+    issuer: 'integration-api',
+    audience: 'integration-web',
+    origins: ['http://localhost:5173'],
+    secure: false,
+    accessSeconds: 900,
+    sessionMilliseconds: 7 * 86400_000,
+    resetMilliseconds: 15 * 60_000,
+  };
+
+  const server = createApp({ database, auth }).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        'X-CSRF-Protection': '1',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ email: adminCredentials.email, password: adminCredentials.password }),
+    });
+    assert.equal(loginRes.status, 200);
+    const {
+      data: { accessToken },
+    } = await loginRes.json();
+    const authHeaders = {
+      Origin: 'http://localhost:5173',
+      'X-CSRF-Protection': '1',
+      'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
+    };
+
+    // 1. Media Asset validation: reject path traversal, script payload, and mismatched magic bytes
+    const traversalMedia = await fetch(`${baseUrl}/api/v1/admin/media-assets`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaType: 'IMAGE',
+        mimeType: 'image/png',
+        storageKey: '../etc/passwd.png',
+        byteSize: 120,
+        sha256Hex: 'a'.repeat(64),
+        sourceReference: 'https://gialai.gov.vn/media',
+        licenseNote: 'CC-BY-4.0',
+      }),
+    });
+    assert.equal(traversalMedia.status, 422);
+
+    const scriptMedia = await fetch(`${baseUrl}/api/v1/admin/media-assets`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaType: 'IMAGE',
+        mimeType: 'image/png',
+        storageKey: 'uploads/bad.png',
+        contentBase64: Buffer.from('<script>alert(1)</script>').toString('base64'),
+        sourceReference: 'https://gialai.gov.vn/media',
+        licenseNote: 'CC-BY-4.0',
+      }),
+    });
+    assert.equal(scriptMedia.status, 422);
+
+    // Valid WAV audio asset
+    const validWavBuffer = Buffer.from(
+      'UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=',
+      'base64',
+    );
+    const audioAssetRes = await fetch(`${baseUrl}/api/v1/admin/media-assets`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        mediaType: 'AUDIO',
+        mimeType: 'audio/wav',
+        storageKey: 'audio/bien-ho-vi.wav',
+        contentBase64: validWavBuffer.toString('base64'),
+        sourceReference: 'https://gialai.gov.vn/audio',
+        licenseNote: 'Sở Du lịch Gia Lai',
+        offlineAllowed: true,
+      }),
+    });
+    assert.equal(audioAssetRes.status, 201);
+    const { data: audioAsset } = await audioAssetRes.json();
+
+    // 2. Create PLACE content (initially PENDING -> not visible in public /places)
+    const placeCreateRes = await fetch(`${baseUrl}/api/v1/admin/contents`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        kind: 'PLACE',
+        title: 'Biển Hồ T’Nưng V1',
+        body: 'Đôi mắt Pleiku giữa cao nguyên bazan.',
+        sourceReference: 'https://gialai.gov.vn/bien-ho',
+        submitImmediately: true,
+        payload: {
+          regionId,
+          category: 'NATURE',
+          latitude: 14.0462,
+          longitude: 108.0002,
+          referencePriceVnd: '20000',
+          typicalDurationMinutes: 90,
+          openingHours: [{ weekday: 1, opensAt: '07:00:00', closesAt: '17:30:00' }],
+        },
+      }),
+    });
+    assert.equal(placeCreateRes.status, 201);
+    const { data: placeContentV1 } = await placeCreateRes.json();
+    assert.equal(placeContentV1.visibility, 'DRAFT');
+
+    const beforeApprovePlaces = await (await fetch(`${baseUrl}/api/v1/places`)).json();
+    assert.equal(beforeApprovePlaces.data.length, 0);
+
+    // Approve PLACE revision #1 -> atomically updates published_revision_id and projection
+    const approvePlaceRes = await fetch(
+      `${baseUrl}/api/v1/admin/contents/${placeContentV1.id}/revisions/${placeContentV1.revisions[0].id}/review`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ decision: 'APPROVE' }),
+      },
+    );
+    assert.equal(approvePlaceRes.status, 200);
+    const { data: approvedPlaceContent } = await approvePlaceRes.json();
+    assert.equal(approvedPlaceContent.visibility, 'PUBLIC');
+    const placeId = approvedPlaceContent.projectionId;
+    assert.ok(placeId);
+
+    // 3. Create Revision #2 (PENDING) and verify public endpoint still serves Revision #1
+    const rev2Res = await fetch(`${baseUrl}/api/v1/admin/contents/${placeContentV1.id}/revisions`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        title: 'Biển Hồ T’Nưng V2 (Chưa duyệt)',
+        body: 'Bản nháp đang chờ duyệt không được ghi đè bản công khai.',
+        sourceReference: 'https://gialai.gov.vn/bien-ho-v2',
+        submitImmediately: true,
+        payload: {
+          regionId,
+          category: 'NATURE',
+          latitude: 14.0462,
+          longitude: 108.0002,
+          referencePriceVnd: '50000',
+          typicalDurationMinutes: 120,
+        },
+      }),
+    });
+    assert.equal(rev2Res.status, 201);
+    const { data: placeWithRev2 } = await rev2Res.json();
+    const rev2 = placeWithRev2.revisions.find((r) => r.revisionNo === 2);
+
+    const publicPlaceDuringRev2 = await (await fetch(`${baseUrl}/api/v1/places/${placeId}`)).json();
+    assert.equal(publicPlaceDuringRev2.data.title, 'Biển Hồ T’Nưng V1');
+
+    // Reject Revision #2 without reason -> 422; with reason -> 200 REJECTED while V1 stays live
+    const rejectMissingReason = await fetch(
+      `${baseUrl}/api/v1/admin/contents/${placeContentV1.id}/revisions/${rev2.id}/review`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ decision: 'REJECT' }),
+      },
+    );
+    assert.equal(rejectMissingReason.status, 422);
+
+    const rejectRev2Res = await fetch(
+      `${baseUrl}/api/v1/admin/contents/${placeContentV1.id}/revisions/${rev2.id}/review`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          decision: 'REJECT',
+          rejectionReason: 'Chưa có văn bản xác nhận tăng giá vé tham khảo.',
+        }),
+      },
+    );
+    assert.equal(rejectRev2Res.status, 200);
+
+    // 4. Create & Approve AUDIO, EVENT, PARTNER, SERVICE (with slots)
+    const audioCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          kind: 'AUDIO',
+          title: 'Thuyết minh Biển Hồ tiếng Việt',
+          body: 'Giới thiệu lịch sử miệng núi lửa Biển Hồ.',
+          transcript: 'Biển Hồ Pleiku nguyên là miệng núi lửa đã ngừng hoạt động hàng triệu năm.',
+          audioAssetId: audioAsset.id,
+          sourceReference: 'https://gialai.gov.vn/audio-bien-ho',
+          submitImmediately: true,
+          payload: { placeId, premiumOnly: false },
+        }),
+      })
+    ).json();
+    await fetch(
+      `${baseUrl}/api/v1/admin/contents/${audioCreate.data.id}/revisions/${audioCreate.data.revisions[0].id}/review`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ decision: 'APPROVE' }),
+      },
+    );
+
+    const eventCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          kind: 'EVENT',
+          title: 'Lễ hội Hoa Dã Quỳ - Núi lửa Chư Đăng Ya',
+          body: 'Tuần lễ văn hóa du lịch và trình diễn cồng chiêng.',
+          sourceReference: 'https://gialai.gov.vn/le-hoi-da-quy',
+          submitImmediately: true,
+          payload: {
+            placeId,
+            startsAt: '2026-11-10T01:00:00.000Z',
+            endsAt: '2026-11-12T10:00:00.000Z',
+            eventStatus: 'SCHEDULED',
+          },
+        }),
+      })
+    ).json();
+    await fetch(
+      `${baseUrl}/api/v1/admin/contents/${eventCreate.data.id}/revisions/${eventCreate.data.revisions[0].id}/review`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ decision: 'APPROVE' }),
+      },
+    );
+
+    const partnerCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          kind: 'PARTNER',
+          title: 'HTX Du lịch Cộng đồng Pleiku',
+          body: 'Đơn vị lữ hành bản địa.',
+          sourceReference: 'https://gialai.gov.vn/partner-pleiku',
+          submitImmediately: true,
+          payload: { status: 'ACTIVE', contactEmail: 'htx@pleiku.test' },
+        }),
+      })
+    ).json();
+    const approvedPartner = await (
+      await fetch(
+        `${baseUrl}/api/v1/admin/contents/${partnerCreate.data.id}/revisions/${partnerCreate.data.revisions[0].id}/review`,
+        {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ decision: 'APPROVE' }),
+        },
+      )
+    ).json();
+    const partnerId = approvedPartner.data.projectionId;
+
+    const serviceCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          kind: 'SERVICE',
+          title: 'Trải nghiệm thuyền độc mộc & cà phê Biển Hồ',
+          body: 'Ngắm bình minh và thưởng thức cà phê nguyên bản.',
+          sourceReference: 'https://gialai.gov.vn/service-bien-ho',
+          submitImmediately: true,
+          payload: {
+            partnerId,
+            placeId,
+            serviceType: 'EXPERIENCE',
+            priceUnit: 'khách',
+            unitPriceVnd: '250000',
+            active: true,
+            slots: [
+              {
+                startsAt: '2026-11-15T00:00:00.000Z',
+                endsAt: '2026-11-15T03:00:00.000Z',
+                capacity: 10,
+              },
+            ],
+          },
+        }),
+      })
+    ).json();
+    const approvedService = await (
+      await fetch(
+        `${baseUrl}/api/v1/admin/contents/${serviceCreate.data.id}/revisions/${serviceCreate.data.revisions[0].id}/review`,
+        {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({ decision: 'APPROVE' }),
+        },
+      )
+    ).json();
+    const serviceId = approvedService.data.projectionId;
+
+    // 5. Verify enriched Place detail, Audio Guides, Events, and Services endpoints
+    const enrichedPlaceRes = await fetch(`${baseUrl}/api/v1/places/${placeId}`);
+    assert.equal(enrichedPlaceRes.status, 200);
+    const enrichedPlace = (await enrichedPlaceRes.json()).data;
+    assert.equal(enrichedPlace.audioGuides.length, 1);
+    assert.equal(
+      enrichedPlace.audioGuides[0].transcript,
+      'Biển Hồ Pleiku nguyên là miệng núi lửa đã ngừng hoạt động hàng triệu năm.',
+    );
+    assert.equal(enrichedPlace.events.length, 1);
+    assert.equal(enrichedPlace.services.length, 1);
+    assert.equal(enrichedPlace.services[0].slots[0].availableQuantity, 10);
+
+    const eventsListRes = await fetch(`${baseUrl}/api/v1/events`);
+    assert.equal(eventsListRes.status, 200);
+    assert.equal((await eventsListRes.json()).data.length, 1);
+
+    const serviceDetailRes = await fetch(`${baseUrl}/api/v1/services/${serviceId}`);
+    assert.equal(serviceDetailRes.status, 200);
+    assert.equal((await serviceDetailRes.json()).data.unitPriceVnd, '250000');
+
+    // 6. Hiding content removes it from public endpoints immediately
+    const hideEventRes = await fetch(
+      `${baseUrl}/api/v1/admin/contents/${eventCreate.data.id}/visibility`,
+      {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ visibility: 'HIDDEN' }),
+      },
+    );
+    assert.equal(hideEventRes.status, 200);
+    const eventsAfterHide = await (await fetch(`${baseUrl}/api/v1/events`)).json();
+    assert.equal(eventsAfterHide.data.length, 0);
+  } finally {
+    await new Promise((resolve) => {
+      server.close(resolve);
+      server.closeAllConnections();
+    });
+  }
 });

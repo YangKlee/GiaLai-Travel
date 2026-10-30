@@ -1,6 +1,10 @@
 export const ROUTE_SEGMENTS = {
   EXPLORE: 'explore',
   PLACES: 'places/:id',
+  EVENTS: 'events',
+  EVENT_DETAIL: 'events/:id',
+  SERVICES: 'services',
+  SERVICE_DETAIL: 'services/:id',
   TRIPS: 'trips',
   ADMIN: 'admin',
   LOGIN: 'login',
@@ -17,6 +21,8 @@ export const ROUTE_SEGMENTS = {
 export const APP_PATHS = {
   HOME: '/',
   EXPLORE: `/${ROUTE_SEGMENTS.EXPLORE}`,
+  EVENTS: `/${ROUTE_SEGMENTS.EVENTS}`,
+  SERVICES: `/${ROUTE_SEGMENTS.SERVICES}`,
   TRIPS: `/${ROUTE_SEGMENTS.TRIPS}`,
   ADMIN: `/${ROUTE_SEGMENTS.ADMIN}`,
   LOGIN: `/${ROUTE_SEGMENTS.LOGIN}`,
@@ -29,4 +35,7 @@ export const APP_PATHS = {
   NOT_FOUND: `/${ROUTE_SEGMENTS.NOT_FOUND}`,
   SERVER_ERROR: `/${ROUTE_SEGMENTS.SERVER_ERROR}`,
   place: (id: string) => `/${ROUTE_SEGMENTS.PLACES.replace(':id', encodeURIComponent(id))}`,
+  event: (id: string) => `/${ROUTE_SEGMENTS.EVENT_DETAIL.replace(':id', encodeURIComponent(id))}`,
+  service: (id: string) =>
+    `/${ROUTE_SEGMENTS.SERVICE_DETAIL.replace(':id', encodeURIComponent(id))}`,
 } as const;
