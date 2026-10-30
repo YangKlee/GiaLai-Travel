@@ -11,6 +11,16 @@ export async function sessionLoader() {
   return null;
 }
 
+export async function resetPasswordLoader({ request }: LoaderFunctionArgs) {
+  await bootstrapAuth();
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token')?.trim() ?? '';
+  if (token && typeof window !== 'undefined' && window.location.search.includes('token=')) {
+    window.history.replaceState(window.history.state, '', APP_PATHS.RESET_PASSWORD);
+  }
+  return { token };
+}
+
 export async function accountLoader({ request }: LoaderFunctionArgs) {
   await bootstrapAuth();
   if (useAuthStore.getState().phase !== 'authenticated')

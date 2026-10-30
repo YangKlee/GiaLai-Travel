@@ -4,8 +4,12 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useTripDraftStore } from '@/store/useTripDraftStore';
 import type {
   AuthUser,
+  ForgotPasswordInput,
+  ForgotPasswordResponse,
   LoginInput,
   RegistrationInput,
+  ResetPasswordInput,
+  ResetPasswordResponse,
   SessionResponse,
 } from '@/features/auth/types/auth';
 
@@ -166,6 +170,38 @@ export async function logout(): Promise<void> {
     useAuthStore.setState({
       note: 'Đã xóa phiên trên trình duyệt. Máy chủ chưa xác nhận đăng xuất; hãy kết nối lại và đăng nhập khi cần.',
     });
+    throw toApiError(error);
+  }
+}
+
+export async function requestPasswordReset(
+  input: ForgotPasswordInput,
+): Promise<ForgotPasswordResponse['data']> {
+  try {
+    const response = await client.post<ForgotPasswordResponse>(
+      '/api/v1/auth/forgot-password',
+      input,
+      { headers: csrf },
+    );
+    return response.data.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function resetPassword(
+  input: ResetPasswordInput,
+): Promise<ResetPasswordResponse['data']> {
+  setupChannel();
+  try {
+    const response = await withSessionLock(() =>
+      client.post<ResetPasswordResponse>('/api/v1/auth/reset-password', input, { headers: csrf }),
+    );
+    markSignedOut(true);
+    clearAuthSession();
+    channel?.postMessage({ type: 'logout' });
+    return response.data.data;
+  } catch (error) {
     throw toApiError(error);
   }
 }

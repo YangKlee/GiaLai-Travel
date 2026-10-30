@@ -55,7 +55,7 @@ client.interceptors.response.use(
         config.headers.set('Authorization', 'Bearer ' + getAccessToken());
         return client.request(config);
       }
-      clearAuthSession('Phi?n ?? k?t th?c. Vui l?ng ??ng nh?p l?i.');
+      clearAuthSession('Phiên đã kết thúc. Vui lòng đăng nhập lại.');
     }
     throw toApiError(error);
   },

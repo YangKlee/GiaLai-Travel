@@ -72,6 +72,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           Tài khoản đã được tạo. Bạn có thể đăng nhập ngay.
         </p>
       ) : null}
+      {params.get('reset') === '1' ? (
+        <p role="status" className="success-note">
+          Mật khẩu đã được đặt lại. Vui lòng đăng nhập bằng mật khẩu mới.
+        </p>
+      ) : null}
       <form onSubmit={(event) => void submit(event)} className="auth-form">
         {registering ? (
           <Input
@@ -142,6 +147,11 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           {registering ? 'Tạo tài khoản' : 'Đăng nhập'}
         </Button>
       </form>
+      {!registering ? (
+        <p className="auth-switch">
+          <Link to={APP_PATHS.FORGOT_PASSWORD}>Quên mật khẩu?</Link>
+        </p>
+      ) : null}
       <p className="auth-switch">
         {registering ? 'Bạn đã có tài khoản?' : 'Bạn chưa có tài khoản?'}{' '}
         <Link to={registering ? APP_PATHS.LOGIN : APP_PATHS.REGISTER}>
