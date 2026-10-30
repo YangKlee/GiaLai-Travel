@@ -37,7 +37,7 @@ export async function exploreLoader({ request }: LoaderFunctionArgs) {
   for (const [key, value] of new URL(request.url).searchParams) {
     if (filterKeys.has(key) && value.trim()) query.append(key, value);
   }
-  if (!query.has('pageSize')) query.set('pageSize', '6');
+  if (!query.has('pageSize')) query.set('pageSize', '12');
   const [catalog, places] = await Promise.all([
     getCatalog(request.signal),
     getPlaces(query, request.signal),

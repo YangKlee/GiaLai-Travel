@@ -9,6 +9,7 @@ import {
   Flag,
   Info,
   MapPin,
+  Navigation,
   Sparkles,
   Ticket,
 } from 'lucide-react';
@@ -275,13 +276,58 @@ export default function PlaceDetailPage() {
             )}
           </section>
           <section className="content-card">
-            <h3>Vị trí</h3>
-            {mapUrl ? (
-              <a href={mapUrl} rel="noreferrer" target="_blank" className="map-link">
-                <MapPin size={20} aria-hidden="true" />
-                Xem trên OpenStreetMap
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </a>
+            <h3>Vị trí trên bản đồ</h3>
+            {place.latitude !== null && place.longitude !== null ? (
+              <div className="map-embed-container">
+                <div className="map-iframe-wrapper">
+                  <iframe
+                    title={`Bản đồ Google Maps cho ${place.title}`}
+                    src={`https://maps.google.com/maps?q=${place.latitude},${place.longitude}&hl=vi&z=15&output=embed`}
+                    width="100%"
+                    height="260"
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+                <div className="map-actions-row">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                    rel="noreferrer"
+                    target="_blank"
+                    className={buttonVariants({ variant: 'secondary' })}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                  >
+                    <Navigation size={16} aria-hidden="true" />
+                    Chỉ đường trên Google Maps
+                    <ArrowUpRight size={14} aria-hidden="true" />
+                  </a>
+                  <div className="map-sub-links">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${place.latitude},${place.longitude}`}
+                      rel="noreferrer"
+                      target="_blank"
+                      className="muted"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      Mở Google Maps lớn
+                      <ArrowUpRight size={12} aria-hidden="true" />
+                    </a>
+                    {mapUrl ? (
+                      <a
+                        href={mapUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                        className="muted"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        OpenStreetMap
+                        <ArrowUpRight size={12} aria-hidden="true" />
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
             ) : (
               <p className="muted">Chưa có tọa độ được xác minh.</p>
             )}
