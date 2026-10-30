@@ -14,8 +14,9 @@
 | D6 — Tài khoản BE/FE | Đăng ký/login/refresh/logout/me; JWT RS256, cookie HttpOnly, CORS/CSRF/rate limit, form/account page, multi-tab và demo local có tài khoản | 16 unit BE, 8 unit FE, 13 integration MariaDB, browser E2E tài khoản và lint/build/format đạt local |
 | D7 — Audit, Jobs & Khôi phục mật khẩu | Audit redaction, notification idempotency, adapter contracts (mail/AI/routing/storage), CLI job runner có advisory lock, clock seam và `/auth/forgot-password`, `/auth/reset-password` BE/FE | 18 unit BE, 9 unit FE, 15 integration MariaDB, browser E2E khôi phục mật khẩu (xóa token khỏi URL, axe WCAG A/AA) đạt local |
 | D8 — Hồ sơ, Consent & Quyền dữ liệu | `/me/profile`, `/me/preferences`, `/me/consents` (khóa chủ thể cấp `decision_no` tuần tự, mặc định chưa đồng ý) và `/me/privacy-requests` (xác minh lại mật khẩu, gói xuất JSON có hạn 7 ngày, job ẩn danh bảo vệ đơn đang hoạt động) trên BE/FE | 18 unit BE, 10 unit FE, 16 integration MariaDB, browser E2E hồ sơ/consent/export và lint/build/format đạt local |
+| D9 — Quản trị nội dung & Duyệt CMS | Workflow revision bất biến (`/api/v1/admin/contents`), kiểm duyệt media (MIME, chống traversal/script/magic bytes), kiểm tra nguồn công bố bắt buộc, đóng cửa tạm thời, thuyết minh âm thanh tiếng Việt, sự kiện và dịch vụ đối tác/slots trên BE/FE | 18 unit BE, 11 unit FE, 17 integration MariaDB, 10 E2E Playwright và lint/build/format đạt local |
 
-Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`; chuyển runtime sang scaffold Sequelize: `ca59920`; migration/integration/bootstrap: `8b5baf4`; audit/jobs & khôi phục mật khẩu: `b22ba80`. Tài liệu cấu trúc ban đầu: `57a8d9c`.
+Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`; chuyển runtime sang scaffold Sequelize: `ca59920`; migration/integration/bootstrap: `8b5baf4`; audit/jobs & khôi phục mật khẩu: `b22ba80`; hồ sơ & consent: `dabde15`; CMS revision & media/events/services: `04b816d`. Tài liệu cấu trúc ban đầu: `57a8d9c`.
 
 ## Đối chiếu backlog
 
