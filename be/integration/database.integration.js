@@ -11,7 +11,8 @@ import { serializeUtc } from '../src/shared/time.js';
 import { createCatalogRepository } from '../src/modules/catalog/catalog.repository.js';
 import { createApp } from '../src/app.js';
 import { bootstrapAdmin } from '../src/modules/auth/bootstrap.js';
-import { verifyPassword } from '../src/shared/password.js';
+import { hashPassword, verifyPassword } from '../src/shared/password.js';
+import { createJobRunner } from '../src/jobs/job-runner.js';
 
 test('MariaDB: fresh baseline, repeat-safe migration, ledger checksum and concurrent lock', async (t) => {
   const { admin, name } = await isolatedDatabase(t);
@@ -780,6 +781,425 @@ test('MariaDB: AI itinerary proposal (7 inputs), independent validator, revalida
       headers: authHeaders,
     });
     assert.equal(getDeletedRes.status, 404);
+  } finally {
+    await new Promise((resolve) => {
+      server.close(resolve);
+      server.closeAllConnections();
+    });
+  }
+});
+
+test('MariaDB: Booking lifecycle — quote, lead-time check, admin review/capacity hold, mock payment attempt, cancel with 100% refund, complete with mock commission, and expire overdue bookings job', async (t) => {
+  const { database } = await isolatedDatabase(t);
+  const regionId = randomUUID();
+  await database.models.Regions.create({ id: regionId, code: 'PLEIKU', name: 'Pleiku & phụ cận' });
+
+  // 1. Create Admin & Tourist users
+  const adminCredentials = {
+    email: 'booking-admin@example.test',
+    password: 'Booking-admin-password-🌿!',
+    displayName: 'Quản trị viên Đặt chỗ',
+  };
+  await bootstrapAdmin(database, adminCredentials);
+
+  const touristPassword = 'Tourist-test-password-🌿!';
+  const touristHash = await hashPassword(touristPassword);
+  const touristUser = await database.models.Users.create({
+    id: randomUUID(),
+    email: 'tourist-booker@example.test',
+    password_hash: touristHash,
+    display_name: 'Du khách Đặt tour',
+    status: 'ACTIVE',
+  });
+  await database.models.UserRoles.create({
+    user_id: touristUser.id,
+    role_code: 'TOURIST',
+  });
+
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const auth = {
+    privateKey,
+    publicKeys: new Map([['integration', publicKey]]),
+    kid: 'integration',
+    issuer: 'integration-api',
+    audience: 'integration-web',
+    origins: ['http://localhost:5173'],
+    secure: false,
+    accessSeconds: 900,
+    sessionMilliseconds: 7 * 86400_000,
+    resetMilliseconds: 15 * 60_000,
+  };
+
+  const server = createApp({ database, auth }).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+  try {
+    // 2. Login Admin and Tourist
+    const adminLoginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        'X-CSRF-Protection': '1',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ email: adminCredentials.email, password: adminCredentials.password }),
+    });
+    const { data: { accessToken: adminToken } } = await adminLoginRes.json();
+    const adminHeaders = {
+      Origin: 'http://localhost:5173',
+      'X-CSRF-Protection': '1',
+      Authorization: `Bearer ${adminToken}`,
+      'content-type': 'application/json',
+    };
+
+    const touristLoginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        'X-CSRF-Protection': '1',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ email: touristUser.email, password: touristPassword }),
+    });
+    const { data: { accessToken: touristToken } } = await touristLoginRes.json();
+    const touristHeaders = {
+      Origin: 'http://localhost:5173',
+      'X-CSRF-Protection': '1',
+      Authorization: `Bearer ${touristToken}`,
+      'content-type': 'application/json',
+    };
+
+    // 3. Create published Partner and Service with slots
+    const partnerCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          kind: 'PARTNER',
+          title: 'HTX Du lịch Cộng đồng Pleiku',
+          body: 'Đơn vị lữ hành bản địa Gia Lai.',
+          sourceReference: 'https://gialai.gov.vn/partner-booking-test',
+          submitImmediately: true,
+        }),
+      })
+    ).json();
+    const approvedPartner = await (
+      await fetch(
+        `${baseUrl}/api/v1/admin/contents/${partnerCreate.data.id}/revisions/${partnerCreate.data.revisions[0].id}/review`,
+        {
+          method: 'POST',
+          headers: adminHeaders,
+          body: JSON.stringify({ decision: 'APPROVE' }),
+        },
+      )
+    ).json();
+    const partnerId = approvedPartner.data.projectionId;
+
+    const futureStart = new Date(Date.now() + 48 * 3600_000); // +48 hours
+    const futureEnd = new Date(Date.now() + 52 * 3600_000);   // +52 hours
+    const shortStart = new Date(Date.now() + 10 * 3600_000);  // +10 hours (< 24h30m)
+    const shortEnd = new Date(Date.now() + 12 * 3600_000);
+
+    const serviceCreate = await (
+      await fetch(`${baseUrl}/api/v1/admin/contents`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          kind: 'SERVICE',
+          title: 'Tour Trekking Chư Đang Ya Mùa Dã Quỳ',
+          body: 'Trải nghiệm leo núi lửa Chư Đang Ya ngắm hoa dã quỳ nở rộ.',
+          sourceReference: 'https://gialai.gov.vn/service-chu-dang-ya',
+          submitImmediately: true,
+          payload: {
+            partnerId,
+            serviceType: 'EXPERIENCE',
+            priceUnit: 'khách',
+            unitPriceVnd: '350000',
+            active: true,
+            slots: [
+              {
+                startsAt: futureStart.toISOString(),
+                endsAt: futureEnd.toISOString(),
+                capacity: 10,
+              },
+              {
+                startsAt: shortStart.toISOString(),
+                endsAt: shortEnd.toISOString(),
+                capacity: 10,
+              },
+            ],
+          },
+        }),
+      })
+    ).json();
+
+    const approvedService = await (
+      await fetch(
+        `${baseUrl}/api/v1/admin/contents/${serviceCreate.data.id}/revisions/${serviceCreate.data.revisions[0].id}/review`,
+        {
+          method: 'POST',
+          headers: adminHeaders,
+          body: JSON.stringify({ decision: 'APPROVE' }),
+        },
+      )
+    ).json();
+    const serviceId = approvedService.data.projectionId;
+
+    const serviceDetailRes = await fetch(`${baseUrl}/api/v1/services/${serviceId}`);
+    assert.equal(serviceDetailRes.status, 200);
+    const serviceDetail = (await serviceDetailRes.json()).data;
+    const validSlot = serviceDetail.slots.find((s) => new Date(s.startsAt) > new Date(Date.now() + 25 * 3600_000));
+    const shortSlot = serviceDetail.slots.find((s) => new Date(s.startsAt) < new Date(Date.now() + 20 * 3600_000));
+    assert.ok(validSlot);
+    assert.ok(shortSlot);
+
+    // 4. Test POST /api/v1/booking-quotes
+    const quoteRes = await fetch(`${baseUrl}/api/v1/booking-quotes`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        serviceId,
+        slotId: validSlot.id,
+        quantity: 2,
+      }),
+    });
+    assert.equal(quoteRes.status, 200);
+    const { data: quote } = await quoteRes.json();
+    assert.equal(quote.unitPriceVnd, '350000');
+    assert.equal(quote.totalVnd, '700000');
+    assert.equal(quote.availableQuantity, 10);
+    assert.equal(quote.isAvailable, true);
+
+    // 5. Test Rule BE-20: Insufficient lead time (< 24h30m) -> 422
+    const shortBookingRes = await fetch(`${baseUrl}/api/v1/bookings`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        serviceId,
+        slotId: shortSlot.id,
+        quantity: 2,
+        contactName: 'Du Khách Ngắn Hạn',
+        contactEmail: 'tourist@example.test',
+        idempotencyKey: 'idem-short-lead-1',
+      }),
+    });
+    assert.equal(shortBookingRes.status, 422);
+    const shortErr = await shortBookingRes.json();
+    assert.equal(shortErr.error.code, 'INSUFFICIENT_LEAD_TIME');
+
+    // 6. Test Capacity exceeded -> 409
+    const overCapacityRes = await fetch(`${baseUrl}/api/v1/bookings`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        serviceId,
+        slotId: validSlot.id,
+        quantity: 15, // Slot capacity is 10
+        contactName: 'Du Khách Quá Tải',
+        contactEmail: 'tourist@example.test',
+        idempotencyKey: 'idem-over-cap-1',
+      }),
+    });
+    assert.equal(overCapacityRes.status, 409);
+    const capErr = await overCapacityRes.json();
+    assert.equal(capErr.error.code, 'SLOT_CAPACITY_EXCEEDED');
+
+    // 7. Test Valid Booking creation -> status CHO_DUYET
+    const createBookingRes = await fetch(`${baseUrl}/api/v1/bookings`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        serviceId,
+        slotId: validSlot.id,
+        quantity: 2,
+        contactName: 'Du Khách Mẫu',
+        contactEmail: 'tourist-booker@example.test',
+        contactPhone: '0905123456',
+        idempotencyKey: 'idem-booking-valid-1',
+      }),
+    });
+    assert.equal(createBookingRes.status, 201);
+    const { data: booking1 } = await createBookingRes.json();
+    assert.equal(booking1.status, 'CHO_DUYET');
+    assert.equal(booking1.quantity, 2);
+    assert.equal(booking1.totalVnd, '700000');
+    assert.ok(booking1.reviewDeadline);
+
+    // Verify slot capacity is NOT yet held during CHO_DUYET
+    const slotCheck1 = await database.models.ServiceSlots.findByPk(validSlot.id);
+    assert.equal(slotCheck1.held_quantity, 0);
+    assert.equal(slotCheck1.sold_quantity, 0);
+
+    // 8. Admin reviews and approves booking -> CHO_THANH_TOAN & capacity held
+    const reviewRes = await fetch(`${baseUrl}/api/v1/admin/bookings/${booking1.id}/review`, {
+      method: 'POST',
+      headers: adminHeaders,
+      body: JSON.stringify({ decision: 'APPROVE' }),
+    });
+    assert.equal(reviewRes.status, 200);
+    const { data: approvedBooking1 } = await reviewRes.json();
+    assert.equal(approvedBooking1.status, 'CHO_THANH_TOAN');
+    assert.ok(approvedBooking1.paymentDeadline);
+
+    // Verify slot capacity held_quantity = 2
+    const slotCheck2 = await database.models.ServiceSlots.findByPk(validSlot.id);
+    assert.equal(slotCheck2.held_quantity, 2);
+    assert.equal(slotCheck2.sold_quantity, 0);
+
+    // 9. Tourist mock payment attempt FAILED
+    const payFailRes = await fetch(`${baseUrl}/api/v1/bookings/${booking1.id}/payment-attempts`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        outcome: 'FAILED',
+        idempotencyKey: 'pay-fail-1',
+      }),
+    });
+    assert.equal(payFailRes.status, 200);
+    const { data: bookingAfterFail } = await payFailRes.json();
+    assert.equal(bookingAfterFail.status, 'CHO_THANH_TOAN'); // Still waiting for valid payment
+
+    // 10. Tourist mock payment attempt SUCCEEDED -> DA_XAC_NHAN
+    const paySuccessRes = await fetch(`${baseUrl}/api/v1/bookings/${booking1.id}/payment-attempts`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        outcome: 'SUCCEEDED',
+        idempotencyKey: 'pay-success-1',
+      }),
+    });
+    assert.equal(paySuccessRes.status, 200);
+    const { data: confirmedBooking1 } = await paySuccessRes.json();
+    assert.equal(confirmedBooking1.status, 'DA_XAC_NHAN');
+
+    // Verify slot: held_quantity -> 0, sold_quantity -> 2
+    const slotCheck3 = await database.models.ServiceSlots.findByPk(validSlot.id);
+    assert.equal(slotCheck3.held_quantity, 0);
+    assert.equal(slotCheck3.sold_quantity, 2);
+
+    // 11. Tourist cancels booking prior to starts_at -> 100% mock refund & inventory returned
+    const cancelRes = await fetch(`${baseUrl}/api/v1/bookings/${booking1.id}/cancel`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({ reason: 'Thay đổi kế hoạch du lịch' }),
+    });
+    assert.equal(cancelRes.status, 200);
+    const { data: cancelledBooking1 } = await cancelRes.json();
+    assert.equal(cancelledBooking1.status, 'DA_HUY');
+    assert.ok(cancelledBooking1.cancelledAt);
+
+    // Verify slot inventory released: sold_quantity -> 0
+    const slotCheck4 = await database.models.ServiceSlots.findByPk(validSlot.id);
+    assert.equal(slotCheck4.held_quantity, 0);
+    assert.equal(slotCheck4.sold_quantity, 0);
+
+    // Verify 100% refund record created in DB
+    const refunds = await database.models.Refunds.findAll({ where: { booking_id: booking1.id } });
+    assert.equal(refunds.length, 1);
+    assert.equal(String(refunds[0].amount_vnd), '700000');
+    assert.equal(refunds[0].status, 'HOAN_GIA_LAP_THANH_CONG');
+    assert.equal(refunds[0].is_mock, true);
+
+    // 12. Create Booking 2 and test Admin completion & mock commission
+    const createBooking2Res = await fetch(`${baseUrl}/api/v1/bookings`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        serviceId,
+        slotId: validSlot.id,
+        quantity: 3,
+        contactName: 'Du Khách Nhóm 2',
+        contactEmail: 'tourist-group@example.test',
+        idempotencyKey: 'idem-booking-valid-2',
+      }),
+    });
+    assert.equal(createBooking2Res.status, 201);
+    const { data: booking2 } = await createBooking2Res.json();
+
+    // Admin approve & tourist pay
+    await fetch(`${baseUrl}/api/v1/admin/bookings/${booking2.id}/review`, {
+      method: 'POST',
+      headers: adminHeaders,
+      body: JSON.stringify({ decision: 'APPROVE' }),
+    });
+    await fetch(`${baseUrl}/api/v1/bookings/${booking2.id}/payment-attempts`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({ outcome: 'SUCCEEDED', idempotencyKey: 'pay-success-2' }),
+    });
+
+    // Try complete before ends_at -> 422 SERVICE_NOT_ENDED
+    const prematureComplete = await fetch(`${baseUrl}/api/v1/admin/bookings/${booking2.id}/complete`, {
+      method: 'POST',
+      headers: adminHeaders,
+    });
+    assert.equal(prematureComplete.status, 422);
+
+    // Fast-forward booking2 to the past in DB to satisfy ck_booking_complete and ck_booking_time constraints
+    const pastCreated = new Date(Date.now() - 48 * 3600_000);
+    const pastReview = new Date(Date.now() - 24 * 3600_000);
+    const pastStartsAt = new Date(Date.now() - 5 * 3600_000);
+    const pastEndsAt = new Date(Date.now() - 3600_000);
+    await database.models.Bookings.update(
+      {
+        created_at: pastCreated,
+        review_deadline: pastReview,
+        starts_at: pastStartsAt,
+        ends_at: pastEndsAt,
+      },
+      { where: { id: booking2.id } },
+    );
+
+    const validComplete = await fetch(`${baseUrl}/api/v1/admin/bookings/${booking2.id}/complete`, {
+      method: 'POST',
+      headers: adminHeaders,
+    });
+    assert.equal(validComplete.status, 200);
+    const { data: completedBooking2 } = await validComplete.json();
+    assert.equal(completedBooking2.status, 'HOAN_THANH');
+    assert.ok(completedBooking2.completedAt);
+
+    // Verify commission: 3 * 350,000 = 1,050,000; 10% commission = 105,000 VND
+    const commissions = await database.models.Commissions.findAll({ where: { booking_id: booking2.id } });
+    assert.equal(commissions.length, 1);
+    assert.equal(String(commissions[0].base_amount_vnd), '1050000');
+    assert.equal(String(commissions[0].amount_vnd), '105000');
+    assert.equal(commissions[0].is_mock, true);
+
+    // 13. Test Background Job 'expire-bookings'
+    // Create an overdue review booking
+    const pastReviewDeadline = new Date(Date.now() - 3600_000);
+    const overdueBooking = await database.models.Bookings.create({
+      id: randomUUID(),
+      customer_id: touristUser.id,
+      service_id: serviceId,
+      slot_id: validSlot.id,
+      status: 'CHO_DUYET',
+      quantity: 1,
+      unit_price_vnd: '350000',
+      total_vnd: '350000',
+      commission_percent: 10.0,
+      policy_snapshot: {},
+      service_snapshot: { title: 'Test' },
+      contact_name: 'Overdue Test',
+      contact_email: 'overdue@test.local',
+      starts_at: futureStart,
+      ends_at: futureEnd,
+      review_deadline: pastReviewDeadline,
+      idempotency_key: 'overdue-idem-1',
+      lock_version: 0,
+      created_at: new Date(Date.now() - 86400_000),
+      updated_at: new Date(Date.now() - 86400_000),
+    });
+
+    const jobRunner = createJobRunner({ database });
+    const jobResult = await jobRunner.run('expire-bookings');
+    assert.equal(jobResult.status, 'COMPLETED');
+    assert.ok(jobResult.summary.expiredCount >= 1);
+
+    const reloadedOverdue = await database.models.Bookings.findByPk(overdueBooking.id);
+    assert.equal(reloadedOverdue.status, 'HET_HAN');
   } finally {
     await new Promise((resolve) => {
       server.close(resolve);

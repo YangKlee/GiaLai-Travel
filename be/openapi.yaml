@@ -1179,6 +1179,260 @@ paths:
         "401": *a2
         "403": *a3
         "422": *a5
+  /api/v1/booking-quotes:
+    post:
+      operationId: quoteBooking
+      summary: Get live price quote and availability check for a service slot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Live quote and slot availability
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422": *a5
+  /api/v1/bookings:
+    post:
+      operationId: createBooking
+      summary: Submit a new booking request in CHO_DUYET status
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Created booking in CHO_DUYET status
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409": *a4
+        "422": *a5
+  /api/v1/bookings/{id}/payment-attempts:
+    post:
+      operationId: recordPaymentAttempt
+      summary: Attempt mock payment for a CHO_THANH_TOAN booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Result of mock payment attempt
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409": *a4
+        "422": *a5
+  /api/v1/bookings/{id}/cancel:
+    post:
+      operationId: cancelBooking
+      summary: Cancel a booking with automatic mock refund if previously confirmed
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Cancelled booking record
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409": *a4
+        "422": *a5
+  /api/v1/me/bookings:
+    get:
+      operationId: listMyBookings
+      summary: List tourist's own bookings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated bookings
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "422": *a5
+  /api/v1/me/bookings/{id}:
+    get:
+      operationId: getMyBooking
+      summary: Get details of a single booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422": *a5
+  /api/v1/admin/bookings:
+    get:
+      operationId: listAdminBookings
+      summary: List all bookings for moderation and management
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated admin bookings
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "422": *a5
+  /api/v1/admin/bookings/{id}/review:
+    post:
+      operationId: reviewAdminBooking
+      summary: Approve (hold capacity) or reject a CHO_DUYET booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Reviewed booking record
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409": *a4
+        "422": *a5
+  /api/v1/admin/bookings/{id}/complete:
+    post:
+      operationId: completeAdminBooking
+      summary: Mark a DA_XAC_NHAN booking as HOAN_THANH after service ends and record mock commission
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Completed booking record
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409": *a4
+        "422": *a5
 components:
   responses:
     InvalidCatalogRequest:

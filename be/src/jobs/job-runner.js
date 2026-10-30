@@ -3,6 +3,12 @@ import { Op } from 'sequelize';
 import { appendAudit } from '../shared/audit.js';
 import { resolveNow } from '../shared/time.js';
 import { processPendingPrivacyRequests } from '../modules/privacy/privacy.service.js';
+import { createBookingService } from '../modules/bookings/booking.service.js';
+
+export async function expireBookingsJob({ database, clock, requestId }) {
+  const service = createBookingService(database, { clock });
+  return service.expireOverdueBookings(requestId);
+}
 
 export async function cleanupExpiredAuth({ database, clock }) {
   const now = resolveNow(clock);
@@ -37,6 +43,7 @@ export function createJobRunner({ database, logger, clock }) {
   const jobs = new Map([
     ['cleanup-expired-auth', cleanupExpiredAuth],
     ['process-privacy-requests', processPendingPrivacyRequests],
+    ['expire-bookings', expireBookingsJob],
   ]);
   return {
     register(name, handler) {

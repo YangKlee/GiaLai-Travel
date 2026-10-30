@@ -43,6 +43,12 @@ import {
   listMyItineraries,
   revalidateItineraryProposal,
 } from '@/services/itineraries';
+import {
+  cancelBooking,
+  listAdminBookings,
+  listMyBookings,
+  recordPaymentAttempt,
+} from '@/services/bookings';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ApiError } from '@/services/api';
 
@@ -94,9 +100,24 @@ vi.mock('@/services/itineraries', () => ({
   copyMyItinerary: vi.fn(),
   deleteMyItinerary: vi.fn(),
 }));
+vi.mock('@/services/bookings', () => ({
+  createBooking: vi.fn(),
+  quoteBooking: vi.fn(),
+  listMyBookings: vi.fn(),
+  getMyBooking: vi.fn(),
+  recordPaymentAttempt: vi.fn(),
+  cancelBooking: vi.fn(),
+  listAdminBookings: vi.fn(),
+  reviewAdminBooking: vi.fn(),
+  completeAdminBooking: vi.fn(),
+}));
 beforeEach(() => {
   vi.mocked(getCatalog).mockResolvedValue(catalogFixture);
   vi.mocked(getPlaces).mockResolvedValue(placesFixture);
+  vi.mocked(listAdminBookings).mockResolvedValue({
+    data: [],
+    meta: { page: 1, pageSize: 50, total: 0, totalPages: 1 },
+  });
   useAuthStore.setState({ enabled: true, phase: 'anonymous', user: null, note: null });
 });
 
@@ -736,6 +757,102 @@ describe('Điều hướng ứng dụng', () => {
     expect(
       await screen.findByText(/Đã lưu "Khám phá Gia Lai 2N1Đ" vào danh sách chuyến đi/),
     ).toBeInTheDocument();
+    router.dispose();
+  });
+
+  it('quản lý quy trình đặt dịch vụ: tạo đơn, duyệt giữ chỗ 30p, thanh toán mô phỏng và hủy đơn có hoàn tiền', async () => {
+    const user = userEvent.setup();
+    useAuthStore.setState({
+      enabled: true,
+      phase: 'authenticated',
+      user: {
+        id: 'user-tourist-1',
+        email: 'tourist@example.com',
+        displayName: 'Du Khách Mẫu',
+        roles: ['TOURIST'],
+      },
+      note: null,
+    });
+
+    const mockBooking = {
+      id: 'book-sample-1234',
+      customerId: 'user-tourist-1',
+      customerName: 'Du Khách Mẫu',
+      customerEmail: 'tourist@example.com',
+      serviceId: 'srv-1',
+      serviceTitle: 'Tour Trekking Chư Đang Ya',
+      partnerName: 'Hợp tác xã Du lịch Chư Đang Ya',
+      slotId: 'slot-1',
+      status: 'CHO_THANH_TOAN' as const,
+      quantity: 2,
+      unitPriceVnd: '350000',
+      totalVnd: '700000',
+      commissionPercent: 10,
+      contactName: 'Du Khách Mẫu',
+      contactEmail: 'tourist@example.com',
+      contactPhone: '0905123456',
+      startsAt: '2026-11-20T08:00:00.000Z',
+      endsAt: '2026-11-20T12:00:00.000Z',
+      reviewDeadline: '2026-11-19T08:00:00.000Z',
+      paymentDeadline: '2026-11-19T08:30:00.000Z',
+      reviewedBy: 'admin-1',
+      reviewedAt: '2026-11-19T08:00:00.000Z',
+      rejectionReason: null,
+      cancelledAt: null,
+      completedAt: null,
+      idempotencyKey: 'idem-1234',
+      lockVersion: 1,
+      createdAt: '2026-11-18T08:00:00.000Z',
+      updatedAt: '2026-11-19T08:00:00.000Z',
+    };
+
+    vi.mocked(listMyBookings).mockResolvedValue({
+      data: [mockBooking],
+      meta: { page: 1, pageSize: 50, total: 1, totalPages: 1 },
+    });
+
+    vi.mocked(recordPaymentAttempt).mockResolvedValue({
+      data: {
+        ...mockBooking,
+        status: 'DA_XAC_NHAN',
+      },
+    });
+
+    vi.mocked(cancelBooking).mockResolvedValue({
+      data: {
+        ...mockBooking,
+        status: 'DA_HUY',
+        cancelledAt: '2026-11-19T09:00:00.000Z',
+      },
+    });
+
+    // Mock window.confirm
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const router = createMemoryRouter(appRoutes, { initialEntries: [APP_PATHS.BOOKINGS] });
+    render(<RouterProvider router={router} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Đơn đặt dịch vụ của tôi' }),
+    ).toBeInTheDocument();
+
+    expect(await screen.findByText('Tour Trekking Chư Đang Ya')).toBeInTheDocument();
+    expect(screen.getByText('Chờ thanh toán')).toBeInTheDocument();
+    expect(screen.getByText('700.000 ₫')).toBeInTheDocument();
+
+    // Trigger mock payment
+    const payBtn = screen.getByRole('button', { name: /Thanh toán mô phỏng thành công/ });
+    await user.click(payBtn);
+    expect(recordPaymentAttempt).toHaveBeenCalledWith(
+      'book-sample-1234',
+      expect.objectContaining({ outcome: 'SUCCEEDED' }),
+    );
+
+    // Cancel booking
+    const cancelBtn = screen.getByRole('button', { name: 'Hủy đơn đặt' });
+    await user.click(cancelBtn);
+    expect(cancelBooking).toHaveBeenCalledWith('book-sample-1234', expect.any(String));
+
     router.dispose();
   });
 });

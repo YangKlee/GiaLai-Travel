@@ -5,6 +5,7 @@ import {
   Mountain,
   ShieldCheck,
   Sparkles,
+  Ticket,
   UserRound,
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigation } from 'react-router-dom';
@@ -48,6 +49,12 @@ export function MainLayout() {
               <MapPinned size={18} aria-hidden="true" />
               Chuyến đi của tôi
             </NavLink>
+            {user && (
+              <NavLink to={APP_PATHS.BOOKINGS}>
+                <Ticket size={18} aria-hidden="true" />
+                Đơn đặt chỗ
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink to={APP_PATHS.ADMIN}>
                 <ShieldCheck size={18} aria-hidden="true" />

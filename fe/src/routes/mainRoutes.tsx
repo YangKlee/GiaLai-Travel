@@ -6,6 +6,7 @@ import { APP_PATHS, ROUTE_SEGMENTS } from '@/constants/path';
 import { RouteSuspense } from './RouteSuspense';
 import {
   adminContentLoader,
+  bookingsLoader,
   eventDetailLoader,
   eventsLoader,
   exploreLoader,
@@ -23,6 +24,7 @@ const EventsPage = lazy(() => import('@/features/explore/pages/EventsPage'));
 const EventDetailPage = lazy(() => import('@/features/explore/pages/EventDetailPage'));
 const ServiceDetailPage = lazy(() => import('@/features/explore/pages/ServiceDetailPage'));
 const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
+const BookingsPage = lazy(() => import('@/features/bookings/pages/BookingsPage'));
 const AdminContentPage = lazy(() => import('@/features/admin/pages/AdminContentPage'));
 const ServerErrorPage = lazy(() =>
   import('@/features/errors/pages/ErrorPages').then((m) => ({ default: m.ServerErrorPage })),
@@ -118,6 +120,20 @@ export const mainRoutes: RouteObject[] = [
         element: (
           <RouteSuspense>
             <TripsPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.BOOKINGS,
+        loader: bookingsLoader,
+        element: (
+          <RouteSuspense>
+            <BookingsPage />
           </RouteSuspense>
         ),
         errorElement: (

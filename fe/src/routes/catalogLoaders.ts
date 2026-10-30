@@ -11,6 +11,8 @@ import {
 import { getAdminContentMeta, listAdminContents } from '@/services/admin';
 import { listMyItineraries } from '@/services/itineraries';
 import type { SavedItinerarySummary } from '@/services/itineraries';
+import { listAdminBookings, listMyBookings } from '@/services/bookings';
+import type { BookingRecord } from '@/services/bookings';
 import { bootstrapAuth } from '@/services/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { APP_PATHS } from '@/constants/path';
@@ -81,15 +83,35 @@ export async function tripsLoader({ request }: LoaderFunctionArgs) {
   return { dataset, savedItineraries, isAuthenticated: state.phase === 'authenticated' };
 }
 
+export async function bookingsLoader({ request }: LoaderFunctionArgs) {
+  const { dataset } = await getCatalog(request.signal);
+  await bootstrapAuth();
+  const state = useAuthStore.getState();
+  if (state.phase !== 'authenticated') {
+    return redirect(APP_PATHS.LOGIN);
+  }
+  let bookings: BookingRecord[];
+  try {
+    const res = await listMyBookings({ pageSize: 50 });
+    bookings = res.data;
+  } catch {
+    bookings = [];
+  }
+  return { dataset, bookings, user: state.user };
+}
+
 export async function adminContentLoader({ request }: LoaderFunctionArgs) {
   await bootstrapAuth();
   const state = useAuthStore.getState();
   if (state.phase !== 'authenticated' || !state.user?.roles.includes('ADMIN')) {
     return redirect(APP_PATHS.FORBIDDEN);
   }
-  const [meta, contents] = await Promise.all([
+  const [meta, contents, bookingsRes] = await Promise.all([
     getAdminContentMeta(request.signal),
     listAdminContents(new URLSearchParams({ pageSize: '50' }), request.signal),
+    Promise.resolve(listAdminBookings({ pageSize: 50 })).catch(() => ({
+      data: [] as BookingRecord[],
+    })),
   ]);
-  return { meta, contents };
+  return { meta, contents, bookings: bookingsRes.data };
 }

@@ -9,6 +9,11 @@ import {
   createItineraryProposalsRouter,
   createMyItinerariesRouter,
 } from '../modules/itineraries/itinerary.routes.js';
+import {
+  createAdminBookingsRouter,
+  createBookingsRouter,
+  createMyBookingsRouter,
+} from '../modules/bookings/booking.routes.js';
 
 export function createApiRouter(dependencies) {
   const router = Router();
@@ -38,6 +43,7 @@ export function createApiRouter(dependencies) {
         routingAdapter,
       }),
     );
+    router.use('/v1', createBookingsRouter({ ...dependencies, authService }));
   }
   router.use('/v1/auth', createAuthRouter({ ...dependencies, authService }));
   router.use('/v1/me', createUsersRouter({ ...dependencies, authService }));
@@ -51,9 +57,20 @@ export function createApiRouter(dependencies) {
         routingAdapter,
       }),
     );
+    router.use(
+      '/v1/me/bookings',
+      createMyBookingsRouter({
+        ...dependencies,
+        authService,
+      }),
+    );
   }
   if (dependencies.database?.models && authService) {
     router.use('/v1/admin', createContentRouter({ ...dependencies, authService }));
+    router.use(
+      '/v1/admin/bookings',
+      createAdminBookingsRouter({ ...dependencies, authService }),
+    );
   }
   return router;
 }
