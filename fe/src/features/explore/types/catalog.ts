@@ -22,6 +22,8 @@ export interface Place {
   referencePriceVnd: string | null;
   typicalDurationMinutes: number | null;
   sourceReference: string | null;
+  bannerUrl?: string | null;
+  imageUrl?: string | null;
   updatedAt: string;
 }
 
@@ -63,6 +65,8 @@ export interface EventItem {
   endsAt: string;
   eventStatus: EventStatus;
   sourceReference: string | null;
+  bannerUrl?: string | null;
+  imageUrl?: string | null;
   updatedAt: string;
 }
 

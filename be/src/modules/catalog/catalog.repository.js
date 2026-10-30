@@ -66,6 +66,10 @@ function serializePlace(instance) {
   const row = instance.get({ plain: true });
   const revision = row.content.published_revision;
   const translation = revision.content_translations[0];
+  const payload =
+    typeof revision.payload === 'string'
+      ? safeParse(revision.payload)
+      : revision.payload || {};
   return {
     id: row.id,
     title: translation.title,
@@ -78,6 +82,8 @@ function serializePlace(instance) {
       row.reference_price_vnd === null ? null : String(row.reference_price_vnd),
     typicalDurationMinutes: row.typical_duration_minutes,
     sourceReference: revision.source_reference,
+    bannerUrl: payload.bannerUrl || null,
+    imageUrl: payload.imageUrl || payload.bannerUrl || null,
     updatedAt: serializeUtc(row.updated_at),
   };
 }
@@ -109,6 +115,10 @@ function serializeEvent(instance, placeMap) {
   const row = instance.get({ plain: true });
   const revision = row.content.published_revision;
   const translation = revision.content_translations[0];
+  const payload =
+    typeof revision.payload === 'string'
+      ? safeParse(revision.payload)
+      : revision.payload || {};
   const placeInfo = placeMap?.get(row.place_id);
   return {
     id: row.id,
@@ -121,6 +131,8 @@ function serializeEvent(instance, placeMap) {
     endsAt: serializeUtc(row.ends_at),
     eventStatus: row.event_status,
     sourceReference: revision.source_reference,
+    bannerUrl: payload.bannerUrl || null,
+    imageUrl: payload.imageUrl || payload.bannerUrl || null,
     updatedAt: serializeUtc(revision.created_at),
   };
 }

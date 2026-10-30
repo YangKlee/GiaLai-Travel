@@ -1,0 +1,69 @@
+{
+  "defaultPassword": "GiaLai@2026Test",
+  "accounts": [
+    {
+      "email": "portal@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Cổng Thông Tin Du Lịch (Admin)",
+      "role": "ADMIN",
+      "roleName": "Quản trị viên cổng thông tin",
+      "description": "Tài khoản admin hệ thống kiêm tác giả biên soạn nội dung chính thống."
+    },
+    {
+      "email": "admin@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Quản trị viên Hệ thống (Admin)",
+      "role": "ADMIN",
+      "roleName": "Quản trị viên toàn hệ thống",
+      "description": "Toàn quyền kiểm duyệt nội dung, quản lý người dùng, phân quyền, cấu hình hệ thống và xem audit log."
+    },
+    {
+      "email": "b2g@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Sở Du Lịch & Cơ Quan Quản Lý",
+      "role": "B2G",
+      "roleName": "Cơ quan quản lý nhà nước (B2G)",
+      "description": "Xem các báo cáo chỉ số mật độ du khách, thống kê du lịch địa phương tuân thủ quy chuẩn riêng tư."
+    },
+    {
+      "email": "contributor@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Nguyễn Văn Biên (Cộng tác viên Xúc tiến)",
+      "role": "CONTRIBUTOR",
+      "roleName": "Cộng tác viên nội dung",
+      "description": "Tạo bản thảo bài viết, đề xuất địa điểm, sự kiện mới, gửi duyệt nội dung."
+    },
+    {
+      "email": "partner@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Trần Thị Lan (Chủ Homestay Biển Hồ Xanh)",
+      "role": "PARTNER",
+      "roleName": "Chủ đối tác dịch vụ (Partner Owner)",
+      "description": "Quản lý thông tin cơ sở đối tác, đăng ký dịch vụ lưu trú, trải nghiệm, mở bán slot dịch vụ."
+    },
+    {
+      "email": "partner.staff@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Lê Hoàng Long (Nhân viên Homestay)",
+      "role": "PARTNER",
+      "roleName": "Nhân viên đối tác dịch vụ (Partner Staff)",
+      "description": "Xác nhận đặt chỗ của du khách, kiểm tra dịch vụ tại cơ sở."
+    },
+    {
+      "email": "tourist@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Trần Du Khách (Khách tiêu chuẩn)",
+      "role": "TOURIST",
+      "roleName": "Khách du lịch tiêu chuẩn (Standard)",
+      "description": "Tìm kiếm địa điểm, lên lịch trình du lịch cá nhân, đánh giá trải nghiệm."
+    },
+    {
+      "email": "premium.tourist@gialai.gov.vn",
+      "password": "GiaLai@2026Test",
+      "displayName": "Phạm Hoàng Nam (Hội viên VIP Premium)",
+      "role": "TOURIST",
+      "roleName": "Khách du lịch cao cấp (VIP Premium)",
+      "description": "Tài khoản đã đăng ký gói Premium 1 năm: tải bản đồ offline, audio guide thuyết minh, không quảng cáo."
+    }
+  ]
+}

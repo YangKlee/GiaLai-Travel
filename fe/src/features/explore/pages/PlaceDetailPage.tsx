@@ -110,7 +110,17 @@ export default function PlaceDetailPage() {
 
       <div className="detail-grid">
         <article className="detail-main">
-          <PlaceArtwork category={place.category} large />
+          {place.bannerUrl || place.imageUrl ? (
+            <div className="detail-banner-wrapper">
+              <img
+                src={place.bannerUrl || place.imageUrl || ''}
+                alt={place.title}
+                className="detail-banner-img"
+              />
+            </div>
+          ) : (
+            <PlaceArtwork category={place.category} large />
+          )}
           <section className="content-card">
             <h2>Một điểm dừng, một trải nghiệm</h2>
             <p className="description-full">{place.description}</p>

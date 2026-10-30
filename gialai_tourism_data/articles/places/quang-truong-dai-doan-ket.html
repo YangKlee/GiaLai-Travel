@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quảng trường Đại Đoàn Kết | Cẩm Nang Du Lịch</title>
+  <meta name="description" content="Trái tim của thành phố Pleiku với diện tích 12ha, nơi đặt Tượng đài Bác Hồ với các dân tộc Tây Nguyên lớn nhất Việt Nam và bức phù điêu đá hoành tráng.">
+  <style>
+
+    :root {
+      --primary: #0284c7;
+      --primary-light: #e0f2fe;
+      --text: #1f2937;
+      --text-muted: #4b5563;
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --accent: #b45309;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.7;
+      color: var(--text);
+      background-color: var(--bg);
+      padding: 24px 16px;
+    }
+    .article-container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 9999px;
+      background: var(--primary-light);
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+    .badge.event {
+      background: #fef3c7;
+      color: var(--accent);
+    }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #111827;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .lead {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      font-style: italic;
+      border-left: 4px solid var(--primary);
+      padding-left: 16px;
+    }
+    .quick-facts {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 36px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .fact-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .fact-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .fact-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .content-section {
+      margin-bottom: 32px;
+    }
+    .content-section h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    .content-section p {
+      margin-bottom: 16px;
+      text-align: justify;
+      color: #334155;
+    }
+    .article-footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+      font-size: 0.875rem;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .banner-wrapper {
+      width: 100%;
+      height: 380px;
+      margin-bottom: 24px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      background-color: #f1f5f9;
+    }
+    .hero-banner {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .hero-banner:hover {
+      transform: scale(1.02);
+    }
+    @media (max-width: 640px) {
+      .article-container { padding: 20px; }
+      h1 { font-size: 1.75rem; }
+      .quick-facts { grid-template-columns: 1fr; }
+      .banner-wrapper { height: 220px; }
+    }
+
+  </style>
+</head>
+<body>
+  <article class="article-container">
+    <header>
+      <span class="badge">CULTURE</span>
+      <h1>Quảng trường Đại Đoàn Kết</h1>
+      <p class="lead">Trái tim của thành phố Pleiku với diện tích 12ha, nơi đặt Tượng đài Bác Hồ với các dân tộc Tây Nguyên lớn nhất Việt Nam và bức phù điêu đá hoành tráng.</p>
+    </header>
+
+    <div class="banner-wrapper">
+      <img class="hero-banner" src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=1200&q=80" alt="Quảng trường Đại Đoàn Kết" loading="lazy" />
+    </div>
+
+    <div class="quick-facts">
+      <div class="fact-item">
+        <span class="fact-label">📍 Địa chỉ</span>
+        <span class="fact-value">Phường Tây Sơn, Thành phố Pleiku, Tỉnh Gia Lai</span>
+      </div>
+      <div class="fact-item">
+        <span class="fact-label">🧭 Tọa độ GPS</span>
+        <span class="fact-value">13.982222, 108.003889</span>
+      </div>
+      <div class="fact-item">
+        <span class="fact-label">⏰ Giờ mở cửa</span>
+        <span class="fact-value">05:00:00 - 23:00:00</span>
+      </div>
+      <div class="fact-item">
+        <span class="fact-label">🎟️ Giá vé tham khảo</span>
+        <span class="fact-value">Miễn phí vé vào cổng</span>
+      </div>
+      <div class="fact-item">
+        <span class="fact-label">⏳ Thời gian tham quan</span>
+        <span class="fact-value">Khoảng 60 phút</span>
+      </div>
+      <div class="fact-item">
+        <span class="fact-label">🌤️ Thời điểm lý tưởng</span>
+        <span class="fact-value">Buổi chiều mát và buổi tối khi hệ thống đèn hoa rực rỡ và các hoạt động cộng đồng sôi nổi</span>
+      </div>
+    </div>
+
+    <div class="article-body">
+
+      <section class="content-section">
+        <h2>Trái tim phố núi Pleiku</h2>
+        <p>Quảng trường Đại Đoàn Kết được khánh thành vào tháng 12 năm 2012, là trung tâm chính trị, văn hóa, xã hội của tỉnh Gia Lai. Với khuôn viên rộng hơn 12ha được quy hoạch đồng bộ với thảm cỏ xanh mướt, đồi nhân tạo mô phỏng đỉnh Hàm Rồng, hàng thông ba lá xanh tươi và hệ thống đường dạo bộ thênh thang.</p>
+      </section>
+  
+
+      <section class="content-section">
+        <h2>Tượng đài Bác Hồ & Bức phù điêu đá kỷ lục</h2>
+        <p>Tâm điểm của quảng trường là Tượng đài Bác Hồ bằng đồng nguyên chất đúc theo công nghệ gò đồng hiện đại, cao 10.8m trên bệ đá 4.5m, nặng gần 16 tấn. Phía sau tượng đài là bức phù điêu hình hoa sen bằng đá tự nhiên dài hơn 58m, khắc họa sinh động bản hùng ca lịch sử, cuộc sống lao động, chiến đấu và văn hóa cồng chiêng của các dân tộc Tây Nguyên.</p>
+      </section>
+  
+
+      <section class="content-section">
+        <h2>Dàn cồng chiêng đồng & Tháp đá cổ kính</h2>
+        <p>Bên cạnh tượng đài là dàn cồng chiêng bằng đồng lớn nhất Việt Nam với đầy đủ chiêng mẹ, chiêng con xếp theo thứ bậc lễ hội truyền thống. Quảng trường còn có ngọn tháp đá 54 khối tượng trưng cho 54 dân tộc anh em đoàn kết một lòng, hồ sen thơm ngát và khu vườn hoa rực rỡ.</p>
+      </section>
+  
+
+      <section class="content-section">
+        <h2>Không gian sinh hoạt cộng đồng sôi động</h2>
+        <p>Vào mỗi buổi chiều tối, quảng trường là nơi người dân Pleiku và du khách tập trung vui chơi, tập thể dục, thưởng thức các màn hòa tấu cồng chiêng đường phố vào dịp cuối tuần và chiêm ngưỡng nhạc nước màu sắc lung linh.</p>
+      </section>
+  
+    </div>
+
+    <footer class="article-footer">
+      <div><strong>Nguồn dữ liệu:</strong> Sở Văn hóa Thể thao và Du lịch Gia Lai</div>
+      <div><strong>Đơn vị biên soạn:</strong> Cổng Thông Tin Xúc Tiến Du Lịch</div>
+    </footer>
+  </article>
+</body>
+</html>

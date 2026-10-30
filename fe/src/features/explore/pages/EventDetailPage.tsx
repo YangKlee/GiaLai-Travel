@@ -57,6 +57,15 @@ export default function EventDetailPage() {
 
       <div className="detail-grid">
         <article className="detail-main">
+          {(eventItem.bannerUrl || eventItem.imageUrl) && (
+            <div className="detail-banner-wrapper">
+              <img
+                src={eventItem.bannerUrl || eventItem.imageUrl || ''}
+                alt={eventItem.title}
+                className="detail-banner-img"
+              />
+            </div>
+          )}
           <section className="content-card">
             <h2>Thông tin chi tiết sự kiện</h2>
             <p className="description-full">{eventItem.description}</p>

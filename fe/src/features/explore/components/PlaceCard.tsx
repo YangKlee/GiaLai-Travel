@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowUpRight, Clock3, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { APP_PATHS } from '@/constants/path';
@@ -9,10 +10,25 @@ import { PlaceArtwork } from './PlaceArtwork';
 import { AddToTripButton } from './AddToTripButton';
 
 export function PlaceCard({ place, dataset }: { place: Place; dataset: Dataset }) {
+  const [imgError, setImgError] = useState(false);
+  const banner = place.bannerUrl || place.imageUrl;
+
   return (
     <article className="place-card">
-      <Link to={APP_PATHS.place(place.id)} tabIndex={-1} aria-hidden="true">
-        <PlaceArtwork category={place.category} />
+      <Link to={APP_PATHS.place(place.id)} tabIndex={-1} aria-hidden="true" className="place-card-media-link">
+        {banner && !imgError ? (
+          <div className="place-card-banner">
+            <img
+              src={banner}
+              alt={place.title}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="place-card-img"
+            />
+          </div>
+        ) : (
+          <PlaceArtwork category={place.category} />
+        )}
       </Link>
       <div className="place-card-body">
         <Badge>{CATEGORY_NAMES[place.category]}</Badge>
