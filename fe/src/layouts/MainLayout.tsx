@@ -12,6 +12,7 @@ import {
 import { Link, NavLink, Outlet, useNavigation } from 'react-router-dom';
 import { APP_PATHS } from '@/constants/path';
 import { useAuthStore } from '@/store/useAuthStore';
+import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
 
 export function MainLayout() {
   const navigation = useNavigation();
@@ -74,6 +75,7 @@ export function MainLayout() {
           </span>
         </div>
       </header>
+      <NetworkStatusBanner />
       {navigation.state !== 'idle' ? (
         <div className="navigation-progress" role="status">
           Đang tải…

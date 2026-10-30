@@ -1,0 +1,18 @@
+{
+  "name": "Gia Lai Travel",
+  "short_name": "GiaLai",
+  "description": "Cẩm nang du lịch và lập lịch trình thông minh Gia Lai - Tây Nguyên đại ngàn",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#166534",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

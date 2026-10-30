@@ -40,6 +40,8 @@ import {
 import {
   createMyItinerary,
   generateItineraryProposal,
+  getItineraryOfflineManifest,
+  getMyItinerary,
   listMyItineraries,
   revalidateItineraryProposal,
 } from '@/services/itineraries';
@@ -50,17 +52,9 @@ import {
   recordPaymentAttempt,
 } from '@/services/bookings';
 import {
-  getUnreadNotificationCount,
   listMyNotifications,
   markAllNotificationsRead,
-  markNotificationRead,
 } from '@/services/notifications';
-import {
-  createIssueReport,
-  listAdminAuditLogs,
-  listAdminIssues,
-  reviewAdminIssue,
-} from '@/services/operations';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ApiError } from '@/services/api';
 
@@ -106,6 +100,7 @@ vi.mock('@/services/itineraries', () => ({
   revalidateItineraryProposal: vi.fn(),
   listMyItineraries: vi.fn(),
   getMyItinerary: vi.fn(),
+  getItineraryOfflineManifest: vi.fn(),
   createMyItinerary: vi.fn(),
   updateMyItineraryRevision: vi.fn(),
   renameMyItinerary: vi.fn(),
@@ -926,6 +921,124 @@ describe('Điều hướng ứng dụng', () => {
     const markAllBtn = screen.getByRole('button', { name: /Đánh dấu tất cả đã đọc/ });
     await user.click(markAllBtn);
     expect(markAllNotificationsRead).toHaveBeenCalled();
+
+    router.dispose();
+  });
+
+  it('tải gói ngoại tuyến chuyến đi và xem ở chế độ chỉ đọc khi mất mạng', async () => {
+    const user = userEvent.setup();
+    useAuthStore.setState({
+      enabled: true,
+      phase: 'authenticated',
+      user: {
+        id: 'user-tourist-offline',
+        email: 'tourist-offline@example.com',
+        displayName: 'Du Khách Ngoại Tuyến',
+        roles: ['TOURIST'],
+      },
+      note: null,
+    });
+
+    const mockSavedTrip = {
+      id: 'trip-off-1',
+      name: 'Chuyến dã ngoại Pleiku - Chư Đang Ya',
+      lockVersion: 1,
+      currentRevisionId: 'rev-off-1',
+      startDate: '2026-11-05',
+      daysCount: 1,
+      partySize: 2,
+      totalBudgetVnd: '2000000',
+      estimatedTotalVnd: '1500000',
+      createdAt: '2026-10-30T00:00:00.000Z',
+      updatedAt: '2026-10-30T00:00:00.000Z',
+    };
+
+    vi.mocked(listMyItineraries).mockResolvedValue([mockSavedTrip]);
+    vi.mocked(getItineraryOfflineManifest).mockResolvedValue({
+      data: {
+        manifestVersion: '1.0',
+        packageId: 'trip-off-1',
+        itineraryName: 'Chuyến dã ngoại Pleiku - Chư Đang Ya',
+        startDate: '2026-11-05',
+        daysCount: 1,
+        partySize: 2,
+        totalBudgetVnd: '2000000',
+        transportMode: 'MOTORBIKE',
+        origin: { latitude: 13.98, longitude: 108.0, label: 'Pleiku' },
+        days: [],
+        checksum: 'sha256offlinepackagevalid',
+        generatedAt: '2026-10-30T00:00:00.000Z',
+      },
+    });
+    vi.mocked(getMyItinerary).mockResolvedValue({
+      id: 'trip-off-1',
+      ownerId: 'user-tourist-offline',
+      name: 'Chuyến dã ngoại Pleiku - Chư Đang Ya',
+      lockVersion: 1,
+      currentRevisionId: 'rev-off-1',
+      createdAt: '2026-10-30T00:00:00.000Z',
+      updatedAt: '2026-10-30T00:00:00.000Z',
+      revision: {
+        id: 'rev-off-1',
+        revisionNo: 1,
+        validatedAt: '2026-10-30T00:00:00.000Z',
+        isValid: true,
+        aiRequestId: null,
+        warnings: [],
+        violations: [],
+        startDate: '2026-11-05',
+        daysCount: 1,
+        partySize: 2,
+        totalBudgetVnd: '2000000',
+        estimatedTotalVnd: '1500000',
+        origin: { latitude: 13.98, longitude: 108.0, label: 'Pleiku' },
+        transportMode: 'MOTORBIKE',
+        preferences: { categories: ['NATURE'], pace: 'BALANCED' },
+        days: [
+          {
+            id: 'd-1',
+            dayNumber: 1,
+            travelDate: '2026-11-05',
+            stops: [
+              {
+                id: 'st-1',
+                sequenceNo: 1,
+                placeId: 'chu-dang-ya',
+                placeTitle: 'Núi lửa Chư Đang Ya',
+                arrivesAt: '2026-11-05T08:00:00.000Z',
+                departsAt: '2026-11-05T10:30:00.000Z',
+                estimatedCostVnd: 50000,
+              },
+            ],
+            legs: [],
+          },
+        ],
+      },
+    });
+
+    const router = createMemoryRouter(appRoutes, { initialEntries: [APP_PATHS.TRIPS] });
+    render(<RouterProvider router={router} />);
+
+    // Nhấn tab Chuyến đi đã lưu
+    const savedTabBtn = await screen.findByRole('button', { name: /Đã lưu/ });
+    await user.click(savedTabBtn);
+
+    expect(await screen.findByText('Chuyến dã ngoại Pleiku - Chư Đang Ya')).toBeInTheDocument();
+
+    // Nhấn Tải offline
+    const downloadBtn = screen.getByRole('button', { name: /Tải offline/ });
+    await user.click(downloadBtn);
+
+    // Kiểm tra gói đã được tải
+    expect(await screen.findByText(/Đã lưu ngoại tuyến/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Đọc offline/ })).toBeInTheDocument();
+
+    // Nhấn Đọc offline
+    const readOfflineBtn = screen.getByRole('button', { name: /Đọc offline/ });
+    await user.click(readOfflineBtn);
+
+    expect(await screen.findByText(/Bản Ngoại tuyến \(Chỉ đọc\)/)).toBeInTheDocument();
+    expect(screen.getByText('Núi lửa Chư Đang Ya')).toBeInTheDocument();
 
     router.dispose();
   });

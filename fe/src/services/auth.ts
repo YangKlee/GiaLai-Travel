@@ -2,6 +2,7 @@ import { createHttpClient } from './http';
 import { ApiError, toApiError } from './api-error';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTripDraftStore } from '@/store/useTripDraftStore';
+import { purgeUserOfflineData } from './offlineStorage';
 import type {
   AuthUser,
   ForgotPasswordInput,
@@ -40,10 +41,16 @@ function markSignedOut(value: boolean): void {
 }
 
 export function clearAuthSession(note: string | null = null): void {
+  const currentUser = useAuthStore.getState().user;
   generation++;
   accessToken = null;
   useAuthStore.setState({ phase: 'anonymous', user: null, note });
   useTripDraftStore.getState().reset();
+  if (currentUser?.id) {
+    void purgeUserOfflineData(currentUser.id).catch(() => {});
+  } else {
+    void purgeUserOfflineData().catch(() => {});
+  }
 }
 
 function setupChannel(): void {

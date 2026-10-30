@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
 import {
@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   Clock3,
   Copy,
+  Download,
   Edit2,
+  HardDriveDownload,
   Info,
   MapPin,
   MapPinned,
@@ -19,6 +21,7 @@ import {
   RefreshCw,
   Sparkles,
   Trash2,
+  WifiOff,
 } from 'lucide-react';
 import { APP_PATHS } from '@/constants/path';
 import { buttonVariants } from '@/components/ui/button-variants';
@@ -27,6 +30,15 @@ import { Badge } from '@/components/ui/Badge';
 import { DatasetNotice } from '@/components/common/DatasetNotice';
 import type { tripsLoader } from '@/routes/catalogLoaders';
 import { MAX_DRAFT_STOPS, useTripDraftStore } from '@/store/useTripDraftStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import {
+  deleteOfflineItinerary,
+  downloadItineraryForOffline,
+  getOfflineItinerary,
+  listOfflineItineraries,
+} from '@/services/offlineStorage';
+import type { OfflineItineraryPackage } from '@/services/offlineStorage';
 import { formatDuration, formatVnd, formatDate } from '@/utils/format';
 import { PlaceArtwork } from '@/features/explore/components/PlaceArtwork';
 import {
@@ -114,6 +126,27 @@ export default function TripsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saveName, setSaveName] = useState('Chuyến du lịch Gia Lai');
+
+  const currentUser = useAuthStore((s) => s.user);
+  const { isOnline } = useNetworkStatus();
+  const [offlinePackages, setOfflinePackages] = useState<Record<string, OfflineItineraryPackage>>({});
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [isViewingOffline, setIsViewingOffline] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    let mounted = true;
+    void listOfflineItineraries(currentUser.id).then((pkgs) => {
+      if (!mounted) return;
+      const map: Record<string, OfflineItineraryPackage> = {};
+      for (const p of pkgs) map[p.itineraryId] = p;
+      setOfflinePackages(map);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [currentUser?.id]);
 
   function toggleCategory(cat: Category) {
     setSelectedCategories((prev) =>
@@ -280,12 +313,81 @@ export default function TripsPage() {
     }
   }
 
-  async function handleLoadDetail(id: string) {
+  async function handleDownloadOffline(itineraryId: string) {
+    if (!currentUser?.id) return;
+    setDownloadingId(itineraryId);
+    setDownloadProgress(10);
     setErrorMessage(null);
+    setActionMessage(null);
+    try {
+      const pkg = await downloadItineraryForOffline(currentUser.id, itineraryId, (_step, pct) => {
+        setDownloadProgress(pct);
+      });
+      setOfflinePackages((prev) => ({ ...prev, [itineraryId]: pkg }));
+      setActionMessage(
+        `Đã tải trọn gói ngoại tuyến cho "${pkg.name}" (${Math.round(pkg.sizeBytes / 1024)} KB) thành công!`,
+      );
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Không thể tải gói ngoại tuyến.'));
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress(0);
+    }
+  }
+
+  async function handleDeleteOffline(itineraryId: string) {
+    if (!currentUser?.id) return;
+    try {
+      await deleteOfflineItinerary(currentUser.id, itineraryId);
+      setOfflinePackages((prev) => {
+        const next = { ...prev };
+        delete next[itineraryId];
+        return next;
+      });
+      if (selectedDetail?.id === itineraryId && isViewingOffline) {
+        setIsViewingOffline(false);
+      }
+      setActionMessage('Đã xóa dữ liệu ngoại tuyến của chuyến đi khỏi thiết bị.');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Không thể xóa dữ liệu ngoại tuyến.'));
+    }
+  }
+
+  async function handleLoadDetail(id: string, forceOffline = false) {
+    setErrorMessage(null);
+    if (forceOffline || !isOnline) {
+      if (currentUser?.id) {
+        const pkg = await getOfflineItinerary(currentUser.id, id);
+        if (pkg) {
+          setSelectedDetail(pkg.detail);
+          setIsViewingOffline(true);
+          setActionMessage(
+            `Đang xem bản ngoại tuyến của "${pkg.name}" (Tải lúc: ${formatDate(pkg.downloadedAt)}).`,
+          );
+          return;
+        }
+      }
+      if (!isOnline) {
+        setErrorMessage('Thiết bị đang ngoại tuyến và chuyến đi này chưa được tải về máy trước đó.');
+        return;
+      }
+    }
     try {
       const detail = await getMyItinerary(id);
       setSelectedDetail(detail);
+      setIsViewingOffline(false);
     } catch (error) {
+      if (currentUser?.id) {
+        const pkg = await getOfflineItinerary(currentUser.id, id);
+        if (pkg) {
+          setSelectedDetail(pkg.detail);
+          setIsViewingOffline(true);
+          setActionMessage(
+            `Mạng gián đoạn. Đã chuyển sang bản ngoại tuyến (tải lúc ${formatDate(pkg.downloadedAt)}).`,
+          );
+          return;
+        }
+      }
       setErrorMessage(getErrorMessage(error, 'Không thể tải chi tiết chuyến đi.'));
     }
   }
@@ -682,9 +784,9 @@ export default function TripsPage() {
                 />
               </div>
 
-              <Button type="submit" loading={aiGenerating}>
+              <Button type="submit" disabled={!isOnline} loading={aiGenerating}>
                 <Sparkles size={16} aria-hidden="true" />
-                Lập lịch trình với AI
+                {isOnline ? 'Lập lịch trình với AI' : 'AI cần kết nối mạng'}
               </Button>
             </form>
           </div>
@@ -845,36 +947,75 @@ export default function TripsPage() {
               <p className="muted">Bạn chưa có chuyến đi nào được lưu trong tài khoản.</p>
             ) : (
               <div className="consent-list">
-                {savedList.map((item) => (
-                  <div key={item.id} className="consent-item">
-                    <div className="consent-title-row">
-                      <div>
-                        <h3>{item.name}</h3>
-                        <p className="muted">
-                          {item.daysCount} ngày · {item.partySize} khách · Ngân sách:{' '}
-                          {formatVnd(item.totalBudgetVnd)} · Dự tính:{' '}
-                          {formatVnd(item.estimatedTotalVnd)}
-                          <br />
-                          Khóa phiên bản (Lock Version): <strong>#{item.lockVersion}</strong>
-                        </p>
-                      </div>
-                      <div className="consent-actions">
-                        <Button variant="secondary" onClick={() => void handleLoadDetail(item.id)}>
-                          Xem chi tiết
-                        </Button>
-                        <Button variant="ghost" onClick={() => void handleRename(item.id)}>
-                          <Edit2 size={15} aria-hidden="true" /> Đổi tên
-                        </Button>
-                        <Button variant="ghost" onClick={() => void handleCopy(item.id)}>
-                          <Copy size={15} aria-hidden="true" /> Bản sao
-                        </Button>
-                        <Button variant="ghost" onClick={() => void handleDelete(item.id)}>
-                          <Trash2 size={15} aria-hidden="true" /> Xóa
-                        </Button>
+                {savedList.map((item) => {
+                  const offlinePkg = offlinePackages[item.id];
+                  const isDownloading = downloadingId === item.id;
+                  return (
+                    <div key={item.id} className="consent-item">
+                      <div className="consent-title-row">
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <h3>{item.name}</h3>
+                            {offlinePkg && (
+                              <Badge>
+                                <HardDriveDownload size={12} aria-hidden="true" /> Đã lưu ngoại tuyến (v{offlinePkg.packageVersion} · {Math.round(offlinePkg.sizeBytes / 1024)} KB)
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="muted">
+                            {item.daysCount} ngày · {item.partySize} khách · Ngân sách:{' '}
+                            {formatVnd(item.totalBudgetVnd)} · Dự tính:{' '}
+                            {formatVnd(item.estimatedTotalVnd)}
+                            <br />
+                            Khóa phiên bản (Lock Version): <strong>#{item.lockVersion}</strong>
+                          </p>
+                        </div>
+                        <div className="consent-actions" style={{ flexWrap: 'wrap' }}>
+                          <Button variant="secondary" onClick={() => void handleLoadDetail(item.id, false)}>
+                            Xem chi tiết
+                          </Button>
+                          {offlinePkg ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                onClick={() => void handleLoadDetail(item.id, true)}
+                                title="Mở bản đọc ngoại tuyến lưu trên máy"
+                              >
+                                <HardDriveDownload size={15} aria-hidden="true" /> Đọc offline
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={() => void handleDeleteOffline(item.id)}
+                                title="Xóa dữ liệu ngoại tuyến của chuyến đi này"
+                              >
+                                Xóa offline
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              disabled={!isOnline || isDownloading}
+                              onClick={() => void handleDownloadOffline(item.id)}
+                              title="Tải trọn gói để xem khi mất sóng tại Gia Lai"
+                            >
+                              <Download size={15} aria-hidden="true" />
+                              {isDownloading ? `Đang tải ${downloadProgress}%` : 'Tải offline'}
+                            </Button>
+                          )}
+                          <Button variant="ghost" disabled={!isOnline} onClick={() => void handleRename(item.id)}>
+                            <Edit2 size={15} aria-hidden="true" /> Đổi tên
+                          </Button>
+                          <Button variant="ghost" disabled={!isOnline} onClick={() => void handleCopy(item.id)}>
+                            <Copy size={15} aria-hidden="true" /> Bản sao
+                          </Button>
+                          <Button variant="ghost" disabled={!isOnline} onClick={() => void handleDelete(item.id)}>
+                            <Trash2 size={15} aria-hidden="true" /> Xóa
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -895,20 +1036,31 @@ export default function TripsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="consent-title-row">
                   <div>
-                    <Badge>Lock Version #{selectedDetail.lockVersion}</Badge>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Badge>Lock Version #{selectedDetail.lockVersion}</Badge>
+                      {(isViewingOffline || !isOnline) && (
+                        <Badge>
+                          <WifiOff size={12} aria-hidden="true" /> Bản Ngoại tuyến (Chỉ đọc)
+                        </Badge>
+                      )}
+                    </div>
                     <h3>{selectedDetail.name}</h3>
                     <p className="muted">
                       Tạo lúc: {formatDate(selectedDetail.createdAt)} · Cập nhật:{' '}
                       {formatDate(selectedDetail.updatedAt)}
                     </p>
                   </div>
-                  <Button
-                    variant="primary"
-                    loading={savingToAccount}
-                    onClick={() => void handleUpdateSavedRevision()}
-                  >
-                    Lưu Revision mới (+1)
-                  </Button>
+                  <div>
+                    <Button
+                      variant="primary"
+                      disabled={isViewingOffline || !isOnline}
+                      title={isViewingOffline || !isOnline ? 'Cần kết nối mạng để lưu bản sửa đổi' : undefined}
+                      loading={savingToAccount}
+                      onClick={() => void handleUpdateSavedRevision()}
+                    >
+                      Lưu Revision mới (+1)
+                    </Button>
+                  </div>
                 </div>
 
                 {selectedDetail.revision && (

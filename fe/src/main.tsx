@@ -12,6 +12,14 @@ import '@fontsource/inter/vietnamese-700.css';
 import { router } from '@/routes';
 import './index.css';
 
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Service worker registration optional/silent in unsupported contexts
+    });
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <RouterProvider router={router} />
