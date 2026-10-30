@@ -75,5 +75,5 @@ docs/             # Tài liệu nghiệp vụ hiện có
 ```
 
 BE đã có config, logger, middleware, health/readiness, pool MariaDB UTC, helper transaction và API danh mục/POI công bố. FE có khám phá, chi tiết và bản nháp chuyến đi.
-Repository SQL chưa được kiểm tra tích hợp trên MariaDB thật; demo chạy qua repository mẫu tách riêng. Chức năng tài khoản, quản trị nội dung, AI và giao dịch tiếp tục theo backlog.
+Repository Sequelize đã được kiểm tra tích hợp trên MariaDB 10.5.26 local; demo chạy qua repository mẫu tách riêng. Có migration runner và CLI bootstrap admin. Chức năng tài khoản, quản trị nội dung, AI và giao dịch tiếp tục theo backlog.
 Xem [hướng dẫn backend](be/DEVELOPMENT.md) và [tài liệu CSDL](be/README.md).

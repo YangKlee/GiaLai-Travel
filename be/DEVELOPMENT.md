@@ -20,7 +20,8 @@ src/shared/       AppError, validation, pagination, GUID và tiền VND
 src/db/           Sequelize, scaffold models, pool UTC và transaction
 scripts/          Lệnh vận hành, kiểm tra DB chỉ đọc
 test/             Test node:test, không gọi hosting trong bộ test mặc định
-migrations/       Hướng dẫn baseline; chưa có migration runner
+migrations/       Baseline và migration SQL theo phiên bản/checksum
+integration/      Kiểm tra MariaDB thật trên DB local biệt lập
 openapi.yaml      Contract endpoint đã triển khai
 ```
 
@@ -52,8 +53,19 @@ HTTP. Production cần HTTPS tại reverse proxy và secret riêng theo môi tr�
 ## Kiểm tra
 
 `npm test` chạy toàn bộ test BE. Dùng đúng Node.js 20.20.2 khi kiểm tra/phát triển.
-Phần auth JWT/refresh/CSRF theo [thiết kế](../docs/implementation/auth-jwt.md), audit nghiệp vụ, migration runner và chức năng FR vẫn
-triển khai theo backlog; scaffold không mở CRUD mẫu hay tự import CSDL.
+`npm run test:integration` tại gốc chạy kiểm tra MariaDB thật. Mặc định dùng root local
+`127.0.0.1:3307`, mật khẩu rỗng; có thể cấu hình `INTEGRATION_DB_PORT/USER/PASSWORD`.
+Chỉ nhận host loopback, không load `.env` hosting. Bộ test tạo/xóa database ngẫu nhiên
+`gialai_test_*` thuộc lần chạy. Cần tài khoản tạo DB test; không chạy trên DB production.
+
+Đã có [migration runner](migrations/README.md), scrypt password helper và CLI bootstrap
+admin. Phần JWT/refresh/CSRF tiếp tục theo [thiết kế](../docs/implementation/auth-jwt.md).
+
+Tạo quản trị viên bằng thông tin do người vận hành cấp qua env tạm
+`BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`, `BOOTSTRAP_ADMIN_NAME`, sau đó
+`npm run admin:create -w be`. Mật khẩu 12–128 ký tự, băm scrypt; không có mật khẩu
+mặc định. Tài khoản đã tồn tại sẽ bị từ chối, không tự nâng quyền. User, role và audit
+được ghi trong cùng Sequelize transaction. Xóa biến mật khẩu khỏi phiên shell sau chạy.
 
 ## CSDL
 

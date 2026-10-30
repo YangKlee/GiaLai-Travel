@@ -62,4 +62,3 @@ test('database failure never silently supplies demo data or exposes connection d
     assert.equal(JSON.parse(text).error.code, 'CATALOG_UNAVAILABLE');
   }
 });
-

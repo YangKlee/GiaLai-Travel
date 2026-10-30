@@ -15,17 +15,18 @@ Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [
 
 ### BE-02 - Kết nối MariaDB và hợp đồng dữ liệu (M)
 
-- [ ] Tạo pool, timeout, truy vấn tham số hóa, helper transaction/retry có giới hạn; mỗi connection dùng UTC; GUID từ BE; serializer tiền BIGINT chính xác và timestamp ISO.
+- [x] Tạo Sequelize pool, timeout, truy cập qua scaffold models, helper transaction/retry có giới hạn; mỗi connection dùng UTC; GUID từ BE; serializer tiền BIGINT chính xác và timestamp ISO.
 - Phụ thuộc: BE-01, X-02. Truy vết: BR-01, D-20, D-21; NFR-05, NFR-07.
 - Nghiệm thu: test DB MariaDB 10.5.26 đọc/ghi GUID, JSON, Unicode và tiền lớn không mất chính xác; lỗi transaction rollback và trả connection; không dựa tính năng riêng MySQL 8.
-- Tiến độ: code pool/transaction, serializer tiền/GUID, CLI `db:check` và nối readiness đã có; test tự động Node 20.20.2 đạt. Kiểm tra hosting `yangkleeserver.io.vn:3306` trả `ETIMEDOUT`; Docker daemon cục bộ chưa chạy. Chưa đánh dấu hoàn thành BE-02 vì chưa chạy integration trên MariaDB thật; cần Remote MySQL/host-port hợp lệ hoặc môi trường DB test trước nghiệm thu. Không có thao tác ghi/import lên hosting.
+- Bằng chứng: kiểm tra thật trên MariaDB 10.5.26 local và Node 20.20.2 đã đạt: ORM đọc/ghi GUID, Unicode/JSON, BIGINT vượt Number, UTC, rollback, query timeout/pool recovery và HTTP round-trip. Runtime dùng Sequelize models; không truy vấn SQL thủ công trong module nghiệp vụ. Không có thao tác ghi/import lên hosting; việc xác minh hosting độc lập với kết quả local.
 
 ### BE-03 - Migration, fixture và bootstrap quản trị (M)
 
-- [ ] Lập sổ migration và baseline schema; kiểm tra DB đã import để không khởi tạo lặp; fixture chỉ dành dev/test; CLI tạo admin từ thông tin nhập/env tạm, băm mật khẩu, không seed tài khoản công khai.
+- [x] Lập sổ migration và baseline schema; kiểm tra DB đã import để không khởi tạo lặp; fixture chỉ dành dev/test; CLI tạo admin từ env tạm, băm mật khẩu scrypt, không seed tài khoản công khai.
 - [ ] Kiểm thử migration [001 JWT](../../be/migrations/001-jwt-auth.sql) trên bản sao baseline GUID; đối chiếu schema mới 59 bảng, thu hồi phiên cũ và quy trình restore. Không chạy lại migration trên DB tạo từ schema mới. Gắn model scaffold với schema sau migration và review generated/JSON/BIGINT/FK trước sử dụng.
 - Phụ thuộc: BE-02. Truy vết: FR-18; NFR-06, NFR-07, NFR-23.
 - Nghiệm thu: DB mới và DB baseline đều có quy trình nâng cấp; chạy migration lặp không phá dữ liệu; không có mật khẩu mặc định; tài khoản runtime không cần quyền DDL.
+- Tiến độ: runner/CLI và 6 integration tests MariaDB đã đạt. Migration 001 chạy được trên baseline GUID cũ, thu hồi phiên và chống chạy lặp; models đã gắn runtime, sửa defaults và association khóa ngoại ghép, bảo vệ generated columns. Chưa nghiệm thu restore backup và grants trên hosting nên giữ phần nghiệm thu vận hành mở.
 
 ### BE-04 - Audit, job runner và adapter contracts (M)
 

@@ -10,6 +10,7 @@
 | D2 — API khám phá | Contract, danh mục, tìm/lọc/phân trang và chi tiết POI; repository CSDL và server demo tách riêng | Đã triển khai; bộ 16 test BE (gồm kiểm tra OpenAPI) đạt trên Node 20.20.2 |
 | D3 — Demo xuyên FE/BE | Trang khám phá, chi tiết, bản nháp chuyến đi và kiểm tra tích hợp | Đã triển khai; 7 unit tests FE, 10 E2E Chromium desktop/mobile, lint và TypeScript/Vite build đạt trên Node 20.20.2 |
 | D4 — CI | GitHub Actions cài dependency theo lockfile, format/lint/unit/build/E2E trên Node từ `.nvmrc` | Đã thêm workflow; các lệnh đạt local, chưa chạy trên GitHub runner |
+| D5 — Nền tảng CSDL thật | Sequelize runtime từ scaffold, migration ledger/lock/checksum, CLI admin, MariaDB integration và CI database job | 15 unit tests BE và 6 integration tests đạt trên MariaDB 10.5.26/Node 20.20.2; CI runner chưa chạy |
 
 Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`. Tài liệu cấu trúc ban đầu: `57a8d9c`.
 
@@ -34,7 +35,7 @@ Playwright kiểm Chromium desktop 1440px và viewport iPhone 13 bằng Chromium
 
 ## Thứ tự tiếp tục
 
-1. Nghiệm thu CSDL dev/test biệt lập và migration (BE-02/03), mở rộng CI bằng integration DB (FE-04/X-02).
+1. Đã kiểm CSDL dev/test biệt lập, migration và bootstrap; bổ sung nghiệm thu restore/grants môi trường triển khai cho BE-03. CI đã có job MariaDB integration.
 2. Auth JWT/refresh/thu hồi phiên và UI tài khoản (BE-04/05, FE-03/05); lưu lịch phải theo danh tính thật.
 3. Workflow quản trị nội dung và dữ liệu có nguồn (BE-09/10/11, FE-12) để thay bộ mẫu bằng nội dung công bố.
 4. Validator/tuyến/AI thật và lưu revision (BE-15–18, FE-14–17), sau đó đặt dịch vụ và mock payment.
