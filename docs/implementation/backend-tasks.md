@@ -33,6 +33,7 @@ Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [
 - [ ] Tạo audit service và primitive ghi notification/history trong transaction theo schema hiện có (API đọc/xử lý ở BE-26), interface mail/AI/routing/storage, CLI job runner, cơ chế tránh thực thi trùng và ghi kết quả job; bổ sung seam clock để kiểm thử biên thời gian.
 - Phụ thuộc: BE-02, BE-03. Truy vết: NFR-14, NFR-22, NFR-23; SEQ-08.
 - Nghiệm thu: audit có actor/target/time/result/request ID, phân quyền đọc và không cho người thường sửa/xóa; hai runner không gây tác dụng kép; không thêm dịch vụ queue bắt buộc khi hosting chưa hỗ trợ.
+- Tiến độ: đã triển khai `redactMetadata`, `appendAudit`, `appendNotification` idempotent theo `(user_id, event_key)`, `listAuditLogs` giới hạn role `ADMIN`, adapter contracts (`mail`, `ai`, `routing`, `storage`), `resolveNow` clock seam và CLI job runner (`npm run job:run -w be`) dùng MariaDB advisory lock trên cùng kết nối. Đã kiểm thử unit và integration trên MariaDB 10.5.26. Giữ checkbox mở cho tới khi tích hợp cron trên môi trường hosting và hoàn tất API đọc notification ở BE-26.
 
 ## M1 - Danh tính và quyền dữ liệu
 
@@ -53,18 +54,21 @@ Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [
 - [ ] Tạo `/auth/forgot-password`, `/auth/reset-password`; token ngẫu nhiên chỉ lưu hash, hạn và dùng một lần; adapter SMTP, retry gửi có kiểm soát; đổi mật khẩu thu hồi phiên cũ.
 - Phụ thuộc: BE-05, X-01 (SMTP/reset URL). Truy vết: FR-01.04–05; NFR-09.03–05; UC-01.
 - Nghiệm thu: phản hồi công khai email có/không tồn tại cùng dạng; đúng 15 phút token bị từ chối theo baseline; hai request đổi đồng thời chỉ một thành công; không ghi token vào log hoặc báo gửi thật thành công khi SMTP lỗi.
+- Tiến độ: đã triển khai `/api/v1/auth/forgot-password` và `/api/v1/auth/reset-password` lưu băm SHA-256, hạn 15 phút, dùng một lần trong transaction khóa `users` → `auth_sessions` → `password_reset_tokens`, thu hồi toàn bộ phiên và vô hiệu hóa token khi SMTP gửi lỗi sau retry có giới hạn. Đã đạt integration MariaDB và browser E2E; giữ checkbox mở chờ cấu hình SMTP thật trên staging/hosting (X-01).
 
 ### BE-07 - Hồ sơ, sở thích và lịch sử consent (M)
 
 - [ ] API `/me/profile`, `/me/preferences`, `/me/consents`; danh mục sở thích; consent theo purpose, khóa chủ thể khi cấp `decision_no`; lấy quyết định hiện tại theo số này.
 - Phụ thuộc: BE-05. Truy vết: FR-02.01–03; NFR-11; UC-22.
 - Nghiệm thu: chỉ sửa dữ liệu mình; thay đổi đồng thời không trùng số quyết định; GUID không dùng để xếp lịch sử; GĐ1 chưa phát sinh tracking hành vi cho AI/quảng cáo.
+- Tiến độ: đã triển khai `/api/v1/me/{profile,preferences,consents}`, danh mục sở thích (`PREFERENCE_CATALOG`), khóa `users` (`FOR UPDATE`) khi cấp `decision_no` tuần tự theo `(user_id, purpose)`, sắp lịch sử theo `decision_no DESC` (không xếp theo GUID) và xác nhận 0 bản ghi `behavior_events` trong GĐ1 trên MariaDB 10.5.26.
 
 ### BE-08 - Tiếp nhận và xử lý xuất/xóa dữ liệu (L)
 
 - [ ] API tạo/theo dõi privacy request sau xác minh lại chủ thể; job hoặc tác vụ vận hành xuất dữ liệu có kiểm soát; xóa/ẩn danh/giữ giao dịch theo chính sách và trả kết quả/lý do giữ; có hạn xử lý và audit.
 - Phụ thuộc: BE-05, BE-07, X-01 (retention). Truy vết: FR-02.04–05; NFR-12; UC-22.
 - Nghiệm thu: không xuất dữ liệu người khác; link tải có quyền/hạn; không xóa dây chuyền vi phạm FK; yêu cầu xóa không âm thầm hủy đơn; kiểm thử fixture có đơn hoạt động sau BE-25; theo dõi SLA đề xuất 7 ngày nếu được khóa baseline.
+- Tiến độ: đã triển khai `/api/v1/me/privacy-requests`, `/api/v1/me/privacy-requests/:id/export` và job `process-privacy-requests`. Đã kiểm thử xác minh mật khẩu, chặn tải chéo tài khoản (`404`), hết hạn gói xuất sau 7 ngày (`410`), hoãn ẩn danh khi còn đơn đang hoạt động (`CHO_DUYET`) mà không tự hủy đơn, và ẩn danh `users` sau khi đơn `HOAN_THANH` đồng thời giữ nguyên đơn lịch sử và nhật ký audit không lỗi khóa ngoại.
 
 ## M2 - Nội dung và khám phá
 

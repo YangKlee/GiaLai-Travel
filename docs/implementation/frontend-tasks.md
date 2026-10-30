@@ -54,12 +54,14 @@ Tuân theo [AGENTS](../../fe/AGENTS.md), [DESIGN](../../fe/DESIGN.md), [essentia
 - [ ] Form quên mật khẩu và đặt mật khẩu từ link; báo public cùng dạng, invalid/expired/used token, policy errors; xóa token khỏi URL sau xử lý phù hợp, không gửi vào analytics/log.
 - Phụ thuộc: FE-05; API BE-06. Truy vết: FR-01.04–05; NFR-09; UC-01.
 - Nghiệm thu: link sai/hết hạn không đổi mật khẩu; thành công yêu cầu đăng nhập lại; không suy ra email tồn tại qua UI; không hiện token trong thông báo lỗi.
+- Tiến độ: đã có `/forgot-password` và `/reset-password` kết nối API thật, `resetPasswordLoader` xóa `token` khỏi thanh địa chỉ ngay khi nạp bằng `history.replaceState`, phản hồi đồng nhất, không lộ token trong thông báo lỗi và đạt kiểm thử Vitest + Playwright/axe WCAG A/AA.
 
 ### FE-07 - Hồ sơ, sở thích, consent và quyền dữ liệu (M)
 
 - [ ] Trang account sửa profile/preferences; đồng ý/rút đồng ý theo purpose; xác minh chủ thể trước yêu cầu export/delete; danh sách/trạng thái phiếu, kết quả và dữ liệu được giữ/lý do.
 - Phụ thuộc: FE-05; API BE-07/08. Truy vết: FR-02.01–05; NFR-11–12; UC-22.
 - Nghiệm thu: consent không chọn sẵn thay người dùng; refresh giữ lựa chọn; xuất/xóa có xác nhận và trạng thái thực; đang có đơn không bị thông báo đã xóa toàn bộ khi BE cần giữ dữ liệu.
+- Tiến độ: đã nâng cấp `accountLoader` và `AccountPage` cho phép sửa hồ sơ/sở thích, cấp/rút đồng ý (`PERSONALIZATION`, `ADVERTISING`) với trạng thái mặc định chưa chọn sẵn (`decisionNo = 0`), lịch sử quyết định theo `decision_no`, gửi yêu cầu xuất/xóa sau khi xác minh lại mật khẩu, hiển thị rõ chính sách giữ đơn đang hoạt động/đơn lịch sử và tải gói JSON cá nhân. Đạt kiểm thử Vitest và Playwright/axe WCAG A/AA.
 
 ## M2 - Khám phá và quản trị nội dung
 

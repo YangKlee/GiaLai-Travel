@@ -63,22 +63,33 @@ be/
 │   ├── middleware/
 │   │   ├── request-context.js       # Request ID và log theo request
 │   │   └── error-handler.js         # Xử lý route không tồn tại và lỗi HTTP
+│   ├── adapters/
+│   │   └── index.js                # Contracts mail, AI, routing và storage
+│   ├── jobs/
+│   │   └── job-runner.js           # Job runner một tiến trình dùng advisory lock
 │   ├── routes/
 │   │   └── index.js                # Router API tổng
 │   ├── modules/
 │   │   ├── README.md               # Quy ước tổ chức module nghiệp vụ
 │   │   ├── catalog/                # Routes/schema/controller/service/repository POI
-│   │   ├── auth/                   # Models auth, JWT, rotation/replay và bootstrap admin
+│   │   ├── auth/                   # JWT, rotation/replay, khôi phục mật khẩu, bootstrap admin
+│   │   ├── users/                  # Hồ sơ, sở thích du lịch và lịch sử consent tuần tự
+│   │   ├── privacy/                # Yêu cầu xuất/xóa dữ liệu, gói JSON và job ẩn danh
 │   │   └── health/
 │   │       └── health.controller.js # Liveness và readiness CSDL
 │   └── shared/
 │       ├── app-error.js             # Kiểu lỗi ứng dụng
+│       ├── audit.js                 # Redact metadata, ghi audit và notification idempotent
+│       ├── credentials.js           # Chuẩn hóa email, mật khẩu và tên hiển thị
 │       ├── identifiers.js           # Tiện ích GUID
 │       ├── money.js                 # Tiện ích tiền VND
 │       ├── pagination.js            # Tiện ích phân trang
+│       ├── password.js              # Băm và xác minh mật khẩu scrypt
+│       ├── time.js                  # Clock seam và định dạng UTC
 │       └── validation.js            # Validation dùng chung
 ├── scripts/
 │   ├── migrate.js                   # CLI status/init/baseline/up
+│   ├── run-jobs.js                  # CLI chạy tác vụ nền (cleanup auth, xử lý privacy)
 │   ├── bootstrap-admin.js           # Tạo admin từ env tạm
 │   ├── setup-demo-auth.js           # Dựng demo tài khoản với DB local riêng
 │   ├── auth-keys.js                 # Sinh khóa RSA local
@@ -110,9 +121,10 @@ be/
 3. `routes/index.js` chuyển request đến controller tương ứng.
 4. Middleware cuối xử lý route không tồn tại và chuẩn hóa lỗi.
 
-Hiện có health/readiness, API khám phá `/api/v1/catalog`, `/api/v1/places`, `/api/v1/places/:id`
-và tài khoản `/api/v1/auth/{status,register,login,refresh,logout,me}`. Auth dùng Sequelize
-models, access JWT RS256 và refresh cookie HttpOnly; quyền/session hiện hành kiểm từ DB.
+Hiện có health/readiness, API khám phá `/api/v1/catalog`, `/api/v1/places`, `/api/v1/places/:id`,
+tài khoản `/api/v1/auth/{status,register,login,refresh,logout,me,forgot-password,reset-password}`
+và hồ sơ/quyền dữ liệu `/api/v1/me/{profile,preferences,consents,privacy-requests,privacy-requests/:id/export}`.
+Auth dùng Sequelize models, access JWT RS256 và refresh cookie HttpOnly; quyền/session hiện hành kiểm từ DB.
 Lưu lịch trình và đặt dịch vụ chưa triển khai.
 
 Runtime dùng Sequelize và các models đã scaffold. Repository nghiệp vụ dùng model APIs/associations; service truyền Sequelize transaction khi ghi nhiều bảng. Không viết query SQL thủ công trong module nghiệp vụ, không gọi `sync()` khi chạy app. Tình trạng migration và xác thực theo [tiến độ](docs/implementation/demo-progress.md).
@@ -174,11 +186,12 @@ fe/
 
 Luồng chạy: `index.html` → `src/main.tsx` → RouterProvider → layout → trang lazy. Route loader gọi API qua `services/` trước khi render; các request nhận AbortSignal để hủy khi điều hướng. Loader lỗi đi qua error boundary. Dev server Vite chạy cổng `5173`, chuyển tiếp `/api` đến backend cổng `3000` theo mặc định.
 
-Các route đã mở: `/explore`, `/places/:id`, `/trips`, `/login`, `/register`, `/account`;
-`/` chuyển sang khám phá. `/admin/*` chưa mở tính năng quản trị. Zustand giữ bản nháp và
-user trong bộ nhớ; access token ở services memory, refresh trong cookie HttpOnly.
-Logout/đổi user xóa state và thông báo tab khác, không phát tán token. Reload xóa bản
-nháp; phiên tài khoản bootstrap qua refresh → me khi hợp lệ.
+Các route đã mở: `/explore`, `/places/:id`, `/trips`, `/login`, `/register`,
+`/forgot-password`, `/reset-password`, `/account`; `/` chuyển sang khám phá. `/admin/*`
+chưa mở tính năng quản trị. Zustand giữ bản nháp và user trong bộ nhớ; access token ở
+services memory, refresh trong cookie HttpOnly. Logout/đổi user xóa state và thông báo tab
+khác, không phát tán token. Reload xóa bản nháp; phiên tài khoản bootstrap qua refresh → me
+khi hợp lệ, trang `/account` nạp song song hồ sơ, sở thích, consent và trạng thái quyền riêng tư.
 
 ### Định hướng mở rộng
 
