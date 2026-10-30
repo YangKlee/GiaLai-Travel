@@ -47,8 +47,9 @@ export function createAuthService(database, config, { mail = createMailAdapter({
     if (!/^Bearer [A-Za-z0-9_.-]+$/.test(authorization || '') || authorization.length > 8192) {
       throw new AppError(401, 'AUTH_REQUIRED', 'Vui lòng đăng nhập để tiếp tục.');
     }
-    const claims = await tokens.verify(authorization.slice(7));
-    const session = await repository.activeSession(claims.sessionId, claims.userId, clock ? resolveNow(clock) : undefined);
+    const now = clock ? resolveNow(clock) : undefined;
+    const claims = await tokens.verify(authorization.slice(7), now);
+    const session = await repository.activeSession(claims.sessionId, claims.userId, now);
     const user = session && await repository.userById(claims.userId);
     if (!user || user.status !== 'ACTIVE') {
       throw new AppError(401, 'SESSION_REVOKED', 'Phiên đã kết thúc. Vui lòng đăng nhập lại.');

@@ -445,6 +445,176 @@ paths:
                         $ref: "#/components/schemas/AuthUser"
         "401": *a2
         "503": *a7
+  /api/v1/me/profile:
+    get:
+      operationId: getMyProfile
+      summary: Get the authenticated tourist profile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401": *a2
+        "503": *a7
+    patch:
+      operationId: updateMyProfile
+      summary: Update the authenticated tourist display name and phone number
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401": *a2
+        "422": *a5
+        "503": *a7
+  /api/v1/me/preferences:
+    get:
+      operationId: getMyPreferences
+      summary: Get travel preferences and the allowed preference catalog
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Travel preferences and catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferencesResponse"
+        "401": *a2
+        "503": *a7
+    put:
+      operationId: updateMyPreferences
+      summary: Save travel preferences for the authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPreferencesUpdate"
+      responses:
+        "200":
+          description: Updated travel preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferencesResponse"
+        "401": *a2
+        "422": *a5
+        "503": *a7
+  /api/v1/me/consents:
+    get:
+      operationId: getMyConsents
+      summary: Get current consent decisions and history ordered by decision_no DESC
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current decisions and history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentStateResponse"
+        "401": *a2
+        "503": *a7
+    post:
+      operationId: recordMyConsent
+      summary: Record a sequential consent decision under user row lock
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsentDecisionInput"
+      responses:
+        "201":
+          description: Recorded consent decision and updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentDecisionResponse"
+        "401": *a2
+        "422": *a5
+        "503": *a7
+  /api/v1/me/privacy-requests:
+    get:
+      operationId: listMyPrivacyRequests
+      summary: List verified export/delete requests and retention assessment for the current user
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Privacy requests and retention summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyRequestListResponse"
+        "401": *a2
+        "503": *a7
+    post:
+      operationId: createMyPrivacyRequest
+      summary: Submit an export or delete privacy request after password re-verification
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacyRequestCreate"
+      responses:
+        "201":
+          description: Verified privacy request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyRequestCreatedResponse"
+        "401": *a2
+        "409": *a4
+        "422": *a5
+        "503": *a7
+  /api/v1/me/privacy-requests/{id}/export:
+    get:
+      operationId: downloadMyPrivacyExport
+      summary: Download personal data export for a verified request owned by the current user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Scoped personal data export package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyExportPackageResponse"
+        "401": *a2
+        "404": *a2
+        "410": *a2
+        "422": *a5
+        "503": *a7
 components:
   responses:
     InvalidCatalogRequest:
@@ -798,6 +968,389 @@ components:
           properties:
             message:
               type: string
+    UserProfile:
+      type: object
+      required:
+        - id
+        - email
+        - displayName
+        - phone
+        - roles
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        phone:
+          type:
+            - string
+            - "null"
+        roles:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserProfileUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - displayName
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 150
+        phone:
+          type:
+            - string
+            - "null"
+          maxLength: 32
+    UserProfileResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/UserProfile"
+    UserPreferences:
+      type: object
+      required:
+        - categories
+        - pace
+        - travelGroup
+        - dietaryNotes
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        pace:
+          type: string
+          enum:
+            - RELAXED
+            - BALANCED
+            - INTENSIVE
+        travelGroup:
+          type: string
+          enum:
+            - SOLO
+            - COUPLE
+            - FAMILY
+            - FRIENDS
+        dietaryNotes:
+          type:
+            - string
+            - "null"
+    UserPreferencesUpdate:
+      $ref: "#/components/schemas/UserPreferences"
+    UserPreferencesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - preferences
+            - catalog
+          properties:
+            preferences:
+              $ref: "#/components/schemas/UserPreferences"
+            catalog:
+              type: object
+    ConsentPurpose:
+      type: string
+      enum:
+        - PERSONALIZATION
+        - ADVERTISING
+    ConsentDecision:
+      type: object
+      required:
+        - id
+        - purpose
+        - decisionNo
+        - granted
+        - policyVersion
+        - decidedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        purpose:
+          $ref: "#/components/schemas/ConsentPurpose"
+        decisionNo:
+          type: integer
+          minimum: 1
+        granted:
+          type: boolean
+        policyVersion:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+    ConsentCurrentItem:
+      type: object
+      required:
+        - purpose
+        - title
+        - description
+        - policyVersion
+        - decisionNo
+        - granted
+        - decidedAt
+      properties:
+        purpose:
+          $ref: "#/components/schemas/ConsentPurpose"
+        title:
+          type: string
+        description:
+          type: string
+        policyVersion:
+          type: string
+        decisionNo:
+          type: integer
+          minimum: 0
+        granted:
+          type: boolean
+        decidedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+    ConsentDecisionInput:
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+        - granted
+      properties:
+        purpose:
+          $ref: "#/components/schemas/ConsentPurpose"
+        granted:
+          type: boolean
+    ConsentStateResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - current
+            - history
+          properties:
+            current:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentCurrentItem"
+            history:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentDecision"
+    ConsentDecisionResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - decision
+            - current
+            - history
+          properties:
+            decision:
+              $ref: "#/components/schemas/ConsentDecision"
+            current:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentCurrentItem"
+            history:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentDecision"
+    PrivacyRequestItem:
+      type: object
+      required:
+        - id
+        - requestType
+        - status
+        - verifiedAt
+        - completedAt
+        - slaDueAt
+        - resultNote
+        - downloadPath
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestType:
+          type: string
+          enum:
+            - EXPORT
+            - DELETE
+        status:
+          type: string
+          enum:
+            - NEW
+            - VERIFIED
+            - PROCESSING
+            - COMPLETED
+            - REJECTED
+        verifiedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        completedAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        slaDueAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+        resultNote:
+          type:
+            - string
+            - "null"
+        downloadPath:
+          type:
+            - string
+            - "null"
+        createdAt:
+          type: string
+          format: date-time
+    PrivacyRetentionSummary:
+      type: object
+      required:
+        - activeBookingsCount
+        - historicalBookingsCount
+        - slaDays
+        - policyNote
+      properties:
+        activeBookingsCount:
+          type: integer
+          minimum: 0
+        historicalBookingsCount:
+          type: integer
+          minimum: 0
+        slaDays:
+          type: integer
+          minimum: 1
+        policyNote:
+          type: string
+    PrivacyRequestCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - requestType
+        - password
+      properties:
+        requestType:
+          type: string
+          enum:
+            - EXPORT
+            - DELETE
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    PrivacyRequestListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - requests
+            - retentionSummary
+          properties:
+            requests:
+              type: array
+              items:
+                $ref: "#/components/schemas/PrivacyRequestItem"
+            retentionSummary:
+              $ref: "#/components/schemas/PrivacyRetentionSummary"
+    PrivacyRequestCreatedResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - request
+            - retentionSummary
+          properties:
+            request:
+              $ref: "#/components/schemas/PrivacyRequestItem"
+            retentionSummary:
+              $ref: "#/components/schemas/PrivacyRetentionSummary"
+    PrivacyExportPackageResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - requestId
+            - exportedAt
+            - expiresAt
+            - subject
+            - consents
+            - itineraries
+            - bookings
+            - issueReports
+            - privacyRequests
+          properties:
+            requestId:
+              type: string
+              format: uuid
+            exportedAt:
+              type: string
+              format: date-time
+            expiresAt:
+              type: string
+              format: date-time
+            subject:
+              type: object
+            consents:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentDecision"
+            itineraries:
+              type: array
+              items:
+                type: object
+            bookings:
+              type: array
+              items:
+                type: object
+            issueReports:
+              type: array
+              items:
+                type: object
+            privacyRequests:
+              type: array
+              items:
+                $ref: "#/components/schemas/PrivacyRequestItem"
   securitySchemes:
     BearerAuth:
       type: http

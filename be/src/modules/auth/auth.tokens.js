@@ -13,16 +13,16 @@ export function createTokens(config) {
         .setIssuedAt(issuedAt).setExpirationTime(expiration).sign(config.privateKey);
       return { accessToken, tokenType: 'Bearer', expiresIn: expiration - issuedAt };
     },
-    async verify(token) {
+    async verify(token, now = new Date()) {
       try {
         const { payload, protectedHeader } = await jwtVerify(token, (header) => {
           if (!config.publicKeys.has(header.kid) || header.jku || header.x5u || header.jwk) throw new Error('Unknown key');
           return config.publicKeys.get(header.kid);
         }, { algorithms: ['RS256'], issuer: config.issuer, audience: config.audience,
-          typ: 'at+jwt', requiredClaims: ['sub', 'sid', 'jti', 'iat', 'exp'], clockTolerance: 0 });
+          typ: 'at+jwt', requiredClaims: ['sub', 'sid', 'jti', 'iat', 'exp'], clockTolerance: 0, currentDate: now });
         if (protectedHeader.typ !== 'at+jwt' || !guidSchema.safeParse(payload.sub).success || !guidSchema.safeParse(payload.sid).success ||
           !guidSchema.safeParse(payload.jti).success || !Number.isInteger(payload.iat) || !Number.isInteger(payload.exp) ||
-          payload.iat > Math.floor(Date.now() / 1000) + 30 || payload.exp <= payload.iat || payload.exp - payload.iat > config.accessSeconds) throw new Error('Invalid claims');
+          payload.iat > Math.floor(now.getTime() / 1000) + 30 || payload.exp <= payload.iat || payload.exp - payload.iat > config.accessSeconds) throw new Error('Invalid claims');
         return { userId: payload.sub, sessionId: payload.sid };
       } catch (error) {
         if (error instanceof errors.JWTExpired) throw new AppError(401, 'ACCESS_TOKEN_EXPIRED', 'Phiên truy cập cần được làm mới.');

@@ -17,9 +17,15 @@ async function authFixture(t, { mail = createMailAdapter({ mode: 'outbox' }), cl
   const server = createApp({ database, auth, mail, clock }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
-  const url = `http://127.0.0.1:${server.address().port}/api/v1/auth`;
+  const baseUrl = `http://127.0.0.1:${server.address().port}/api/v1`;
+  const url = `${baseUrl}/auth`;
   const credentials = { email: 'visitor@example.test', password: 'Integration password 🌿', displayName: 'Du khách 🌿' };
   const request = (path, { body, cookie, access, headers, method = 'POST' } = {}) => fetch(`${url}${path}`, {
+    method, headers: { Origin: 'http://localhost:5173', 'X-CSRF-Protection': '1', 'Content-Type': 'application/json',
+      ...(cookie ? { Cookie: cookie } : {}), ...(access ? { Authorization: `Bearer ${access}` } : {}), ...headers },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const meRequest = (path, { body, cookie, access, headers, method = 'GET' } = {}) => fetch(`${baseUrl}/me${path}`, {
     method, headers: { Origin: 'http://localhost:5173', 'X-CSRF-Protection': '1', 'Content-Type': 'application/json',
       ...(cookie ? { Cookie: cookie } : {}), ...(access ? { Authorization: `Bearer ${access}` } : {}), ...headers },
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -31,7 +37,7 @@ async function authFixture(t, { mail = createMailAdapter({ mode: 'outbox' }), cl
     assert.equal(response.status, 200, await response.clone().text());
     return { response, cookie: cookie(response), data: (await response.json()).data };
   }
-  return { database, mail, request, credentials, cookie, register, login };
+  return { database, mail, request, meRequest, credentials, cookie, register, login };
 }
 
 test('Auth/MariaDB: registration, normalized uniqueness, CSRF, cookie flags and current user', async (t) => {
@@ -263,4 +269,219 @@ test('Audit & Jobs/MariaDB: notification idempotency, admin-only audit read, adv
   assert.equal(cleanupOutcome.summary.deletedSessions, 1);
   assert.equal(await f.database.models.AuthSessions.count({ where: { id: expiredSessionId } }), 0);
   assert.equal(await f.database.models.AuthSessions.count({ where: { user_id: user.id } }), 1);
+});
+
+test('Profile, Consents & Privacy/MariaDB: preferences, concurrent sequential consents, scoped export and active-booking delete retention', async (t) => {
+  let currentNow = new Date('2026-10-30T05:00:00.000Z');
+  const f = await authFixture(t, { clock: () => currentNow });
+  const user = await f.register();
+  const session = await f.login();
+  const access = session.data.accessToken;
+
+  // 1. Profile & preferences round-trip.
+  const profGet = await f.meRequest('/profile', { access });
+  assert.equal(profGet.status, 200);
+  assert.equal((await profGet.json()).data.phone, null);
+
+  const profPatch = await f.meRequest('/profile', {
+    method: 'PATCH',
+    access,
+    body: { displayName: 'Ksor H’Hen', phone: '+84901234567' },
+  });
+  assert.equal(profPatch.status, 200);
+  const updatedProfile = (await profPatch.json()).data;
+  assert.equal(updatedProfile.displayName, 'Ksor H’Hen');
+  assert.equal(updatedProfile.phone, '+84901234567');
+
+  const prefPut = await f.meRequest('/preferences', {
+    method: 'PUT',
+    access,
+    body: {
+      categories: ['NATURE', 'FOOD'],
+      pace: 'RELAXED',
+      travelGroup: 'FAMILY',
+      dietaryNotes: 'Ưu tiên cà phê Pleiku',
+    },
+  });
+  assert.equal(prefPut.status, 200);
+  const prefBody = (await prefPut.json()).data;
+  assert.deepEqual(prefBody.preferences.categories, ['NATURE', 'FOOD']);
+  assert.equal(prefBody.preferences.pace, 'RELAXED');
+  assert.equal(prefBody.preferences.travelGroup, 'FAMILY');
+
+  // 2. Consents: default un-preselected (decisionNo = 0, granted = false), concurrent sequential decision_no, zero behavior_events.
+  const initialConsents = (await (await f.meRequest('/consents', { access })).json()).data;
+  for (const item of initialConsents.current) {
+    assert.equal(item.decisionNo, 0);
+    assert.equal(item.granted, false);
+  }
+
+  const concurrentDecisions = await Promise.all([
+    f.meRequest('/consents', { method: 'POST', access, body: { purpose: 'PERSONALIZATION', granted: true } }),
+    f.meRequest('/consents', { method: 'POST', access, body: { purpose: 'PERSONALIZATION', granted: false } }),
+    f.meRequest('/consents', { method: 'POST', access, body: { purpose: 'PERSONALIZATION', granted: true } }),
+    f.meRequest('/consents', { method: 'POST', access, body: { purpose: 'PERSONALIZATION', granted: false } }),
+  ]);
+  for (const resp of concurrentDecisions) {
+    assert.equal(resp.status, 201);
+  }
+  const consentState = (await (await f.meRequest('/consents', { access })).json()).data;
+  const personalizationHistory = consentState.history.filter((c) => c.purpose === 'PERSONALIZATION');
+  assert.deepEqual(personalizationHistory.map((c) => c.decisionNo), [4, 3, 2, 1]);
+  const currentPersonalization = consentState.current.find((c) => c.purpose === 'PERSONALIZATION');
+  assert.equal(currentPersonalization.decisionNo, 4);
+  assert.equal(currentPersonalization.granted, personalizationHistory[0].granted);
+  assert.equal(await f.database.models.BehaviorEvents.count(), 0);
+
+  // 3. Privacy requests: wrong password rejected, EXPORT scoped to owner & expires after 7 days.
+  const wrongPw = await f.meRequest('/privacy-requests', {
+    method: 'POST',
+    access,
+    body: { requestType: 'EXPORT', password: 'Wrong password!' },
+  });
+  assert.equal(wrongPw.status, 401);
+
+  const exportResp = await f.meRequest('/privacy-requests', {
+    method: 'POST',
+    access,
+    body: { requestType: 'EXPORT', password: f.credentials.password },
+  });
+  assert.equal(exportResp.status, 201);
+  const exportReq = (await exportResp.json()).data.request;
+  assert.equal(exportReq.status, 'COMPLETED');
+
+  const pkgResp = await f.meRequest(`/privacy-requests/${exportReq.id}/export`, { access });
+  assert.equal(pkgResp.status, 200);
+  const pkgText = await pkgResp.clone().text();
+  assert.ok(!pkgText.includes('password_hash'));
+  assert.ok(!pkgText.includes('token_hash'));
+  const pkgData = (await pkgResp.json()).data;
+  assert.equal(pkgData.subject.email, f.credentials.email);
+  assert.equal(pkgData.consents.length, 4);
+
+  // Another user cannot download this user's export package.
+  const otherEmail = 'other-tourist@example.test';
+  assert.equal(
+    (await f.request('/register', { body: { email: otherEmail, password: f.credentials.password, displayName: 'Khách B' } })).status,
+    201,
+  );
+  const otherLogin = await (await f.request('/login', { body: { email: otherEmail, password: f.credentials.password } })).json();
+  const crossResp = await f.meRequest(`/privacy-requests/${exportReq.id}/export`, {
+    access: otherLogin.data.accessToken,
+  });
+  assert.equal(crossResp.status, 404);
+
+  // Advance clock past 7 days: login at new time and verify export download expires with 410, then reset clock back.
+  currentNow = new Date('2026-11-07T06:00:00.000Z');
+  const futureSession = await f.login();
+  const expiredExport = await f.meRequest(`/privacy-requests/${exportReq.id}/export`, {
+    access: futureSession.data.accessToken,
+  });
+  assert.equal(expiredExport.status, 410);
+  currentNow = new Date('2026-10-30T05:10:00.000Z');
+
+  // 4. Seed an active booking (CHO_DUYET) for the user and verify DELETE request + job retention.
+  const partnerContentId = randomUUID();
+  const serviceContentId = randomUUID();
+  const partnerId = randomUUID();
+  const serviceId = randomUUID();
+  const slotId = randomUUID();
+  const bookingId = randomUUID();
+  await f.database.models.ContentItems.bulkCreate([
+    { id: partnerContentId, kind: 'PARTNER', visibility: 'DRAFT', created_by: user.id },
+    { id: serviceContentId, kind: 'SERVICE', visibility: 'DRAFT', created_by: user.id },
+  ]);
+  await f.database.models.Partners.create({
+    id: partnerId,
+    content_id: partnerContentId,
+    status: 'ACTIVE',
+  });
+  await f.database.models.Services.create({
+    id: serviceId,
+    content_id: serviceContentId,
+    partner_id: partnerId,
+    service_type: 'EXPERIENCE',
+    price_unit: 'khách',
+    unit_price_vnd: 250000,
+    active: true,
+  });
+  await f.database.models.ServiceSlots.create({
+    id: slotId,
+    service_id: serviceId,
+    starts_at: new Date('2026-11-01T08:00:00.000Z'),
+    ends_at: new Date('2026-11-01T12:00:00.000Z'),
+    capacity: 10,
+    held_quantity: 2,
+    sold_quantity: 0,
+  });
+  await f.database.models.Bookings.create({
+    id: bookingId,
+    customer_id: user.id,
+    service_id: serviceId,
+    slot_id: slotId,
+    status: 'CHO_DUYET',
+    quantity: 2,
+    unit_price_vnd: 250000,
+    total_vnd: 500000,
+    commission_percent: 10,
+    policy_snapshot: { cancellation: 'flexible' },
+    service_snapshot: { title: 'Trải nghiệm cồng chiêng' },
+    contact_name: 'Ksor H’Hen',
+    contact_email: f.credentials.email,
+    starts_at: new Date('2026-11-01T08:00:00.000Z'),
+    ends_at: new Date('2026-11-01T12:00:00.000Z'),
+    review_deadline: new Date('2026-10-31T08:00:00.000Z'),
+    idempotency_key: 'idem-privacy-booking-1',
+  });
+
+  const deleteResp = await f.meRequest('/privacy-requests', {
+    method: 'POST',
+    access,
+    body: { requestType: 'DELETE', password: f.credentials.password },
+  });
+  assert.equal(deleteResp.status, 201);
+  const deleteBody = (await deleteResp.json()).data;
+  assert.equal(deleteBody.request.status, 'VERIFIED');
+  assert.equal(deleteBody.retentionSummary.activeBookingsCount, 1);
+
+  // Duplicate open DELETE request is blocked with 409.
+  const dupDelete = await f.meRequest('/privacy-requests', {
+    method: 'POST',
+    access,
+    body: { requestType: 'DELETE', password: f.credentials.password },
+  });
+  assert.equal(dupDelete.status, 409);
+
+  // Running the privacy job while booking is CHO_DUYET defers anonymization and never cancels the booking.
+  const runner = createJobRunner({ database: f.database, clock: () => currentNow });
+  const deferredRun = await runner.run('process-privacy-requests');
+  assert.equal(deferredRun.status, 'COMPLETED');
+  assert.equal(deferredRun.summary.deferredActiveBookingsCount, 1);
+  assert.equal(deferredRun.summary.anonymizedCount, 0);
+  const bookingStillActive = await f.database.models.Bookings.findByPk(bookingId);
+  assert.equal(bookingStillActive.status, 'CHO_DUYET');
+  const userStillActive = await f.database.models.Users.findByPk(user.id);
+  assert.equal(userStillActive.status, 'ACTIVE');
+
+  // Once the booking completes (HOAN_THANH after ends_at), the job anonymizes the user while preserving booking & audit records.
+  currentNow = new Date('2026-11-01T13:00:00.000Z');
+  await bookingStillActive.update({
+    status: 'HOAN_THANH',
+    completed_at: currentNow,
+  });
+  const completedRun = await runner.run('process-privacy-requests');
+  assert.equal(completedRun.status, 'COMPLETED');
+  assert.equal(completedRun.summary.anonymizedCount, 1);
+
+  const anonymizedUser = await f.database.models.Users.findByPk(user.id);
+  assert.equal(anonymizedUser.status, 'ANONYMIZED');
+  assert.equal(anonymizedUser.email, null);
+  assert.equal(anonymizedUser.password_hash, null);
+
+  const historicalBooking = await f.database.models.Bookings.findByPk(bookingId);
+  assert.equal(historicalBooking.status, 'HOAN_THANH');
+  assert.equal(historicalBooking.customer_id, user.id);
+
+  const finalizedReq = await f.database.models.PrivacyRequests.findByPk(deleteBody.request.id);
+  assert.equal(finalizedReq.status, 'COMPLETED');
 });

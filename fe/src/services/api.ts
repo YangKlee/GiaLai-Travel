@@ -64,3 +64,15 @@ client.interceptors.response.use(
 export async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   return (await client.get<T>(path, { signal })).data;
 }
+
+export async function post<T, B = unknown>(path: string, body: B): Promise<T> {
+  return (await client.post<T>(path, body)).data;
+}
+
+export async function put<T, B = unknown>(path: string, body: B): Promise<T> {
+  return (await client.put<T>(path, body)).data;
+}
+
+export async function patch<T, B = unknown>(path: string, body: B): Promise<T> {
+  return (await client.patch<T>(path, body)).data;
+}

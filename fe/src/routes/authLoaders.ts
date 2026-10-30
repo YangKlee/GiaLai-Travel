@@ -1,9 +1,14 @@
 import { redirect } from 'react-router-dom';
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { bootstrapAuth } from '@/services/auth';
-import { get } from '@/services/api';
+import {
+  getMyConsents,
+  getMyPreferences,
+  getMyProfile,
+  listMyPrivacyRequests,
+} from '@/services/account';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { AuthUser } from '@/features/auth/types/auth';
+import type { AccountLoaderData } from '@/features/auth/types/auth';
 import { APP_PATHS } from '@/constants/path';
 
 export async function sessionLoader() {
@@ -21,14 +26,29 @@ export async function resetPasswordLoader({ request }: LoaderFunctionArgs) {
   return { token };
 }
 
-export async function accountLoader({ request }: LoaderFunctionArgs) {
+export async function accountLoader({
+  request,
+}: LoaderFunctionArgs): Promise<Response | AccountLoaderData> {
   await bootstrapAuth();
   if (useAuthStore.getState().phase !== 'authenticated')
     return redirect(`${APP_PATHS.LOGIN}?returnTo=${encodeURIComponent(APP_PATHS.ACCOUNT)}`);
-  const response = await get<{ data: { user: AuthUser } }>('/api/v1/auth/me', request.signal);
+  const [profile, preferences, consents, privacy] = await Promise.all([
+    getMyProfile(request.signal),
+    getMyPreferences(request.signal),
+    getMyConsents(request.signal),
+    listMyPrivacyRequests(request.signal),
+  ]);
   const current = useAuthStore.getState();
   if (current.phase !== 'authenticated') return redirect(APP_PATHS.LOGIN);
-  if (current.user?.id === response.data.user.id)
-    useAuthStore.setState({ user: response.data.user });
-  return null;
+  if (current.user?.id === profile.id) {
+    useAuthStore.setState({
+      user: {
+        id: profile.id,
+        email: profile.email,
+        displayName: profile.displayName,
+        roles: profile.roles,
+      },
+    });
+  }
+  return { profile, preferences, consents, privacy };
 }

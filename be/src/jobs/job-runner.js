@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Op } from 'sequelize';
 import { appendAudit } from '../shared/audit.js';
 import { resolveNow } from '../shared/time.js';
+import { processPendingPrivacyRequests } from '../modules/privacy/privacy.service.js';
 
 export async function cleanupExpiredAuth({ database, clock }) {
   const now = resolveNow(clock);
@@ -33,7 +34,10 @@ export async function cleanupExpiredAuth({ database, clock }) {
 }
 
 export function createJobRunner({ database, logger, clock }) {
-  const jobs = new Map([['cleanup-expired-auth', cleanupExpiredAuth]]);
+  const jobs = new Map([
+    ['cleanup-expired-auth', cleanupExpiredAuth],
+    ['process-privacy-requests', processPendingPrivacyRequests],
+  ]);
   return {
     register(name, handler) {
       if (!/^[a-z0-9-]{3,48}$/.test(name) || typeof handler !== 'function') {

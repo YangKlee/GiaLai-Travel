@@ -180,6 +180,26 @@ test('Auth browser/MariaDB: register, login, reload/refresh across tabs, logout,
     await mobile.getByLabel('Mật khẩu', { exact: true }).fill(nextPassword);
     await mobile.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
     await expect(mobile.getByRole('heading', { name: 'Tài khoản của tôi', exact: true })).toBeVisible();
+
+    // Profile, preferences, consents (default un-preselected), and privacy export on mobile viewport.
+    await expect(mobile.getByText('Mặc định: Chưa đồng ý').first()).toBeVisible();
+    await mobile.getByLabel('Số điện thoại liên hệ', { exact: true }).fill('+84905112233');
+    await mobile.getByRole('button', { name: 'Lưu hồ sơ', exact: true }).click();
+    await expect(mobile.getByText('Đã lưu thông tin hồ sơ.')).toBeVisible();
+
+    await mobile.getByLabel('Ẩm thực bản địa').check();
+    await mobile.getByRole('button', { name: 'Lưu sở thích', exact: true }).click();
+    await expect(mobile.getByText('Đã lưu sở thích du lịch.')).toBeVisible();
+
+    await mobile.getByRole('button', { name: 'Đồng ý PERSONALIZATION', exact: true }).click();
+    await expect(mobile.getByText('Đang đồng ý (Quyết định #1)')).toBeVisible();
+
+    await mobile.getByLabel('Xác nhận mật khẩu hiện tại', { exact: true }).fill(nextPassword);
+    await mobile.getByRole('button', { name: 'Gửi yêu cầu quyền riêng tư', exact: true }).click();
+    await expect(mobile.getByRole('button', { name: 'Tải gói dữ liệu JSON', exact: true })).toBeVisible();
+    await mobile.getByRole('button', { name: 'Tải gói dữ liệu JSON', exact: true }).click();
+    await expect(mobile.getByLabel('Gói dữ liệu cá nhân đã xuất')).toBeVisible();
+    assert.deepEqual((await new AxeBuilder({ page: mobile }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations, []);
   } finally {
     await browser?.close();
     if (vite && vite.exitCode === null) { const exited = once(vite, 'exit'); vite.kill(); await exited; }
