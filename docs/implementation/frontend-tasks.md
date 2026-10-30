@@ -1,5 +1,7 @@
 # Task triển khai frontend
 
+Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [demo-progress.md](demo-progress.md). Checkbox chỉ đóng khi đủ toàn bộ tiêu chí của task; phần đã làm trong demo được ghi riêng tại đó.
+
 Áp dụng [quy ước trạng thái, kích thước và hoàn thành](README.md). Owner mặc định: FE; QA phối hợp kiểm thử tương thích và tiếp cận. `Phụ thuộc API` là điều kiện tích hợp thật; có thể dựng giao diện trước bằng fixture khớp OpenAPI sau X-02. Fixture không thay bằng chứng nghiệm thu.
 
 Mọi màn hình phải có trạng thái tải, rỗng, lỗi, thiếu quyền, hết phiên và mất kết nối phù hợp. Không hiển thị mock payment như thu tiền thật. Không dùng route guard làm lớp phân quyền duy nhất; BE kiểm tra mọi thao tác.

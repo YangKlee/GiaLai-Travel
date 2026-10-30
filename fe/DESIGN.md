@@ -66,6 +66,10 @@ Context cho các chức năng quản lý: thứ tự phân cấp `page header �
 
 ## Colors
 
+### Accessible action colors (demo implementation)
+
+Brand `primary` remains `#256EFF`. Small white text on that color has contrast 4.42:1, so use the semantic `primary-action` token (`#1D63ED`, 5.17:1 against white) for primary buttons and selected category pills. Use `primary-hover` (`#1755CC`) for blue body text, links and hover states. These tokens are defined in `src/index.css`; keep component styling bound to tokens. Automated axe scans pass on demo pages; full manual accessibility acceptance remains pending.
+
 - **Primary (#256EFF):** Brand electric blue for primary buttons, active toggles, chart series, logo icon, and badges.
 - **Secondary (#6B7280):** Neutral gray for icons, secondary elements, and borders.
 - **Success (#15A34A):** Active status dots, positive trend metrics, and positive sparklines.

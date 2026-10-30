@@ -1,6 +1,6 @@
 # Cấu trúc dự án GiaLai Travel
 
-Tài liệu mô tả cấu trúc mã nguồn backend (BE), frontend (FE) và tài liệu dùng chung tại thời điểm khởi tạo, ngày 30/10/2026. Các mục **hiện có** phản ánh mã nguồn trong repository; các mục **định hướng** mô tả cách tổ chức khi triển khai tiếp.
+Tài liệu mô tả cấu trúc mã nguồn backend (BE), frontend (FE) và tài liệu dùng chung, cập nhật theo mốc demo ngày 30/10/2026. Các mục **hiện có** phản ánh mã nguồn trong repository; các mục **định hướng** mô tả cách tổ chức khi triển khai tiếp.
 
 ## 1. Tổng quan
 
@@ -8,12 +8,13 @@ Dự án là monorepo dùng **npm workspaces**, gồm hai workspace `be` và `fe
 
 | Thành phần | Công nghệ hiện có | Vai trò |
 | --- | --- | --- |
-| Runtime | Node.js 20.20.2, JavaScript ES modules | Chạy backend và công cụ phát triển frontend |
+| Runtime | Node.js 20.20.2, ES modules | Chạy backend và công cụ phát triển frontend |
 | Backend | Express 5, Zod, Pino, Helmet, CORS | HTTP API, validation, logging và middleware |
 | CSDL | MariaDB/MySQL qua `mysql2/promise` | Pool kết nối, truy vấn tham số hóa, transaction |
 | Models | Sequelize 6, `sequelize-auto` | Model và quan hệ sinh từ metadata CSDL; chưa tích hợp vào runtime API |
-| Frontend | React 19, Vite 8, CSS thuần | SPA và màn hình kiểm tra kết nối backend |
-| Kiểm tra | `node:test` cho BE; ESLint và Vite build cho FE | Kiểm thử backend, kiểm tra và đóng gói frontend |
+| Frontend | React 19, TypeScript 6, Vite 8, React Router 7 | SPA khám phá, chi tiết và bản nháp chuyến đi |
+| Giao diện và dữ liệu FE | Tailwind 4, Inter, Lucide, cva/cn, Axios, Zustand 5 | Essential tokens, API client và state theo domain |
+| Kiểm tra | `node:test`, Vitest/Testing Library, Playwright, ESLint, `tsc -b`/Vite | Unit, API, E2E desktop/mobile và build |
 
 ## 2. Cấu trúc thư mục gốc hiện có
 
@@ -42,6 +43,7 @@ GiaLai-Travel/
 
 ```text
 be/
+├── demo/                            # Server và repository mẫu, không kết nối DB
 ├── src/
 │   ├── server.js                    # Đọc config, tạo DB, chạy/dừng HTTP server
 │   ├── app.js                       # Tạo Express app và gắn middleware/router
@@ -60,6 +62,7 @@ be/
 │   │   └── index.js                # Router API tổng
 │   ├── modules/
 │   │   ├── README.md               # Quy ước tổ chức module nghiệp vụ
+│   │   ├── catalog/                # Routes/schema/controller/service/repository POI
 │   │   └── health/
 │   │       └── health.controller.js # Liveness và readiness CSDL
 │   └── shared/
@@ -75,6 +78,8 @@ be/
 │   ├── app.test.js                  # Kiểm thử HTTP app
 │   ├── config.test.js               # Kiểm thử cấu hình
 │   ├── database.test.js             # Kiểm thử lớp truy cập DB
+│   ├── catalog.test.js              # API danh mục, validation, lỗi DB và SQL binding
+│   ├── contract.test.js             # Cú pháp và references OpenAPI
 │   └── validation.test.js           # Kiểm thử validation và tiện ích
 ├── migrations/
 │   ├── README.md                    # Hướng dẫn áp dụng migration
@@ -94,9 +99,11 @@ be/
 3. `routes/index.js` chuyển request đến controller tương ứng.
 4. Middleware cuối xử lý route không tồn tại và chuẩn hóa lỗi.
 
-Hiện có `GET /api/health`, `GET /api/ready` và các alias `/api/v1/health`, `/api/v1/ready`. Health kiểm tra ứng dụng còn hoạt động; readiness kiểm tra truy cập CSDL. API nghiệp vụ như đăng nhập, khám phá, lịch trình và đặt dịch vụ chưa được triển khai.
+Hiện có `GET /api/health`, `GET /api/ready` và các alias `/api/v1/health`, `/api/v1/ready`. Health kiểm tra ứng dụng còn hoạt động; readiness kiểm tra truy cập CSDL. API khám phá gồm `/api/v1/catalog`, `/api/v1/places` và `/api/v1/places/:id`, chỉ đọc nội dung công bố tiếng Việt thuộc vùng giai đoạn 1. API đăng nhập, lưu lịch trình và đặt dịch vụ chưa được triển khai.
 
 Runtime hiện dùng `src/db/database.js` qua `mysql2/promise`. Việc có Sequelize models hoặc migration JWT chưa có nghĩa API đã dùng ORM hoặc đã có chức năng xác thực. Chưa có migration runner tự động.
+
+`be/demo/server.js` dùng cùng router/service/validation và contract với runtime CSDL, nhưng inject repository mẫu từ `be/demo/`. Chế độ này chỉ chạy khi gọi `dev:demo`, không load `.env`, không ghi DB và trả `dataset: demo`. Runtime CSDL không tự fallback sang mẫu khi lỗi; repository SQL còn cần nghiệm thu MariaDB thật.
 
 ### Định hướng tổ chức module nghiệp vụ
 
@@ -122,23 +129,41 @@ Service điều phối transaction qua lớp DB dùng chung; repository nhận e
 ```text
 fe/
 ├── src/
-│   ├── main.jsx              # Mount React vào #root, bật StrictMode, import CSS
-│   ├── App.jsx               # Trang khởi tạo và gọi API health
-│   └── styles.css            # CSS toàn cục cho màn hình khởi tạo
+│   ├── main.tsx              # Mount RouterProvider, StrictMode, font Inter và CSS
+│   ├── index.css             # Tailwind v4, Essential tokens và CSS responsive
+│   ├── components/
+│   │   ├── ui/               # Button (cva/cn), Badge
+│   │   └── common/           # Loading và nhãn dữ liệu demo
+│   ├── constants/path.ts     # APP_PATHS và ROUTE_SEGMENTS
+│   ├── layouts/              # MainLayout và ErrorLayout, eager imports
+│   ├── routes/               # Router composition, route modules, loaders, Suspense
+│   ├── features/
+│   │   ├── explore/          # Trang danh sách/chi tiết, card, kiểu dữ liệu API
+│   │   ├── trips/            # Bản nháp chuyến đi trong phiên mở trang
+│   │   └── errors/           # Trang 401/403/404/500 và lỗi loader
+│   ├── services/             # Axios client, API danh mục và fixture chỉ dùng test
+│   ├── store/                # Zustand bản nháp; tách dữ liệu demo/live
+│   ├── utils/                # cn, tiền VND chính xác, ngày VN, kiểm URL nguồn
+│   └── test-setup.ts          # Setup Testing Library/Vitest
+├── e2e/                      # Playwright test luồng thực với API demo
 ├── .env.example              # Mẫu API_PROXY_TARGET và VITE_API_BASE_URL
 ├── index.html                # HTML entry chứa #root
-├── vite.config.js            # React plugin, cổng dev và proxy /api
-├── eslint.config.js          # Quy tắc kiểm tra JavaScript/React
+├── vite.config.ts            # React/Tailwind plugins, alias, proxy và Vitest
+├── playwright.config.ts      # Desktop/mobile Chromium, tự chạy API demo và Vite
+├── tsconfig*.json            # TypeScript strict và alias @/*
+├── eslint.config.js          # Quy tắc kiểm tra TypeScript/React
 ├── package.json              # Dependency và scripts frontend
 ├── AGENTS.md                 # Quy ước và kiến trúc mục tiêu cho FE
 └── DESIGN.md                 # Đặc tả thiết kế giao diện
 ```
 
-Luồng chạy: `index.html` → `src/main.jsx` → `src/App.jsx`. Màn hình hiện tại gọi `/api/health` để hiển thị trạng thái kết nối backend. Dev server Vite chạy cổng `5173`, chuyển tiếp `/api` đến backend cổng `3000` theo mặc định.
+Luồng chạy: `index.html` → `src/main.tsx` → RouterProvider → layout → trang lazy. Route loader gọi API qua `services/` trước khi render; các request nhận AbortSignal để hủy khi điều hướng. Loader lỗi đi qua error boundary. Dev server Vite chạy cổng `5173`, chuyển tiếp `/api` đến backend cổng `3000` theo mặc định.
+
+Các route đã mở: `/explore`, `/places/:id`, `/trips`; `/` chuyển sang khám phá. `/admin/*` hiển thị chưa khả dụng, chưa có quyền quản trị giả. Zustand giữ bản nháp chỉ trong bộ nhớ, không persist token hoặc lưu lịch lên server; reload sẽ xóa bản nháp.
 
 ### Định hướng mở rộng
 
-`AGENTS.md` và kế hoạch triển khai định hướng TypeScript strict, Tailwind CSS v4, component theo pattern shadcn/ui, Lucide, React Router v7, Axios và Zustand. **Các công nghệ này chưa được khai báo trong dependency frontend hiện tại.**
+Đã thiết lập TypeScript strict, Tailwind v4, Lucide, React Router v7, Axios và Zustand. Các module tài khoản, quản trị, AI, offline, dịch vụ/đặt chỗ và bộ UI mở rộng tiếp tục theo `AGENTS.md`/backlog. Cấu trúc mở rộng dự kiến:
 
 ```text
 fe/src/
@@ -161,7 +186,7 @@ fe/src/
 └── index.css                 # Tailwind và design tokens khi chuyển đổi
 ```
 
-Đây là cấu trúc mục tiêu, chưa phải các thư mục đã có. Khi chuyển đổi, dữ liệu ban đầu của trang lấy qua route loader; mutation qua event handler hoặc router action; network call tập trung tại `services/`. Mã khởi tạo hiện vẫn gọi health bằng `fetch` trong `useEffect`.
+Chỉ tạo thêm `assets/`, layouts, domain stores, hooks/types và các component khi có tính năng tương ứng. Dữ liệu ban đầu của trang lấy qua route loader; mutation qua event handler hoặc router action; network call tập trung tại `services/`. Không fetch trong `useEffect`.
 
 ## 5. Kết nối BE và FE
 
@@ -187,10 +212,13 @@ Chạy từ thư mục gốc repository:
 | --- | --- |
 | `npm ci` | Cài dependency theo lockfile cho cả BE và FE |
 | `npm run dev` | Chạy đồng thời backend và frontend |
+| `npm run dev:demo` | Chạy FE và API mẫu tách biệt, không cần CSDL |
 | `npm run dev:be` | Chạy backend ở chế độ watch |
 | `npm run dev:fe` | Chạy Vite dev server |
 | `npm start` | Chạy backend |
-| `npm test` | Chạy bộ test backend |
+| `npm test` | Chạy BE và FE unit tests |
+| `npm run test:be` / `npm run test:fe` | Chạy riêng từng workspace |
+| `npm run test:e2e` | Playwright tự chạy API demo và Vite, kiểm tra desktop/mobile |
 | `npm run lint` | Chạy ESLint frontend |
 | `npm run build` | Build frontend vào `fe/dist/` |
 | `npm run preview -w fe` | Xem thử bản build frontend |
@@ -207,4 +235,5 @@ Lần đầu chạy local, tạo `be/.env` và `fe/.env` từ các file `.env.ex
 - [Quy ước frontend](fe/AGENTS.md) và [thiết kế giao diện](fe/DESIGN.md).
 - [SRS](docs/srs/README.md): yêu cầu chức năng, phi chức năng và sơ đồ.
 - [Kế hoạch triển khai](docs/implementation/README.md): kiến trúc mục tiêu và milestone.
+- [Tiến độ demo](docs/implementation/demo-progress.md): phạm vi hoàn thành, bằng chứng kiểm tra và task tiếp theo.
 - [Task backend](docs/implementation/backend-tasks.md), [task frontend](docs/implementation/frontend-tasks.md) và [tích hợp/nghiệm thu](docs/implementation/integration-and-acceptance.md).

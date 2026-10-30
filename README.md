@@ -1,8 +1,19 @@
 # GiaLai Travel
 
-Tài liệu: [Cấu trúc dự án BE/FE](PROJECT_STRUCTURE.md) · [SRS](docs/srs/README.md) · [Kế hoạch và task triển khai BE/FE](docs/implementation/README.md).
+Tài liệu: [Cấu trúc dự án BE/FE](PROJECT_STRUCTURE.md) · [Tiến độ demo](docs/implementation/demo-progress.md) · [SRS](docs/srs/README.md) · [Kế hoạch và task triển khai BE/FE](docs/implementation/README.md).
 
-Backend Express 5 và frontend React 19 (JavaScript, Vite), dùng npm workspaces.
+Backend Express 5 (JavaScript) và frontend React 19 (TypeScript strict, Vite), dùng npm workspaces.
+
+## Chạy demo trước
+
+```powershell
+npm ci
+npm run dev:demo
+```
+
+Mở http://localhost:5173: tìm/lọc/phân trang địa điểm → xem chi tiết → thêm điểm vào chuyến đi → đổi tên, sắp xếp và xóa điểm trong bản nháp.
+
+Demo không cần `.env` hoặc CSDL; API mẫu chạy cổng 3000, chỉ bind loopback. Nội dung/giá/thời lượng có nhãn mẫu, chưa xác minh để hướng dẫn du lịch. Bản nháp chỉ nằm trong bộ nhớ phiên mở trang, tải lại sẽ xóa; chưa có tài khoản, AI, lưu lịch lên máy chủ hoặc giao dịch. Chưa có ảnh du lịch được cấp phép nên dùng minh họa biểu tượng cục bộ. Nếu máy có `fe/.env`, để trống `VITE_API_BASE_URL` và trỏ `API_PROXY_TARGET` đến `http://localhost:3000` khi chạy demo.
 
 ## Yêu cầu
 
@@ -36,9 +47,13 @@ Chỉ copy `.env.example` lần đầu, tránh ghi đè cấu hình đã có. Ba
 npm test
 npm run lint
 npm run build
+npm exec -w fe -- playwright install chromium
+npm run test:e2e
 ```
 
 `npm start` chạy backend. `npm run preview -w fe` xem thử bản build frontend.
+`npm test` chạy BE và FE unit tests; `npm run test:be` hoặc `npm run test:fe` chạy riêng.
+E2E tự khởi động API demo và Vite, cần để trống cổng 3000/5173 (dừng `dev` trước khi chạy). Kiểm tra trên Chromium desktop và viewport mobile, chưa thay thế Safari/iOS thật.
 Khi triển khai, phục vụ `fe/dist` bằng static hosting, chuyển tiếp `/api` đến backend
 hoặc cấu hình `VITE_API_BASE_URL` trước khi build và `CLIENT_ORIGIN` ở backend.
 Các biến `VITE_*` công khai trong trình duyệt, không chứa bí mật.
@@ -54,10 +69,10 @@ be/
   README.md       # Tài liệu CSDL
 fe/
   src/            # React app
-  vite.config.js  # Dev server và proxy API
+  vite.config.ts  # Dev server, proxy API và Vitest
 docs/             # Tài liệu nghiệp vụ hiện có
 ```
 
-Scaffold BE đã có config, logger, middleware, health/readiness, pool MariaDB UTC và helper transaction.
-Kết nối hosting hiện chưa xác minh được do timeout cổng 3306; chưa triển khai chức năng nghiệp vụ.
+BE đã có config, logger, middleware, health/readiness, pool MariaDB UTC, helper transaction và API danh mục/POI công bố. FE có khám phá, chi tiết và bản nháp chuyến đi.
+Repository SQL chưa được kiểm tra tích hợp trên MariaDB thật; demo chạy qua repository mẫu tách riêng. Chức năng tài khoản, quản trị nội dung, AI và giao dịch tiếp tục theo backlog.
 Xem [hướng dẫn backend](be/DEVELOPMENT.md) và [tài liệu CSDL](be/README.md).

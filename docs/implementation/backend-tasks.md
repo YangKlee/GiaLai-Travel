@@ -1,5 +1,7 @@
 # Task triển khai backend
 
+Tiến độ triển khai ưu tiên demo và bằng chứng từng lát cắt: [demo-progress.md](demo-progress.md). API danh mục có repository CSDL và repository mẫu tách biệt; chưa thay thế nghiệm thu MariaDB hoặc workflow quản trị.
+
 Áp dụng [quy ước trạng thái, kích thước và hoàn thành](README.md). Owner mặc định: BE; task triển khai phối hợp OPS, task dữ liệu phối hợp content/PO. Tất cả checkbox đang để chưa hoàn thành; scaffold hiện tại được dùng làm nền. Endpoint dưới đây là thiết kế đề xuất, phải đưa vào OpenAPI ở X-02 trước khi tích hợp.
 
 ## M0 - Nền tảng

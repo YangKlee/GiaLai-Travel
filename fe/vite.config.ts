@@ -12,8 +12,15 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       strictPort: true,
-      proxy: { '/api': { target: env.API_PROXY_TARGET || 'http://localhost:3000', changeOrigin: true } },
+      proxy: {
+        '/api': { target: env.API_PROXY_TARGET || 'http://localhost:3000', changeOrigin: true },
+      },
     },
-    test: { environment: 'jsdom', setupFiles: ['./src/test-setup.ts'], restoreMocks: true },
+    test: {
+      environment: 'jsdom',
+      include: ['src/**/*.test.{ts,tsx}'],
+      setupFiles: ['./src/test-setup.ts'],
+      restoreMocks: true,
+    },
   };
 });

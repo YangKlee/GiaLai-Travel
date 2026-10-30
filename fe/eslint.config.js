@@ -23,7 +23,10 @@ export default [
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
     },
   },
-  { files: ['vite.config.ts', 'eslint.config.js'], languageOptions: { globals: globals.node } },
+  {
+    files: ['vite.config.ts', 'playwright.config.ts', 'eslint.config.js'],
+    languageOptions: { globals: globals.node },
+  },
   // Route modules export route objects, rather than refreshable React components.
   { files: ['src/routes/*Routes.tsx'], rules: { 'react-refresh/only-export-components': 'off' } },
 ];

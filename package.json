@@ -12,7 +12,10 @@
     "start": "npm run start -w be",
     "build": "npm run build -w fe",
     "lint": "npm run lint -w fe",
-    "test": "npm run test -w be"
+    "test": "npm run test:be && npm run test:fe",
+    "test:be": "npm run test -w be",
+    "test:fe": "npm run test -w fe",
+    "test:e2e": "npm run test:e2e -w fe"
   },
   "devDependencies": { "concurrently": "^9.2.1" }
 }
