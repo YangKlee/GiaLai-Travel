@@ -20,6 +20,7 @@ Dự án là monorepo dùng **npm workspaces**, gồm hai workspace `be` và `fe
 
 ```text
 GiaLai-Travel/
+├── .github/workflows/ci.yml   # Format, lint, unit, build và E2E demo
 ├── be/                       # Workspace backend
 ├── fe/                       # Workspace frontend
 ├── docs/                     # Yêu cầu, thiết kế và kế hoạch triển khai

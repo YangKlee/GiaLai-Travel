@@ -9,13 +9,16 @@
 | D1 — Nền tảng FE | TypeScript strict, alias, Router Data Mode, route modules, lazy pages, error pages, Essential tokens, Button/Badge, Vitest | Đã triển khai; lint, build và 2 route tests đạt trên Node 20.20.2 |
 | D2 — API khám phá | Contract, danh mục, tìm/lọc/phân trang và chi tiết POI; repository CSDL và server demo tách riêng | Đã triển khai; bộ 16 test BE (gồm kiểm tra OpenAPI) đạt trên Node 20.20.2 |
 | D3 — Demo xuyên FE/BE | Trang khám phá, chi tiết, bản nháp chuyến đi và kiểm tra tích hợp | Đã triển khai; 7 unit tests FE, 10 E2E Chromium desktop/mobile, lint và TypeScript/Vite build đạt trên Node 20.20.2 |
+| D4 — CI | GitHub Actions cài dependency theo lockfile, format/lint/unit/build/E2E trên Node từ `.nvmrc` | Đã thêm workflow; các lệnh đạt local, chưa chạy trên GitHub runner |
+
+Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`. Tài liệu cấu trúc ban đầu: `57a8d9c`.
 
 ## Đối chiếu backlog
 
 - FE-01: hoàn thành phần nền tảng public router/TypeScript; admin chưa mở do chưa có auth, chưa tạo shell tài khoản giả. SPA fallback trên hosting sẽ kiểm tra khi triển khai.
 - FE-02: đã có tokens, font Inter tự host, Button/Badge và layout responsive. Các component form/table/dialog và kiểm tra tiếp cận đầy đủ sẽ bổ sung theo tính năng sử dụng.
 - FE-03: Axios public read client xử lý lỗi chuẩn, hủy request qua AbortSignal; formatter VND dùng BigInt, ngày theo Việt Nam và URL nguồn chỉ HTTP(S). Chưa có auth/refresh/cache dữ liệu riêng.
-- FE-04: có Vitest/Testing Library và memory router độc lập; E2E dùng API demo thật, kiểm tra tìm kiếm/URL/phân trang, detail/deep link/reload, bản nháp và phục hồi lỗi mạng. Đã có Prettier và lệnh `format:check`; CI và git hooks còn tiếp tục.
+- FE-04: có Vitest/Testing Library và memory router độc lập; E2E dùng API demo thật, kiểm tra tìm kiếm/URL/phân trang, detail/deep link/reload, bản nháp và phục hồi lỗi mạng. Đã có Prettier, `format:check` và workflow CI; git hooks còn tiếp tục. Chưa chạy workflow trên GitHub runner, chưa có smoke với DB thật.
 - FE-08/09: có khám phá, lọc tên/loại/vùng/giá, sort, phân trang, empty/error và detail POI. Bản đồ mở bằng liên kết OpenStreetMap khi có tọa độ; chưa nhúng bản đồ, chưa có dịch vụ/slot. Minh họa dùng Lucide/CSS cục bộ, chưa dùng ảnh du lịch có bản quyền.
 - FE-17: mới có bản nháp thao tác thêm/xóa/đổi thứ tự/đổi tên, tối đa 12 điểm. Dữ liệu trong bộ nhớ, tách demo/live, reload xóa; chưa có lưu revision, ownership, AI/validator hoặc CRUD lịch phía BE.
 - BE-11/12: có API đọc danh mục/POI, giá, giờ, lọc và phân trang; chỉ đọc bản công bố tiếng Việt, vùng giai đoạn 1. Chưa có workflow quản trị, dịch vụ/slot, ngoại lệ đóng cửa hoặc bằng chứng tích hợp MariaDB thật. Test SQL chỉ xác minh binding và điều kiện truy vấn, không thay thế integration DB.
@@ -31,7 +34,7 @@ Playwright kiểm Chromium desktop 1440px và viewport iPhone 13 bằng Chromium
 
 ## Thứ tự tiếp tục
 
-1. Nghiệm thu CSDL dev/test biệt lập và migration (BE-02/03), thêm CI cho các kiểm tra hiện có (FE-04/X-02).
+1. Nghiệm thu CSDL dev/test biệt lập và migration (BE-02/03), mở rộng CI bằng integration DB (FE-04/X-02).
 2. Auth JWT/refresh/thu hồi phiên và UI tài khoản (BE-04/05, FE-03/05); lưu lịch phải theo danh tính thật.
 3. Workflow quản trị nội dung và dữ liệu có nguồn (BE-09/10/11, FE-12) để thay bộ mẫu bằng nội dung công bố.
 4. Validator/tuyến/AI thật và lưu revision (BE-15–18, FE-14–17), sau đó đặt dịch vụ và mock payment.

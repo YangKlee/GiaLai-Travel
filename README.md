@@ -54,6 +54,7 @@ npm run test:e2e
 `npm start` chạy backend. `npm run preview -w fe` xem thử bản build frontend.
 `npm test` chạy BE và FE unit tests; `npm run test:be` hoặc `npm run test:fe` chạy riêng.
 E2E tự khởi động API demo và Vite, cần để trống cổng 3000/5173 (dừng `dev` trước khi chạy). Kiểm tra trên Chromium desktop và viewport mobile, chưa thay thế Safari/iOS thật.
+Workflow [Demo checks](.github/workflows/ci.yml) chạy format/lint/unit/build/E2E khi push lên `main` hoặc mở PR; chưa bao gồm integration MariaDB. Định dạng FE bằng `npm run format -w fe`, kiểm tra bằng `npm run format:check -w fe`.
 Khi triển khai, phục vụ `fe/dist` bằng static hosting, chuyển tiếp `/api` đến backend
 hoặc cấu hình `VITE_API_BASE_URL` trước khi build và `CLIENT_ORIGIN` ở backend.
 Các biến `VITE_*` công khai trong trình duyệt, không chứa bí mật.
