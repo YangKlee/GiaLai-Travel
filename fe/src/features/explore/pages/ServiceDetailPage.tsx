@@ -28,9 +28,7 @@ export default function ServiceDetailPage() {
   const user = useAuthStore((state) => state.user);
   const sourceUrl = safeHttpUrl(service.sourceReference);
 
-  const [selectedSlotId, setSelectedSlotId] = useState<string>(
-    service.slots[0]?.id ?? '',
-  );
+  const [selectedSlotId, setSelectedSlotId] = useState<string>(service.slots[0]?.id ?? '');
   const [quantity, setQuantity] = useState<number>(1);
   const [contactName, setContactName] = useState<string>(user?.displayName ?? '');
   const [contactEmail, setContactEmail] = useState<string>(user?.email ?? '');
@@ -129,11 +127,7 @@ export default function ServiceDetailPage() {
             <div className="card-header-inline">
               <Ticket size={22} aria-hidden="true" />
               <div>
-                <h2>Khung giờ phục vụ (Service Slots)</h2>
-                <p className="muted">
-                  Tồn kho tính theo từng khoảng thời gian độc lập; yêu cầu đặt dịch vụ chỉ giữ chỗ
-                  sau khi quản trị viên duyệt đơn.
-                </p>
+                <h2>Khung giờ phục vụ</h2>
               </div>
             </div>
 
@@ -200,7 +194,9 @@ export default function ServiceDetailPage() {
                   marginTop: '12px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#28a745' }}
+                >
                   <CheckCircle2 size={20} />
                   <strong>Gửi yêu cầu thành công!</strong>
                 </div>
@@ -208,13 +204,18 @@ export default function ServiceDetailPage() {
                   Mã đơn đặt: <code>{successBookingId}</code>
                 </p>
                 <p style={{ margin: '8px 0', fontSize: '0.85rem', color: '#666' }}>
-                  Đơn của bạn đang ở trạng thái <strong>CHỜ DUYỆT</strong>. Bạn có thể theo dõi tiến độ
-                  và thanh toán giữ chỗ tại trang Đơn đặt chỗ.
+                  Đơn của bạn đang ở trạng thái <strong>CHỜ DUYỆT</strong>. Bạn có thể theo dõi tiến
+                  độ và thanh toán giữ chỗ tại trang Đơn đặt chỗ.
                 </p>
                 <Link
                   to={APP_PATHS.BOOKINGS}
                   className="button button-primary"
-                  style={{ display: 'inline-flex', marginTop: '8px', width: '100%', justifyContent: 'center' }}
+                  style={{
+                    display: 'inline-flex',
+                    marginTop: '8px',
+                    width: '100%',
+                    justifyContent: 'center',
+                  }}
                 >
                   <CalendarCheck size={16} style={{ marginRight: '6px' }} />
                   Xem danh sách đơn đặt chỗ
@@ -242,7 +243,10 @@ export default function ServiceDetailPage() {
                 )}
 
                 <div className="form-group" style={{ marginBottom: '12px' }}>
-                  <label htmlFor="quantity" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}>
+                  <label
+                    htmlFor="quantity"
+                    style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}
+                  >
                     Số lượng người / suất:
                   </label>
                   <input
@@ -262,7 +266,10 @@ export default function ServiceDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '12px' }}>
-                  <label htmlFor="contactName" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}>
+                  <label
+                    htmlFor="contactName"
+                    style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}
+                  >
                     Họ tên liên hệ:
                   </label>
                   <input
@@ -278,7 +285,10 @@ export default function ServiceDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '12px' }}>
-                  <label htmlFor="contactPhone" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}>
+                  <label
+                    htmlFor="contactPhone"
+                    style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}
+                  >
                     Số điện thoại liên hệ:
                   </label>
                   <input
@@ -293,7 +303,10 @@ export default function ServiceDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label htmlFor="contactEmail" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}>
+                  <label
+                    htmlFor="contactEmail"
+                    style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}
+                  >
                     Email nhận xác nhận:
                   </label>
                   <input
@@ -307,7 +320,10 @@ export default function ServiceDetailPage() {
                   />
                 </div>
 
-                <dl className="facts" style={{ margin: '16px 0', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+                <dl
+                  className="facts"
+                  style={{ margin: '16px 0', borderTop: '1px solid #eee', paddingTop: '12px' }}
+                >
                   <div>
                     <dt>Đơn giá</dt>
                     <dd>{formatVnd(service.unitPriceVnd)}</dd>
@@ -317,13 +333,20 @@ export default function ServiceDetailPage() {
                     <dd>{quantity} suất</dd>
                   </div>
                   <div>
-                    <dt><strong>Tổng chi phí</strong></dt>
-                    <dd><strong style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>{formatVnd(totalCost.toString())}</strong></dd>
+                    <dt>
+                      <strong>Tổng chi phí</strong>
+                    </dt>
+                    <dd>
+                      <strong style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>
+                        {formatVnd(totalCost.toString())}
+                      </strong>
+                    </dd>
                   </div>
                 </dl>
 
                 <p className="muted" style={{ fontSize: '0.8rem', marginBottom: '16px' }}>
-                  Chính sách: Hoàn 100% tiền mô phỏng nếu hủy trước giờ bắt đầu dịch vụ. Đơn phải gửi trước giờ khởi hành tối thiểu 24h30m.
+                  Chính sách: Hoàn 100% tiền mô phỏng nếu hủy trước giờ bắt đầu dịch vụ. Đơn phải
+                  gửi trước giờ khởi hành tối thiểu 24h30m.
                 </p>
 
                 {user ? (

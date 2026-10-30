@@ -123,7 +123,7 @@ export default function PlaceDetailPage() {
             <PlaceArtwork category={place.category} large />
           )}
           <section className="content-card">
-            <h2>Một điểm dừng, một trải nghiệm</h2>
+            <h2>Giới thiệu điểm đến</h2>
             <p className="description-full">{place.description}</p>
             <div className="source-note">
               <CalendarDays size={16} aria-hidden="true" />
@@ -149,10 +149,7 @@ export default function PlaceDetailPage() {
               <div className="card-header-inline">
                 <Ticket size={22} aria-hidden="true" />
                 <div>
-                  <h2>Dịch vụ &amp; Trải nghiệm tại điểm đến</h2>
-                  <p className="muted">
-                    Các dịch vụ đối tác công bố kèm khung giờ (slot) và số lượng suất còn nhận.
-                  </p>
+                  <h2>Dịch vụ &amp; Trải nghiệm</h2>
                 </div>
               </div>
               {services.length === 0 ? (
@@ -193,10 +190,7 @@ export default function PlaceDetailPage() {
               <div className="card-header-inline">
                 <Sparkles size={22} aria-hidden="true" />
                 <div>
-                  <h2>Sự kiện &amp; Lễ hội tại địa điểm</h2>
-                  <p className="muted">
-                    Thông tin sự kiện có nguồn xác minh theo lịch trình địa phương.
-                  </p>
+                  <h2>Sự kiện &amp; Lễ hội</h2>
                 </div>
               </div>
               {events.length === 0 ? (
@@ -233,7 +227,6 @@ export default function PlaceDetailPage() {
         </article>
         <aside className="detail-sidebar">
           <section className="content-card trip-cta">
-            <p className="eyebrow text-primary-hover">GỢI Ý ĐIỂM DỪNG</p>
             <h2>Đưa vào hành trình</h2>
             <dl className="facts">
               <div>
@@ -249,7 +242,6 @@ export default function PlaceDetailPage() {
               </div>
             </dl>
             <AddToTripButton dataset={dataset} place={place} />
-            <p className="muted">Chọn điểm vào bản nháp, chưa phát sinh đặt chỗ.</p>
           </section>
           <section className="content-card">
             <h3>Giờ mở cửa</h3>
@@ -296,7 +288,13 @@ export default function PlaceDetailPage() {
                     rel="noreferrer"
                     target="_blank"
                     className={buttonVariants({ variant: 'secondary' })}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      width: '100%',
+                    }}
                   >
                     <Navigation size={16} aria-hidden="true" />
                     Chỉ đường trên Google Maps
@@ -336,26 +334,40 @@ export default function PlaceDetailPage() {
           <section className="content-card">
             <h3>Đóng góp chất lượng dữ liệu</h3>
             <p className="muted" style={{ fontSize: '0.88rem', marginBottom: '12px' }}>
-              Phát hiện thông tin chưa chính xác, địa điểm đóng cửa hoặc giá vé thay đổi? Hãy gửi phản ánh để ban quản trị xác minh.
+              Phát hiện thông tin chưa chính xác, địa điểm đóng cửa hoặc giá vé thay đổi? Hãy gửi
+              phản ánh để ban quản trị xác minh.
             </p>
 
             {user ? (
               <Button
                 variant="secondary"
                 onClick={() => setShowReportModal(!showReportModal)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
               >
                 <Flag size={16} />
                 Báo lỗi / Góp ý nội dung
               </Button>
             ) : (
-              <Link to={APP_PATHS.LOGIN} className="button button-outline" style={{ display: 'block', textAlign: 'center' }}>
+              <Link
+                to={APP_PATHS.LOGIN}
+                className="button button-outline"
+                style={{ display: 'block', textAlign: 'center' }}
+              >
                 Đăng nhập để góp ý dữ liệu
               </Link>
             )}
 
             {showReportModal && (
-              <form onSubmit={handleSubmitIssue} style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+              <form
+                onSubmit={handleSubmitIssue}
+                style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '12px' }}
+              >
                 {reportSuccess ? (
                   <p style={{ color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600 }}>
                     Cảm ơn bạn! Báo cáo đã được ghi nhận vào hệ thống.
@@ -368,7 +380,15 @@ export default function PlaceDetailPage() {
                       </p>
                     )}
                     <div style={{ marginBottom: '10px' }}>
-                      <label htmlFor="issueCategory" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+                      <label
+                        htmlFor="issueCategory"
+                        style={{
+                          display: 'block',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          marginBottom: '4px',
+                        }}
+                      >
                         Loại phản ánh:
                       </label>
                       <select
@@ -386,7 +406,15 @@ export default function PlaceDetailPage() {
                     </div>
 
                     <div style={{ marginBottom: '12px' }}>
-                      <label htmlFor="issueDesc" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+                      <label
+                        htmlFor="issueDesc"
+                        style={{
+                          display: 'block',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          marginBottom: '4px',
+                        }}
+                      >
                         Mô tả chi tiết:
                       </label>
                       <textarea

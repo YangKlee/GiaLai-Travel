@@ -15,11 +15,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDuration, formatVnd } from '@/utils/format';
 import { CATEGORY_NAMES } from '@/features/explore/types/catalog';
-import type {
-  AdminContentMeta,
-  AdminPlaceItem,
-  Category,
-} from '@/features/explore/types/catalog';
+import type { AdminContentMeta, AdminPlaceItem, Category } from '@/features/explore/types/catalog';
 import {
   createAdminPlace,
   deleteAdminPlace,
@@ -147,7 +143,9 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
       bannerUrl: formBannerUrl.trim() || null,
       imageUrl: formBannerUrl.trim() || null,
       sourceReference: formSource.trim() || null,
-      openingHours: [{ weekday: 1, opensAt: '07:30:00', closesAt: '17:30:00', crossesMidnight: false }],
+      openingHours: [
+        { weekday: 1, opensAt: '07:30:00', closesAt: '17:30:00', crossesMidnight: false },
+      ],
     };
 
     try {
@@ -176,7 +174,11 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
   }
 
   async function handleDelete(placeId: string, placeTitle: string) {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa địa điểm "${placeTitle}" không? Hành động này sẽ xóa dữ liệu và không thể hoàn tác.`)) {
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn xóa địa điểm "${placeTitle}" không? Hành động này sẽ xóa dữ liệu và không thể hoàn tác.`,
+      )
+    ) {
       return;
     }
 
@@ -224,10 +226,10 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
       >
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-            Quản trị Địa điểm Du lịch (Places CRUD)
+            Quản lý Địa điểm Du lịch
           </h2>
           <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>
-            Thêm mới, cập nhật toạ độ, giá vé, giờ mở cửa và xóa các điểm đến trên bản đồ Gia Lai.
+            Thêm mới, cập nhật toạ độ, giá vé, giờ mở cửa và các điểm đến trên bản đồ Gia Lai.
           </p>
         </div>
         <Button variant="primary" onClick={openCreateModal}>
@@ -433,7 +435,16 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                     {place.description}
                   </p>
 
-                  <div style={{ fontSize: '0.82rem', color: '#666', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div
+                    style={{
+                      fontSize: '0.82rem',
+                      color: '#666',
+                      marginTop: 'auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
                     <div>
                       💰 Giá tham khảo: <strong>{formatVnd(place.referencePriceVnd)}</strong>
                     </div>
@@ -442,7 +453,9 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <MapPin size={13} />
-                      <small>({place.latitude.toFixed(4)}, {place.longitude.toFixed(4)})</small>
+                      <small>
+                        ({place.latitude.toFixed(4)}, {place.longitude.toFixed(4)})
+                      </small>
                     </div>
                   </div>
 
@@ -523,7 +536,9 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
               }}
             >
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
-                {editingPlace ? `Chỉnh sửa địa điểm: ${editingPlace.title}` : 'Thêm địa điểm du lịch mới'}
+                {editingPlace
+                  ? `Chỉnh sửa địa điểm: ${editingPlace.title}`
+                  : 'Thêm địa điểm du lịch mới'}
               </h3>
               <button
                 type="button"
@@ -720,7 +735,13 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                       }}
                     />
                     {uploadingR2 && (
-                      <p style={{ margin: '6px 0 0', color: 'var(--color-primary)', fontSize: '0.88rem' }}>
+                      <p
+                        style={{
+                          margin: '6px 0 0',
+                          color: 'var(--color-primary)',
+                          fontSize: '0.88rem',
+                        }}
+                      >
                         ⏳ Đang tải ảnh lên Cloudflare R2...
                       </p>
                     )}
@@ -751,7 +772,9 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                         marginBottom: '6px',
                       }}
                     >
-                      <small style={{ fontWeight: 600, color: '#555' }}>Xem trước ảnh banner:</small>
+                      <small style={{ fontWeight: 600, color: '#555' }}>
+                        Xem trước ảnh banner:
+                      </small>
                       <button
                         type="button"
                         onClick={() => setFormBannerUrl('')}

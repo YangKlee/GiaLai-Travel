@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { deduceAddressFromCoords, parseCoordinatesOrGoogleMapsUrl } from '../utils/geoUtils';
 import 'leaflet/dist/leaflet.css';
 
 interface OriginLocationPickerProps {
@@ -31,38 +32,6 @@ interface SearchResult {
 
 type MapTileLayerType = 'google-roadmap' | 'google-hybrid' | 'osm';
 
-/**
- * Trích xuất tọa độ từ chuỗi văn bản (ví dụ "13.9833, 108.0000" hoặc Google Maps URL)
- */
-export function parseCoordinatesOrGoogleMapsUrl(input: string): { lat: number; lon: number } | null {
-  if (!input) return null;
-  const trimmed = input.trim();
-
-  // 1. Google Maps URL (@lat,lon, or ?q=lat,lon, or ?ll=lat,lon)
-  const urlMatch =
-    trimmed.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/) ||
-    trimmed.match(/[?&](?:q|ll)=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/);
-  if (urlMatch) {
-    const lat = Number(urlMatch[1]);
-    const lon = Number(urlMatch[2]);
-    if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
-      return { lat, lon };
-    }
-  }
-
-  // 2. Tọa độ số dạng "13.9833, 108.0000" hoặc "13.9833 108.0000"
-  const coordMatch = trimmed.match(/^(-?\d{1,2}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)$/);
-  if (coordMatch) {
-    const lat = Number(coordMatch[1]);
-    const lon = Number(coordMatch[2]);
-    if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
-      return { lat, lon };
-    }
-  }
-
-  return null;
-}
-
 export function OriginLocationPicker({
   label,
   latitude,
@@ -80,6 +49,14 @@ export function OriginLocationPicker({
   const [reverseGeocoding, setReverseGeocoding] = useState(false);
   const [pickerStatus, setPickerStatus] = useState<string | null>(null);
 
+  const onChangeRef = useRef(onChange);
+  const availablePlacesRef = useRef(availablePlaces);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    availablePlacesRef.current = availablePlaces;
+  }, [onChange, availablePlaces]);
+
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const leafletMapRef = useRef<any>(null);
@@ -94,56 +71,7 @@ export function OriginLocationPicker({
   // Lấy link mở trực tiếp trên Google Maps
   const googleMapsUrl = `https://www.google.com/maps?q=${currentLat},${currentLon}`;
 
-  // Reverse geocoding: Suy ra tên địa chỉ từ tọa độ
-  async function deduceAddressFromCoords(lat: number, lon: number): Promise<string> {
-    // 1. Kiểm tra địa điểm gần nhất trong kho Gia Lai (< 300m)
-    let nearest: { place: Place; dist: number } | null = null;
-    for (const p of availablePlaces) {
-      const dLat = (p.latitude - lat) * 111000;
-      const dLon = (p.longitude - lon) * 111000 * Math.cos((lat * Math.PI) / 180);
-      const dist = Math.sqrt(dLat * dLat + dLon * dLon);
-      if (dist < 400) {
-        if (!nearest || dist < nearest.dist) {
-          nearest = { place: p, dist };
-        }
-      }
-    }
-    if (nearest) {
-      if (nearest.dist < 60) return nearest.place.title;
-      return `Gần ${nearest.place.title} (khoảng ${Math.round(nearest.dist)}m)`;
-    }
-
-    // 2. Gọi OpenStreetMap Nominatim reverse geocode
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=17&addressdetails=1`,
-        {
-          signal: controller.signal,
-          headers: { 'Accept-Language': 'vi,en' },
-        },
-      );
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.display_name) {
-          const addr = data.address || {};
-          const road = addr.road || addr.suburb || addr.quarter || addr.neighbourhood || '';
-          const city = addr.city || addr.town || addr.county || 'Pleiku, Gia Lai';
-          if (road) return `${road}, ${city}`;
-          const parts = (data.display_name as string).split(',').map((s) => s.trim());
-          return parts.slice(0, 3).join(', ');
-        }
-      }
-    } catch {
-      // offline / timeout
-    }
-
-    return `Vị trí tại tọa độ ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-  }
-
-  // Khởi tạo và đồng bộ Leaflet map
+  // Khởi tạo và đồng bộ Leaflet map khi mở bản đồ
   useEffect(() => {
     if (!showMap || !mapContainerRef.current) return;
 
@@ -212,8 +140,12 @@ export function OriginLocationPicker({
           setReverseGeocoding(true);
           setPickerStatus(`Đang suy ra địa chỉ cho ${newLat}, ${newLon}...`);
           try {
-            const newLabel = await deduceAddressFromCoords(newLat, newLon);
-            onChange({
+            const newLabel = await deduceAddressFromCoords(
+              newLat,
+              newLon,
+              availablePlacesRef.current,
+            );
+            onChangeRef.current({
               label: newLabel,
               latitude: String(newLat),
               longitude: String(newLon),
@@ -232,8 +164,12 @@ export function OriginLocationPicker({
           setReverseGeocoding(true);
           setPickerStatus(`Đang suy ra địa chỉ cho ${newLat}, ${newLon}...`);
           try {
-            const newLabel = await deduceAddressFromCoords(newLat, newLon);
-            onChange({
+            const newLabel = await deduceAddressFromCoords(
+              newLat,
+              newLon,
+              availablePlacesRef.current,
+            );
+            onChangeRef.current({
               label: newLabel,
               latitude: String(newLat),
               longitude: String(newLon),
@@ -259,7 +195,7 @@ export function OriginLocationPicker({
     return () => {
       isSubscribed = false;
     };
-  }, [showMap]);
+  }, [showMap, currentLat, currentLon, mapLayer]);
 
   // Cập nhật vị trí marker khi latitude / longitude thay đổi từ bên ngoài (ví dụ gõ phím hoặc chọn search)
   useEffect(() => {
@@ -323,12 +259,13 @@ export function OriginLocationPicker({
 
     // 2. Tìm kiếm trong danh mục địa điểm Gia Lai (55 địa điểm)
     for (const p of availablePlaces) {
+      if (p.latitude === null || p.longitude === null) continue;
       const matchTitle = p.title.toLowerCase().includes(cleanQ);
-      const matchAddress = p.address?.toLowerCase().includes(cleanQ);
       const matchRegion = p.region?.name?.toLowerCase().includes(cleanQ);
-      if (matchTitle || matchAddress || matchRegion) {
+      const matchDesc = p.description?.toLowerCase().includes(cleanQ);
+      if (matchTitle || matchRegion || matchDesc) {
         results.push({
-          label: `${p.title}${p.address ? ` (${p.address})` : ''}`,
+          label: `${p.title} (${p.region?.name || 'Gia Lai'})`,
           lat: p.latitude,
           lon: p.longitude,
           source: 'catalog',
@@ -392,7 +329,7 @@ export function OriginLocationPicker({
 
   // Chọn 1 kết quả từ danh sách tìm kiếm
   function handleSelectSearchResult(result: SearchResult) {
-    onChange({
+    onChangeRef.current({
       label: result.label,
       latitude: String(result.lat),
       longitude: String(result.lon),
@@ -420,8 +357,8 @@ export function OriginLocationPicker({
         const lat = Number(pos.coords.latitude.toFixed(6));
         const lon = Number(pos.coords.longitude.toFixed(6));
         setLocatingGps(false);
-        const deducedLabel = await deduceAddressFromCoords(lat, lon);
-        onChange({
+        const deducedLabel = await deduceAddressFromCoords(lat, lon, availablePlacesRef.current);
+        onChangeRef.current({
           label: deducedLabel || 'Vị trí hiện tại của tôi (GPS)',
           latitude: String(lat),
           longitude: String(lon),
@@ -442,10 +379,16 @@ export function OriginLocationPicker({
   }
 
   return (
-    <div className="origin-picker-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div
+      className="origin-picker-wrapper"
+      style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+    >
       {/* Search & Address Input */}
       <div>
-        <label htmlFor="ai-origin-label" style={{ fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+        <label
+          htmlFor="ai-origin-label"
+          style={{ fontWeight: 600, display: 'block', marginBottom: '4px' }}
+        >
           5. Điểm xuất phát (Tìm kiếm địa chỉ hoặc chọn trực tiếp trên Google Maps)
         </label>
 
@@ -461,14 +404,16 @@ export function OriginLocationPicker({
                   // Tự động kiểm tra nếu dán tọa độ hoặc link Google Maps
                   const parsed = parseCoordinatesOrGoogleMapsUrl(val);
                   if (parsed) {
-                    onChange({
+                    onChangeRef.current({
                       label: `Vị trí tọa độ (${parsed.lat}, ${parsed.lon})`,
                       latitude: String(parsed.lat),
                       longitude: String(parsed.lon),
                     });
-                    setPickerStatus(`Đã tự động suy ra tọa độ từ liên kết: ${parsed.lat}, ${parsed.lon}`);
+                    setPickerStatus(
+                      `Đã tự động suy ra tọa độ từ liên kết: ${parsed.lat}, ${parsed.lon}`,
+                    );
                   } else {
-                    onChange({ label: val, latitude, longitude });
+                    onChangeRef.current({ label: val, latitude, longitude });
                   }
                 }}
                 placeholder="Nhập địa chỉ, khách sạn, hoặc dán link Google Maps / tọa độ..."
@@ -488,7 +433,7 @@ export function OriginLocationPicker({
                     cursor: 'pointer',
                     color: 'var(--color-text-muted, #94a3b8)',
                   }}
-                  onClick={() => onChange({ label: '', latitude, longitude })}
+                  onClick={() => onChangeRef.current({ label: '', latitude, longitude })}
                 >
                   <X size={16} />
                 </button>
@@ -639,7 +584,14 @@ export function OriginLocationPicker({
           marginTop: '2px',
         }}
       >
-        <span style={{ color: 'var(--color-text-muted, #64748b)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        <span
+          style={{
+            color: 'var(--color-text-muted, #64748b)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
           <Compass size={14} /> Tọa độ xuất phát:
         </span>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -647,7 +599,7 @@ export function OriginLocationPicker({
             aria-label="Vĩ độ xuất phát"
             type="text"
             value={latitude}
-            onChange={(e) => onChange({ label, latitude: e.target.value, longitude })}
+            onChange={(e) => onChangeRef.current({ label, latitude: e.target.value, longitude })}
             placeholder="Vĩ độ (Lat)"
             style={{ width: '110px', padding: '4px 8px', fontSize: '0.82rem', borderRadius: '4px' }}
           />
@@ -655,7 +607,7 @@ export function OriginLocationPicker({
             aria-label="Kinh độ xuất phát"
             type="text"
             value={longitude}
-            onChange={(e) => onChange({ label, latitude, longitude: e.target.value })}
+            onChange={(e) => onChangeRef.current({ label, latitude, longitude: e.target.value })}
             placeholder="Kinh độ (Lon)"
             style={{ width: '110px', padding: '4px 8px', fontSize: '0.82rem', borderRadius: '4px' }}
           />
@@ -682,7 +634,13 @@ export function OriginLocationPicker({
       </div>
 
       {pickerStatus && (
-        <div style={{ fontSize: '0.78rem', color: 'var(--color-primary, #059669)', fontStyle: 'italic' }}>
+        <div
+          style={{
+            fontSize: '0.78rem',
+            color: 'var(--color-primary, #059669)',
+            fontStyle: 'italic',
+          }}
+        >
           {pickerStatus}
         </div>
       )}
@@ -712,7 +670,15 @@ export function OriginLocationPicker({
               gap: '6px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}
+            >
               <MapPin size={16} style={{ color: '#ef4444' }} />
               <span>Chạm / Nhấp chuột hoặc kéo ghim để chọn tọa độ xuất phát</span>
             </div>
@@ -770,7 +736,8 @@ export function OriginLocationPicker({
             }}
           >
             <span>
-              Tọa độ hiện tại: <strong>{currentLat.toFixed(6)}</strong>, <strong>{currentLon.toFixed(6)}</strong>
+              Tọa độ hiện tại: <strong>{currentLat.toFixed(6)}</strong>,{' '}
+              <strong>{currentLon.toFixed(6)}</strong>
               {reverseGeocoding && ' (Đang suy ra địa chỉ...)'}
             </span>
             <span>Kéo ghim hoặc click để di chuyển điểm xuất phát</span>

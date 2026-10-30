@@ -17,7 +17,12 @@ export function createApp({
   app.disable('x-powered-by');
   if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
   app.use(requestContext(logger));
-  app.use(helmet({ contentSecurityPolicy: serveStatic ? false : undefined }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: serveStatic ? false : undefined,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(cors({ origin: clientOrigin, credentials: true }));
   app.use(express.json({ limit: '15mb' }));
 

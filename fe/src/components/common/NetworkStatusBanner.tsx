@@ -25,7 +25,8 @@ export function NetworkStatusBanner() {
       >
         <WifiOff size={16} aria-hidden="true" />
         <span>
-          Mất kết nối Internet. Đang hoạt động ở chế độ <strong>Ngoại tuyến (Chỉ đọc)</strong> cho các chuyến đi đã tải.
+          Mất kết nối Internet. Đang hoạt động ở chế độ <strong>Ngoại tuyến (Chỉ đọc)</strong> cho
+          các chuyến đi đã tải.
         </span>
       </aside>
     );

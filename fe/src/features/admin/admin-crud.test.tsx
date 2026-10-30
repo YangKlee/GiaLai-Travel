@@ -95,12 +95,17 @@ describe('Admin Places CRUD (AdminPlacesManager)', () => {
     expect(screen.getByRole('heading', { name: 'Thêm địa điểm du lịch mới' })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Tiêu đề địa điểm/i), 'Thác Phú Cường');
-    await user.type(screen.getByLabelText(/Mô tả điểm đến chi tiết/i), 'Dải lụa trắng giữa đại ngàn Chư Sê...');
+    await user.type(
+      screen.getByLabelText(/Mô tả điểm đến chi tiết/i),
+      'Dải lụa trắng giữa đại ngàn Chư Sê...',
+    );
 
     await user.click(screen.getByRole('button', { name: 'Tạo địa điểm' }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Đã tạo mới địa điểm "Thác Phú Cường" thành công!/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Đã tạo mới địa điểm "Thác Phú Cường" thành công!/i),
+      ).toBeInTheDocument();
     });
     expect(screen.getByText('Thác Phú Cường')).toBeInTheDocument();
   });
@@ -118,7 +123,9 @@ describe('Admin Places CRUD (AdminPlacesManager)', () => {
     await user.click(screen.getByRole('button', { name: /Xóa/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Đã xóa địa điểm "Biển Hồ \(Hồ T’Nưng\)" thành công!/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Đã xóa địa điểm "Biển Hồ \(Hồ T’Nưng\)" thành công!/i),
+      ).toBeInTheDocument();
     });
     expect(screen.queryByText('Biển Hồ (Hồ T’Nưng)')).not.toBeInTheDocument();
   });
@@ -197,7 +204,9 @@ describe('Admin Events CRUD & Banner Cloudflare R2 (AdminEventsManager)', () => 
     await user.click(screen.getByRole('button', { name: /Xóa/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Đã xóa sự kiện "Lễ hội Hoa Dã Quỳ Chư Đang Ya" thành công!/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Đã xóa sự kiện "Lễ hội Hoa Dã Quỳ Chư Đang Ya" thành công!/i),
+      ).toBeInTheDocument();
     });
     expect(screen.queryByText('Lễ hội Hoa Dã Quỳ Chư Đang Ya')).not.toBeInTheDocument();
   });

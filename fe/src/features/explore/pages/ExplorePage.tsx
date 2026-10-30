@@ -27,36 +27,26 @@ export default function ExplorePage() {
       <DatasetNotice dataset={places.dataset} />
       <section className="hero explore-hero">
         <div>
-          <p className="eyebrow">CHẠM VÀO ĐẠI NGÀN</p>
           <h1>
             Một Gia Lai,
             <br />
             nhiều điều để khám phá.
           </h1>
-          <p>
-            Gom những điểm đến yêu thích.
-            <br className="desktop-break" /> Tự viết nên hành trình của riêng bạn.
-          </p>
+          <p>Chọn điểm đến yêu thích và tự viết nên hành trình của riêng bạn.</p>
           <a href="#destinations" className="hero-link">
             Tìm điểm đến <ArrowRight size={18} aria-hidden="true" />
           </a>
         </div>
         <div className="hero-art" aria-hidden="true">
           <span className="hero-ring" />
-          <Compass size={150} strokeWidth={0.7} />
-          <span className="hero-caption">
-            13°58′ BẮC · 108°00′ ĐÔNG
-            <br />
-            HẸN NHAU GIỮA CAO NGUYÊN
-          </span>
+          <Compass size={140} strokeWidth={0.7} />
         </div>
       </section>
       <section id="destinations" className="discovery-section" aria-labelledby="discovery-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow text-primary-hover">ĐIỂM ĐẾN CỦA BẠN</p>
             <h2 id="discovery-title">Hôm nay, mình đi đâu?</h2>
-            <p>Thiên nhiên, văn hóa hay một chút hương vị địa phương.</p>
+            <p>Thiên nhiên, văn hóa và ẩm thực bản địa Gia Lai.</p>
           </div>
           <Link className={buttonVariants({ variant: 'secondary' })} to={APP_PATHS.TRIPS}>
             <MapPinned size={18} aria-hidden="true" />
@@ -135,7 +125,6 @@ export default function ExplorePage() {
                   placeholder="Không giới hạn"
                 />
               </label>
-              <p>Điểm chưa có giá sẽ không xuất hiện khi lọc theo giá.</p>
             </div>
           </details>
         </Form>

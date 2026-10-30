@@ -22,11 +22,8 @@ export default function EventsPage() {
       <DatasetNotice dataset={events.dataset} />
       <section className="section-heading">
         <div>
-          <p className="eyebrow text-primary-hover">LỊCH SỰ KIỆN &amp; LỄ HỘI</p>
-          <h1>Sự kiện tại Gia Lai</h1>
-          <p>
-            Theo dõi các lễ hội văn hóa, trình diễn cồng chiêng và sự kiện theo mùa tại điểm đến.
-          </p>
+          <h1>Sự kiện &amp; Lễ hội</h1>
+          <p>Lễ hội văn hóa, cồng chiêng Tây Nguyên và các sự kiện theo mùa tại Gia Lai.</p>
         </div>
         <Link to={APP_PATHS.EXPLORE} className={buttonVariants({ variant: 'secondary' })}>
           Khám phá địa điểm

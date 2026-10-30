@@ -5,6 +5,7 @@ info:
   description: Health and public place discovery. Demo server returns dataset=demo
     and never connects to the application database.
 servers:
+  - url: https://gialaitravelapi.yangkleeserver.io.vn
   - url: http://localhost:3000
 paths:
   /api/v1/admin/users:

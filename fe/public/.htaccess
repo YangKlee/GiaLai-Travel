@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Nếu yêu cầu trùng với file hoặc thư mục có thật trên đĩa, phục vụ trực tiếp
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 2. Chuyển tiếp toàn bộ các route SPA (React Router) về index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Ngăn chặn duyệt thư mục
+Options -Indexes
+
+# Cấu hình MIME type chuẩn
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+  AddType application/javascript .js
+  AddType text/css .css
+</IfModule>

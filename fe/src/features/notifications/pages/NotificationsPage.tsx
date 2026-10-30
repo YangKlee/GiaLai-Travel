@@ -1,11 +1,5 @@
 import { useState } from 'react';
-import {
-  Bell,
-  CheckCheck,
-  CheckCircle2,
-  Info,
-  Ticket,
-} from 'lucide-react';
+import { Bell, CheckCheck, CheckCircle2, Info, Ticket } from 'lucide-react';
 import { Link, useLoaderData, useRevalidator } from 'react-router-dom';
 import type { notificationsLoader } from '@/routes/catalogLoaders';
 import { APP_PATHS } from '@/constants/path';
@@ -60,7 +54,7 @@ export default function NotificationsPage() {
           <div>
             <h1>Hộp thư thông báo hệ thống</h1>
             <p className="lead">
-              Cập nhật tức thời về tình trạng đơn đặt dịch vụ, phản hồi báo lỗi dữ liệu và thông báo cá nhân.
+              Thông báo cập nhật lịch trình, trạng thái đơn đặt chỗ và hệ thống.
             </p>
           </div>
         </div>
@@ -82,7 +76,8 @@ export default function NotificationsPage() {
           <Bell size={48} className="muted" style={{ margin: '0 auto 16px' }} />
           <h3>Bạn chưa có thông báo nào</h3>
           <p className="muted" style={{ maxWidth: '480px', margin: '0 auto 20px' }}>
-            Khi có cập nhật về lịch trình, phê duyệt đơn đặt hoặc phản hồi báo lỗi, thông báo sẽ hiển thị tại đây.
+            Khi có cập nhật về lịch trình, phê duyệt đơn đặt hoặc phản hồi báo lỗi, thông báo sẽ
+            hiển thị tại đây.
           </p>
           <Link to={APP_PATHS.EXPLORE} className="button button-primary">
             Khám phá Gia Lai ngay
@@ -109,7 +104,14 @@ export default function NotificationsPage() {
                 }}
               >
                 <div style={{ flex: '1 1 300px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '6px',
+                    }}
+                  >
                     {n.kind === 'BOOKING' ? (
                       <Ticket size={16} className="text-primary" />
                     ) : n.kind === 'ISSUE' ? (
@@ -155,7 +157,11 @@ export default function NotificationsPage() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {n.targetType === 'BOOKING' && (
-                    <Link to={APP_PATHS.BOOKINGS} className="button button-outline" style={{ fontSize: '0.85rem' }}>
+                    <Link
+                      to={APP_PATHS.BOOKINGS}
+                      className="button button-outline"
+                      style={{ fontSize: '0.85rem' }}
+                    >
                       Xem đơn đặt
                     </Link>
                   )}

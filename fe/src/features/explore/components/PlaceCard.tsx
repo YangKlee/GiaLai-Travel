@@ -15,7 +15,12 @@ export function PlaceCard({ place, dataset }: { place: Place; dataset: Dataset }
 
   return (
     <article className="place-card">
-      <Link to={APP_PATHS.place(place.id)} tabIndex={-1} aria-hidden="true" className="place-card-media-link">
+      <Link
+        to={APP_PATHS.place(place.id)}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="place-card-media-link"
+      >
         {banner && !imgError ? (
           <div className="place-card-banner">
             <img
@@ -47,10 +52,7 @@ export function PlaceCard({ place, dataset }: { place: Place; dataset: Dataset }
         </p>
         <p className="place-description">{place.description}</p>
         <div className="place-card-bottom">
-          <span className="price">
-            {formatVnd(place.referencePriceVnd)}
-            {place.referencePriceVnd !== null ? <small>giá tham khảo</small> : null}
-          </span>
+          <span className="price">{formatVnd(place.referencePriceVnd)}</span>
           <AddToTripButton dataset={dataset} place={place} />
         </div>
       </div>

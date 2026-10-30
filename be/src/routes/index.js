@@ -39,6 +39,24 @@ export function createApiRouter(dependencies) {
   router.get('/ready', health.ready);
   router.get('/v1/health', health.live);
   router.get('/v1/ready', health.ready);
+  router.get('/debug-db', async (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!dependencies.database) {
+      return res.status(503).json({ status: 'error', message: 'No database instance initialized' });
+    }
+    try {
+      await dependencies.database.checkReadiness();
+      return res.json({ status: 'ok', message: 'Database connected successfully!' });
+    } catch (err) {
+      return res.status(503).json({
+        status: 'error',
+        message: err.message,
+        code: err.original?.code || err.code,
+        sqlMessage: err.original?.sqlMessage,
+        errno: err.original?.errno,
+      });
+    }
+  });
   router.use('/v1', createCatalogRouter(dependencies));
   if (dependencies.database?.models) {
     router.use(

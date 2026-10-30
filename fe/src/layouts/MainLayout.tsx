@@ -23,12 +23,16 @@ import { logout } from '@/services/auth';
 import { Badge } from '@/components/ui/Badge';
 import { buttonVariants } from '@/components/ui/button-variants';
 import { NetworkStatusBanner } from '@/components/common/NetworkStatusBanner';
+import { useTripDraftStore } from '@/store/useTripDraftStore';
 
 export function MainLayout() {
   const navigation = useNavigation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isAdmin = Boolean(user?.roles.includes('ADMIN'));
+  const draftCount = useTripDraftStore(
+    (state) => state.drafts.live?.places.length ?? state.drafts.demo?.places.length ?? 0,
+  );
 
   // Sidebar states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -187,10 +191,7 @@ export function MainLayout() {
                         role="menuitem"
                       >
                         <UserRound size={18} aria-hidden="true" />
-                        <div>
-                          <strong>Hồ sơ cá nhân</strong>
-                          <small>Quản lý tài khoản &amp; quyền riêng tư</small>
-                        </div>
+                        <span>Hồ sơ cá nhân</span>
                       </Link>
 
                       <Link
@@ -200,10 +201,7 @@ export function MainLayout() {
                         role="menuitem"
                       >
                         <MapPinned size={18} aria-hidden="true" />
-                        <div>
-                          <strong>Chuyến đi của tôi</strong>
-                          <small>Xem và chỉnh sửa lịch trình đã lưu</small>
-                        </div>
+                        <span>Chuyến đi của tôi</span>
                       </Link>
 
                       <Link
@@ -213,10 +211,7 @@ export function MainLayout() {
                         role="menuitem"
                       >
                         <Ticket size={18} aria-hidden="true" />
-                        <div>
-                          <strong>Đơn đặt chỗ dịch vụ</strong>
-                          <small>Lịch sử vé và trải nghiệm đã đặt</small>
-                        </div>
+                        <span>Đơn đặt chỗ</span>
                       </Link>
 
                       <Link
@@ -226,10 +221,7 @@ export function MainLayout() {
                         role="menuitem"
                       >
                         <Bell size={18} aria-hidden="true" />
-                        <div>
-                          <strong>Hộp thư thông báo</strong>
-                          <small>Tin tức, cập nhật và xác nhận đơn</small>
-                        </div>
+                        <span>Thông báo</span>
                       </Link>
 
                       {isAdmin && (
@@ -240,10 +232,7 @@ export function MainLayout() {
                           role="menuitem"
                         >
                           <ShieldCheck size={18} aria-hidden="true" />
-                          <div>
-                            <strong>Bảng điều khiển Quản trị</strong>
-                            <small>Kiểm duyệt nội dung và đối tác</small>
-                          </div>
+                          <span>Quản trị CMS</span>
                         </Link>
                       )}
                     </div>
@@ -437,12 +426,54 @@ export function MainLayout() {
 
           <footer className="site-footer">
             <div className="container footer-inner">
-              <span>GiaLai Travel · Một hành trình, nhiều điều để nhớ.</span>
-              <span>Khám phá theo cách của bạn.</span>
+              <span>GiaLai Travel · Khám phá đại ngàn Gia Lai.</span>
+              <span>Một hành trình, nhiều điều để nhớ.</span>
             </div>
           </footer>
         </div>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="mobile-bottom-nav" aria-label="Điều hướng nhanh điện thoại">
+        <NavLink
+          to={APP_PATHS.EXPLORE}
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Compass size={20} aria-hidden="true" />
+          <span>Khám phá</span>
+        </NavLink>
+        <NavLink
+          to={APP_PATHS.EVENTS}
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Sparkles size={20} aria-hidden="true" />
+          <span>Sự kiện</span>
+        </NavLink>
+        <NavLink
+          to={APP_PATHS.TRIPS}
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <div className="mobile-nav-icon-wrap">
+            <MapPinned size={20} aria-hidden="true" />
+            {draftCount > 0 && <span className="mobile-nav-badge">{draftCount}</span>}
+          </div>
+          <span>Chuyến đi</span>
+        </NavLink>
+        <NavLink
+          to={user ? APP_PATHS.BOOKINGS : APP_PATHS.LOGIN}
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Ticket size={20} aria-hidden="true" />
+          <span>Đơn đặt</span>
+        </NavLink>
+        <NavLink
+          to={user ? APP_PATHS.ACCOUNT : APP_PATHS.LOGIN}
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <UserRound size={20} aria-hidden="true" />
+          <span>{user ? 'Tài khoản' : 'Đăng nhập'}</span>
+        </NavLink>
+      </nav>
     </div>
   );
 }

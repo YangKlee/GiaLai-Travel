@@ -51,10 +51,7 @@ import {
   listMyBookings,
   recordPaymentAttempt,
 } from '@/services/bookings';
-import {
-  listMyNotifications,
-  markAllNotificationsRead,
-} from '@/services/notifications';
+import { listMyNotifications, markAllNotificationsRead } from '@/services/notifications';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ApiError } from '@/services/api';
 

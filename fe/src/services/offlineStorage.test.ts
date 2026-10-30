@@ -79,7 +79,9 @@ describe('offlineStorage service', () => {
   });
 
   it('tải nguyên tử (atomic) thành công gói offline và lưu vào storage', async () => {
-    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({ data: mockManifest });
+    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({
+      data: mockManifest,
+    });
     vi.spyOn(itineraryServices, 'getMyItinerary').mockResolvedValue(mockDetail);
 
     const steps: string[] = [];
@@ -102,19 +104,23 @@ describe('offlineStorage service', () => {
 
   it('từ chối tải nếu manifest thiếu checksum và không lưu vào active storage', async () => {
     const invalidManifest = { ...mockManifest, checksum: '' };
-    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({ data: invalidManifest });
+    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({
+      data: invalidManifest,
+    });
     vi.spyOn(itineraryServices, 'getMyItinerary').mockResolvedValue(mockDetail);
 
-    await expect(
-      downloadItineraryForOffline(mockUserId, mockItineraryId),
-    ).rejects.toThrow('Gói dữ liệu không có mã băm toàn vẹn');
+    await expect(downloadItineraryForOffline(mockUserId, mockItineraryId)).rejects.toThrow(
+      'Gói dữ liệu không có mã băm toàn vẹn',
+    );
 
     const notFound = await getOfflineItinerary(mockUserId, mockItineraryId);
     expect(notFound).toBeNull();
   });
 
   it('liệt kê và xóa gói offline của người dùng', async () => {
-    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({ data: mockManifest });
+    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({
+      data: mockManifest,
+    });
     vi.spyOn(itineraryServices, 'getMyItinerary').mockResolvedValue(mockDetail);
 
     await downloadItineraryForOffline(mockUserId, mockItineraryId);
@@ -129,7 +135,9 @@ describe('offlineStorage service', () => {
   });
 
   it('dọn dẹp sạch toàn bộ dữ liệu offline khi người dùng đăng xuất (purgeUserOfflineData)', async () => {
-    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({ data: mockManifest });
+    vi.spyOn(itineraryServices, 'getItineraryOfflineManifest').mockResolvedValue({
+      data: mockManifest,
+    });
     vi.spyOn(itineraryServices, 'getMyItinerary').mockResolvedValue(mockDetail);
 
     await downloadItineraryForOffline(mockUserId, mockItineraryId);

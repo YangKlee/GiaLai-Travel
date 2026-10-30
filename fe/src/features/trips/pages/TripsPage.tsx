@@ -457,8 +457,7 @@ export default function TripsPage() {
       departsAt,
       estimatedCostVnd: unitCost * proposal.partySize,
       note:
-        newStopNote.trim() ||
-        `${newStopArriveTime} - ${newStopDepartTime}: ${chosenPlace.title}`,
+        newStopNote.trim() || `${newStopArriveTime} - ${newStopDepartTime}: ${chosenPlace.title}`,
     };
 
     const updatedDays: ItineraryDay[] = proposal.days.map((d, dIdx) => {
@@ -620,13 +619,9 @@ export default function TripsPage() {
     setErrorMessage(null);
     setActionMessage(null);
     try {
-      const pkg = await downloadItineraryForOffline(
-        currentUser.id,
-        itineraryId,
-        (_step, pct) => {
-          setDownloadProgress(pct);
-        },
-      );
+      const pkg = await downloadItineraryForOffline(currentUser.id, itineraryId, (_step, pct) => {
+        setDownloadProgress(pct);
+      });
       setOfflinePackages((prev) => ({ ...prev, [itineraryId]: pkg }));
       setActionMessage(
         `Đã tải trọn gói ngoại tuyến cho "${pkg.name}" (${Math.round(pkg.sizeBytes / 1024)} KB) thành công!`,
@@ -662,8 +657,7 @@ export default function TripsPage() {
   async function handleLoadDetail(id: string, forceOffline = false) {
     setErrorMessage(null);
     if (forceOffline || !isOnline || id.startsWith('local-')) {
-      const pkg =
-        offlinePackages[id] || (await getOfflineItinerary(effectiveUserId, id));
+      const pkg = offlinePackages[id] || (await getOfflineItinerary(effectiveUserId, id));
       if (pkg) {
         setSelectedDetail(pkg.detail);
         setIsViewingOffline(true);
@@ -684,8 +678,7 @@ export default function TripsPage() {
       setSelectedDetail(detail);
       setIsViewingOffline(false);
     } catch (error) {
-      const pkg =
-        offlinePackages[id] || (await getOfflineItinerary(effectiveUserId, id));
+      const pkg = offlinePackages[id] || (await getOfflineItinerary(effectiveUserId, id));
       if (pkg) {
         setSelectedDetail(pkg.detail);
         setIsViewingOffline(true);
@@ -765,11 +758,10 @@ export default function TripsPage() {
       <DatasetNotice dataset={dataset} />
       <div className="section-heading trips-heading">
         <div>
-          <p className="eyebrow text-primary-hover">LÊN KẾ HOẠCH &amp; ĐIỀU HÀNH CHUYẾN ĐI</p>
           <h1>Chuyến đi &amp; Lịch trình AI</h1>
           <p>
-            Chọn điểm vào bản nháp nhanh hoặc sử dụng trợ lý AI tạo hành trình hoàn chỉnh theo ngân
-            sách, giờ đến/đi, địa điểm ăn/nghỉ và lộ trình tích hợp Google Maps.
+            Chọn điểm vào bản nháp nhanh hoặc sử dụng trợ lý AI tối ưu hóa lộ trình theo ngân sách,
+            giờ đến/đi và bản đồ Google Maps.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -782,7 +774,7 @@ export default function TripsPage() {
             onClick={() => setTab('DRAFT')}
           >
             <BookmarkCheck size={16} aria-hidden="true" />
-            Bản nháp trong phiên ({draft.places.length})
+            Bản nháp ({draft.places.length})
           </Button>
           <Button
             variant={tab === 'AI_PLANNER' ? 'primary' : 'secondary'}
@@ -820,17 +812,20 @@ export default function TripsPage() {
           <div className="info-note">
             <Info size={18} aria-hidden="true" />
             <p>
-              <strong>Bản nháp trong phiên mở trang.</strong> Bạn có thể chọn trước các địa điểm yêu
-              thích rồi bấm chuyển sang AI để AI tự động sắp xếp giờ ăn sáng, giờ xuất phát, khoảng
-              cách di chuyển thực tế và lộ trình Google Maps.
+              Chọn trước các địa điểm yêu thích rồi chuyển sang AI để tự động tối ưu hóa lộ trình,
+              thời gian di chuyển và Google Maps.
             </p>
           </div>
           {!draft.places.length ? (
             <section className="empty-state empty-card">
               <MapPinned size={40} aria-hidden="true" />
               <h2>Hành trình bắt đầu từ một điểm đến</h2>
-              <p>Khám phá và chọn những nơi bạn muốn ghé thăm hoặc để AI đề xuất toàn bộ lộ trình.</p>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <p>
+                Khám phá và chọn những nơi bạn muốn ghé thăm hoặc để AI đề xuất toàn bộ lộ trình.
+              </p>
+              <div
+                style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}
+              >
                 <Link className={buttonVariants()} to={APP_PATHS.EXPLORE}>
                   Khám phá địa điểm
                 </Link>
@@ -948,36 +943,28 @@ export default function TripsPage() {
       {/* TAB 2: AI PLANNER (3-STEP SMART ITINERARY WORKFLOW) */}
       {tab === 'AI_PLANNER' && (
         <>
-          {/* 3-Step Workflow Banner */}
-          <div
-            className="info-note"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '12px',
-              marginBottom: '20px',
-            }}
-          >
-            <div>
-              <strong>Bước 1: Nói sở thích &amp; Chọn điểm trước</strong>
-              <p className="muted" style={{ margin: '4px 0 0' }}>
-                Nhập sở thích (thiên nhiên/văn hóa/ẩm thực/phiêu lưu), ngân sách, yêu cầu giờ ăn
-                sáng/xuất phát hoặc chọn sẵn các địa điểm để AI tổng hợp.
-              </p>
+          {/* 3-Step Workflow Stepper */}
+          <div className="ai-stepper" aria-label="Quy trình lập lịch trình">
+            <div className="ai-step active">
+              <span className="ai-step-num">1</span>
+              <div>
+                <strong>Thông số &amp; Sở thích</strong>
+                <small>Thời gian, người, ngân sách &amp; điểm đón</small>
+              </div>
             </div>
-            <div>
-              <strong>Bước 2: Tùy chỉnh lộ trình &amp; Google Maps</strong>
-              <p className="muted" style={{ margin: '4px 0 0' }}>
-                Xem lịch trình chi tiết từng khung giờ (VD: 07:00-07:30 ăn sáng, 07:30-08:00 xuất
-                phát), tùy chỉnh điểm dừng và mở lộ trình đa điểm trên Google Maps.
-              </p>
+            <div className="ai-step">
+              <span className="ai-step-num">2</span>
+              <div>
+                <strong>Lộ trình AI &amp; Bản đồ</strong>
+                <small>Khung giờ, quãng đường &amp; Google Maps</small>
+              </div>
             </div>
-            <div>
-              <strong>Bước 3: Lưu trước phòng mất mạng</strong>
-              <p className="muted" style={{ margin: '4px 0 0' }}>
-                Lưu lộ trình vào tài khoản hoặc lưu gói ngoại tuyến (Offline) trực tiếp vào thiết bị
-                để xem ngay cả khi đi đèo/núi không có sóng.
-              </p>
+            <div className="ai-step">
+              <span className="ai-step-num">3</span>
+              <div>
+                <strong>Lưu &amp; Ngoại tuyến</strong>
+                <small>Tải về máy dùng khi mất sóng</small>
+              </div>
             </div>
           </div>
 
@@ -987,17 +974,16 @@ export default function TripsPage() {
               <div className="card-header-inline">
                 <Sparkles size={22} aria-hidden="true" />
                 <div>
-                  <h2>Thông số chuyến đi (7 thông tin cốt lõi)</h2>
+                  <h2>Thông số chuyến đi</h2>
                   <p className="muted">
-                    Tích hợp OpenAI / Google Gemini API cùng dữ liệu giờ mở cửa và khoảng cách thực
-                    tế tại Gia Lai.
+                    Dữ liệu giờ mở cửa, giá vé và khoảng cách thực tế tại Gia Lai.
                   </p>
                 </div>
               </div>
 
               <form className="auth-form" onSubmit={(event) => void handleGenerateProposal(event)}>
                 <div className="form-field">
-                  <label htmlFor="ai-start-date">1. Ngày khởi hành (YYYY-MM-DD)</label>
+                  <label htmlFor="ai-start-date">Ngày khởi hành (YYYY-MM-DD)</label>
                   <input
                     id="ai-start-date"
                     type="date"
@@ -1009,7 +995,7 @@ export default function TripsPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-field">
-                    <label htmlFor="ai-days-count">2. Số ngày ({daysCount} ngày)</label>
+                    <label htmlFor="ai-days-count">Số ngày ({daysCount} ngày)</label>
                     <input
                       id="ai-days-count"
                       type="number"
@@ -1022,7 +1008,7 @@ export default function TripsPage() {
                   </div>
 
                   <div className="form-field">
-                    <label htmlFor="ai-party-size">3. Số khách ({partySize} người)</label>
+                    <label htmlFor="ai-party-size">Số khách ({partySize} người)</label>
                     <input
                       id="ai-party-size"
                       type="number"
@@ -1036,7 +1022,7 @@ export default function TripsPage() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="ai-budget">4. Tổng ngân sách dự kiến (VND)</label>
+                  <label htmlFor="ai-budget">Tổng ngân sách dự kiến (VND)</label>
                   <input
                     id="ai-budget"
                     type="text"
@@ -1048,34 +1034,21 @@ export default function TripsPage() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="ai-origin-label">5. Điểm xuất phát</label>
-                  <input
-                    id="ai-origin-label"
-                    type="text"
-                    value={originLabel}
-                    onChange={(e) => setOriginLabel(e.target.value)}
-                    placeholder="Nhập địa chỉ hoặc điểm xuất phát"
+                  <OriginLocationPicker
+                    label={originLabel}
+                    latitude={originLat}
+                    longitude={originLon}
+                    onChange={({ label, latitude, longitude }) => {
+                      setOriginLabel(label);
+                      setOriginLat(latitude);
+                      setOriginLon(longitude);
+                    }}
+                    availablePlaces={allKnownPlaces}
                   />
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <input
-                      aria-label="Vĩ độ xuất phát"
-                      type="text"
-                      value={originLat}
-                      onChange={(e) => setOriginLat(e.target.value)}
-                      placeholder="Vĩ độ"
-                    />
-                    <input
-                      aria-label="Kinh độ xuất phát"
-                      type="text"
-                      value={originLon}
-                      onChange={(e) => setOriginLon(e.target.value)}
-                      placeholder="Kinh độ"
-                    />
-                  </div>
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="ai-transport">6. Phương tiện di chuyển chính</label>
+                  <label htmlFor="ai-transport">Phương tiện di chuyển chính</label>
                   <select
                     id="ai-transport"
                     value={transportMode}
@@ -1090,7 +1063,7 @@ export default function TripsPage() {
                 </div>
 
                 <div className="form-field">
-                  <label>7. Sở thích du lịch &amp; Nhịp độ</label>
+                  <label>Sở thích du lịch &amp; Nhịp độ</label>
                   <div className="preference-chips">
                     {(Object.keys(CATEGORY_NAMES) as Category[]).map((cat) => (
                       <button
@@ -1103,7 +1076,9 @@ export default function TripsPage() {
                       </button>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  <div
+                    style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap' }}
+                  >
                     <label className="preference-chip">
                       <input
                         type="radio"
@@ -1260,7 +1235,7 @@ export default function TripsPage() {
               <div className="card-header-inline">
                 <Calendar size={22} aria-hidden="true" />
                 <div>
-                  <h2>Đề xuất lịch trình thông minh &amp; Lộ trình Google Maps</h2>
+                  <h2>Đề xuất lịch trình thông minh </h2>
                   <p className="muted">
                     Chi tiết giờ đến/đi (GMT+7), khoảng cách, thời gian xuất phát di chuyển thực tế,
                     địa điểm ăn/nghỉ và tùy chỉnh trực tiếp.
@@ -1278,7 +1253,14 @@ export default function TripsPage() {
                   {/* Header & Step 3 Save Actions */}
                   <div className="consent-title-row">
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Badge>
                           {proposal.isValid ? (
                             <>
@@ -1428,7 +1410,14 @@ export default function TripsPage() {
                           marginBottom: '10px',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                          }}
+                        >
                           <MapIcon size={18} aria-hidden="true" />
                           <strong>Lộ trình tích hợp Google Maps:</strong>
                           {proposal.days.map((d) => (
@@ -1484,9 +1473,7 @@ export default function TripsPage() {
                           marginBottom: showEmbeddedMap ? '10px' : '0',
                         }}
                       >
-                        <Badge>
-                          🚩 Xuất phát: {proposal.origin.label || 'Trung tâm Pleiku'}
-                        </Badge>
+                        <Badge>🚩 Xuất phát: {proposal.origin.label || 'Trung tâm Pleiku'}</Badge>
                         {currentMapDayObj.stops.map((st) => {
                           const leg = currentMapDayObj.legs.find(
                             (l) => l.toStopSequence === st.sequenceNo,
@@ -1556,7 +1543,10 @@ export default function TripsPage() {
                               Ngày {day.dayNumber} — {formatDate(day.travelDate)}
                             </h4>
                             {day.daySummary && (
-                              <p className="muted" style={{ margin: '2px 0 0', fontSize: '0.88rem' }}>
+                              <p
+                                className="muted"
+                                style={{ margin: '2px 0 0', fontSize: '0.88rem' }}
+                              >
                                 {day.daySummary}
                               </p>
                             )}
@@ -1582,9 +1572,7 @@ export default function TripsPage() {
 
                         <ol className="trip-stops" style={{ margin: '10px 0 0' }}>
                           {day.stops.map((stop, sIdx) => {
-                            const leg = day.legs.find(
-                              (l) => l.toStopSequence === stop.sequenceNo,
-                            );
+                            const leg = day.legs.find((l) => l.toStopSequence === stop.sequenceNo);
                             const prevStop = sIdx > 0 ? day.stops[sIdx - 1] : null;
                             const stopArriveVn = formatVnTime(stop.arrivesAt);
                             const stopDepartVn = formatVnTime(stop.departsAt);
@@ -1646,7 +1634,10 @@ export default function TripsPage() {
                                       </em>{' '}
                                       đến <em>{stop.placeTitle || stop.placeId}</em> · Khoảng cách:{' '}
                                       <strong>
-                                        {Math.max(0.1, Number((leg.distanceMeters / 1000).toFixed(1)))}{' '}
+                                        {Math.max(
+                                          0.1,
+                                          Number((leg.distanceMeters / 1000).toFixed(1)),
+                                        )}{' '}
                                         km
                                       </strong>{' '}
                                       ({Math.ceil(leg.durationSeconds / 60)} phút thực tế bằng{' '}
@@ -1840,7 +1831,9 @@ export default function TripsPage() {
                                       </label>
                                     </div>
                                     <label className="form-field" style={{ margin: 0 }}>
-                                      <span>Ghi chú hoạt động (VD: 07:00-07:30 ăn sáng, 07:30 xuất phát)</span>
+                                      <span>
+                                        Ghi chú hoạt động (VD: 07:00-07:30 ăn sáng, 07:30 xuất phát)
+                                      </span>
                                       <input
                                         type="text"
                                         value={editStopNote}
@@ -1944,28 +1937,19 @@ export default function TripsPage() {
                                 />
                               </label>
                               <div style={{ display: 'flex', gap: '8px' }}>
-                                <Button
-                                  variant="primary"
-                                  onClick={() => handleAddStopToDay(dIdx)}
-                                >
+                                <Button variant="primary" onClick={() => handleAddStopToDay(dIdx)}>
                                   Thêm vào Ngày {day.dayNumber}
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => setAddingToDayIndex(null)}
-                                >
+                                <Button variant="ghost" onClick={() => setAddingToDayIndex(null)}>
                                   Đóng
                                 </Button>
                               </div>
                             </div>
                           ) : (
                             allKnownPlaces.length > 0 && (
-                              <Button
-                                variant="ghost"
-                                onClick={() => openAddStopForm(dIdx)}
-                              >
-                                <Plus size={15} aria-hidden="true" /> Thêm điểm ăn sáng / tham quan /
-                                nghỉ ngơi vào Ngày {day.dayNumber}
+                              <Button variant="ghost" onClick={() => openAddStopForm(dIdx)}>
+                                <Plus size={15} aria-hidden="true" /> Thêm điểm ăn sáng / tham quan
+                                / nghỉ ngơi vào Ngày {day.dayNumber}
                               </Button>
                             )
                           )}
@@ -2201,9 +2185,7 @@ export default function TripsPage() {
                         </div>
                         <ol className="trip-stops" style={{ margin: '8px 0 0' }}>
                           {day.stops.map((stop) => {
-                            const leg = day.legs?.find(
-                              (l) => l.toStopSequence === stop.sequenceNo,
-                            );
+                            const leg = day.legs?.find((l) => l.toStopSequence === stop.sequenceNo);
                             return (
                               <li key={stop.id || stop.sequenceNo} style={{ paddingBlock: '8px' }}>
                                 <span className="stop-number">#{stop.sequenceNo}</span>
@@ -2217,7 +2199,10 @@ export default function TripsPage() {
                                   {leg && (
                                     <p className="meta-line">
                                       <ArrowRight size={12} aria-hidden="true" /> Di chuyển:{' '}
-                                      {Math.max(0.1, Number((leg.distanceMeters / 1000).toFixed(1)))}{' '}
+                                      {Math.max(
+                                        0.1,
+                                        Number((leg.distanceMeters / 1000).toFixed(1)),
+                                      )}{' '}
                                       km (~{Math.ceil(leg.durationSeconds / 60)} phút)
                                     </p>
                                   )}

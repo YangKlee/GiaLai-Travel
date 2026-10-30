@@ -105,9 +105,7 @@ export default function BookingsPage() {
           <Ticket size={28} className="text-primary" />
           <div>
             <h1>Đơn đặt dịch vụ của tôi</h1>
-            <p className="lead">
-              Theo dõi tình trạng phê duyệt, thanh toán giữ chỗ 30 phút và quản lý hoàn hủy mô phỏng.
-            </p>
+            <p className="lead">Quản lý lịch đặt chỗ, thanh toán giữ chỗ và hoàn hủy dịch vụ.</p>
           </div>
         </div>
       </header>
@@ -163,9 +161,8 @@ export default function BookingsPage() {
         >
           Chờ xử lý (
           {
-            initialBookings.filter(
-              (b) => b.status === 'CHO_DUYET' || b.status === 'CHO_THANH_TOAN',
-            ).length
+            initialBookings.filter((b) => b.status === 'CHO_DUYET' || b.status === 'CHO_THANH_TOAN')
+              .length
           }
           )
         </button>
@@ -176,9 +173,8 @@ export default function BookingsPage() {
         >
           Đã xác nhận (
           {
-            initialBookings.filter(
-              (b) => b.status === 'DA_XAC_NHAN' || b.status === 'HOAN_THANH',
-            ).length
+            initialBookings.filter((b) => b.status === 'DA_XAC_NHAN' || b.status === 'HOAN_THANH')
+              .length
           }
           )
         </button>
@@ -202,7 +198,8 @@ export default function BookingsPage() {
           <Ticket size={48} className="muted" style={{ margin: '0 auto 16px' }} />
           <h3>Chưa có đơn đặt dịch vụ nào trong mục này</h3>
           <p className="muted" style={{ maxWidth: '480px', margin: '0 auto 20px' }}>
-            Khám phá các tour trải nghiệm, homestay và dịch vụ bản địa của đối tác Gia Lai để đặt chỗ.
+            Khám phá các tour trải nghiệm, homestay và dịch vụ bản địa của đối tác Gia Lai để đặt
+            chỗ.
           </p>
           <Link to={APP_PATHS.EXPLORE} className="button button-primary">
             Khám phá dịch vụ ngay
@@ -261,7 +258,13 @@ export default function BookingsPage() {
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                    <div
+                      style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 700,
+                        color: 'var(--color-primary)',
+                      }}
+                    >
                       {formatVnd(booking.totalVnd)}
                     </div>
                     <small className="muted">
@@ -287,7 +290,8 @@ export default function BookingsPage() {
                     <Clock size={16} color="#856404" />
                     <span>
                       Đơn đang được ban quản trị xét duyệt. Hạn duyệt:{' '}
-                      <strong>{formatDate(booking.reviewDeadline)}</strong> (trong 24 giờ kể từ khi gửi).
+                      <strong>{formatDate(booking.reviewDeadline)}</strong> (trong 24 giờ kể từ khi
+                      gửi).
                     </span>
                   </div>
                 )}
@@ -302,14 +306,24 @@ export default function BookingsPage() {
                       marginBottom: '16px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#0c5460' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                        color: '#0c5460',
+                      }}
+                    >
                       <CreditCard size={18} />
                       <strong>Đơn đã được duyệt! Khung giờ đang giữ chỗ cho bạn.</strong>
                     </div>
                     <p style={{ margin: '0 0 12px', fontSize: '0.88rem', color: '#0c5460' }}>
                       Vui lòng thanh toán mô phỏng trước hạn:{' '}
-                      <strong>{booking.paymentDeadline ? formatDate(booking.paymentDeadline) : '30 phút'}</strong>.
-                      Nếu quá hạn, suất giữ chỗ sẽ tự động hủy và trả về kho khả dụng.
+                      <strong>
+                        {booking.paymentDeadline ? formatDate(booking.paymentDeadline) : '30 phút'}
+                      </strong>
+                      . Nếu quá hạn, suất giữ chỗ sẽ tự động hủy và trả về kho khả dụng.
                     </p>
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -352,7 +366,8 @@ export default function BookingsPage() {
                       color: '#721c24',
                     }}
                   >
-                    <strong>Lý do từ chối:</strong> {booking.rejectionReason ?? 'Không có lý do cụ thể.'}
+                    <strong>Lý do từ chối:</strong>{' '}
+                    {booking.rejectionReason ?? 'Không có lý do cụ thể.'}
                   </div>
                 )}
 
@@ -372,8 +387,9 @@ export default function BookingsPage() {
                   >
                     <RotateCcw size={16} color="#28a745" />
                     <span>
-                      Đã hoàn tiền mô phỏng 100%: <strong>{formatVnd(booking.refunds[0].amountVnd)}</strong>{' '}
-                      (Mã hoàn: <code>{booking.refunds[0].id.slice(0, 8)}…</code>).
+                      Đã hoàn tiền mô phỏng 100%:{' '}
+                      <strong>{formatVnd(booking.refunds[0].amountVnd)}</strong> (Mã hoàn:{' '}
+                      <code>{booking.refunds[0].id.slice(0, 8)}…</code>).
                     </span>
                   </div>
                 )}

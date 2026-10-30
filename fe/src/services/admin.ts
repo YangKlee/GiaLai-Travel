@@ -192,9 +192,7 @@ export async function updateAdminPlace(
   return res.data;
 }
 
-export async function deleteAdminPlace(
-  id: string,
-): Promise<{ success: boolean; message: string }> {
+export async function deleteAdminPlace(id: string): Promise<{ success: boolean; message: string }> {
   const res = await del<{ data: { success: boolean; message: string } }>(
     `/api/v1/admin/places/${encodeURIComponent(id)}`,
   );
@@ -245,9 +243,7 @@ export async function updateAdminEvent(
   return res.data;
 }
 
-export async function deleteAdminEvent(
-  id: string,
-): Promise<{ success: boolean; message: string }> {
+export async function deleteAdminEvent(id: string): Promise<{ success: boolean; message: string }> {
   const res = await del<{ data: { success: boolean; message: string } }>(
     `/api/v1/admin/events/${encodeURIComponent(id)}`,
   );

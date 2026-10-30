@@ -277,10 +277,10 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
       >
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-            Quản trị Sự kiện &amp; Banner (Events CRUD)
+            Quản lý Sự kiện &amp; Banner
           </h2>
           <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>
-            Tạo mới, chỉnh sửa sự kiện, dán liên kết hoặc tải ảnh banner trực tiếp lên Cloudflare R2.
+            Tạo mới, cập nhật sự kiện, dán liên kết hoặc tải ảnh banner trực tiếp lên Cloudflare R2.
           </p>
         </div>
         <Button variant="primary" onClick={openCreateModal}>
@@ -484,7 +484,9 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
 
                 {/* Content */}
                 <div style={{ flex: '1 1 300px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}
+                  >
                     <Badge>{EVENT_STATUS_NAMES[ev.eventStatus]}</Badge>
                     <strong style={{ fontSize: '1.1rem' }}>{ev.title}</strong>
                   </div>
@@ -622,7 +624,9 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
               }}
             >
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
-                {editingEvent ? `Chỉnh sửa sự kiện: ${editingEvent.title}` : 'Thêm sự kiện / Lễ hội mới'}
+                {editingEvent
+                  ? `Chỉnh sửa sự kiện: ${editingEvent.title}`
+                  : 'Thêm sự kiện / Lễ hội mới'}
               </h3>
               <button
                 type="button"
@@ -734,13 +738,16 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
                   marginBottom: '16px',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <label style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                    Ảnh Banner Sự Kiện
-                  </label>
-                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                    Chọn 1 trong 2 cách
-                  </span>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <label style={{ fontWeight: 700, fontSize: '0.95rem' }}>Ảnh Banner Sự Kiện</label>
+                  <span style={{ fontSize: '0.8rem', color: '#666' }}>Chọn 1 trong 2 cách</span>
                 </div>
 
                 {/* Option Toggle Buttons */}
@@ -787,7 +794,10 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
                 {/* Mode 2: Upload to Cloudflare R2 */}
                 {formBannerMode === 'UPLOAD' && (
                   <div>
-                    <label htmlFor="ev-file-upload" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '6px' }}>
+                    <label
+                      htmlFor="ev-file-upload"
+                      style={{ fontSize: '0.85rem', display: 'block', marginBottom: '6px' }}
+                    >
                       Chọn tệp ảnh từ máy tính (PNG, JPEG, WEBP, GIF tối đa 10MB):
                     </label>
                     <input
@@ -807,13 +817,29 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
                       }}
                     />
                     {uploadingR2 && (
-                      <div style={{ marginTop: '8px', color: 'var(--color-primary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          color: 'var(--color-primary)',
+                          fontSize: '0.88rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
                         <Sparkles size={16} />
                         <strong>Đang tải tệp lên kho lưu trữ Cloudflare R2...</strong>
                       </div>
                     )}
                     {uploadNote && (
-                      <p style={{ margin: '8px 0 0', color: '#28a745', fontWeight: 600, fontSize: '0.88rem' }}>
+                      <p
+                        style={{
+                          margin: '8px 0 0',
+                          color: '#28a745',
+                          fontWeight: 600,
+                          fontSize: '0.88rem',
+                        }}
+                      >
                         {uploadNote}
                       </p>
                     )}
@@ -861,7 +887,14 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
                       </button>
                     </div>
 
-                    <div style={{ borderRadius: '6px', overflow: 'hidden', height: '180px', backgroundColor: '#f0f0f0' }}>
+                    <div
+                      style={{
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        height: '180px',
+                        backgroundColor: '#f0f0f0',
+                      }}
+                    >
                       <img
                         src={formBannerUrl}
                         alt="Event Banner Preview"
@@ -873,7 +906,14 @@ export function AdminEventsManager({ initialEvents, meta }: Props) {
                       />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginTop: '6px',
+                      }}
+                    >
                       <span
                         style={{
                           fontSize: '0.72rem',

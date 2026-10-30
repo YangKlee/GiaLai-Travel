@@ -42,9 +42,7 @@ test('quản trị có URL riêng và CRUD người dùng', async ({ page }, tes
         await route.fulfill({ status: 201, json: { data: created } });
       } else if (request.method() === 'PUT') {
         const input = request.postDataJSON() as AdminUserInput;
-        users = users.map((user) =>
-          user.id === id ? { ...user, ...input } : user,
-        );
+        users = users.map((user) => (user.id === id ? { ...user, ...input } : user));
         await route.fulfill({ json: { data: users.find((user) => user.id === id) } });
       } else if (request.method() === 'DELETE') {
         users = users.filter((user) => user.id !== id);

@@ -78,6 +78,15 @@ format/lint/unit/build/E2E và job MariaDB 10.5.26/integration/auth browser. Đ�
 bằng `npm run format -w fe`, kiểm tra bằng `npm run format:check -w fe`.
 Khi triển khai, phục vụ `fe/dist` bằng static hosting, chuyển tiếp `/api` đến backend
 hoặc cấu hình `VITE_API_BASE_URL` trước khi build và `CLIENT_ORIGIN` ở backend.
+
+Nếu đăng nhập trên hosting trả `403` với mã `CSRF_REJECTED`, đặt trong `be/.env` của hosting:
+
+```dotenv
+CLIENT_ORIGIN=https://gialaitravel.yangkleeserver.io.vn
+```
+
+Origin phải khớp URL giao diện, không có dấu `/` cuối. Nhiều origin phân cách bằng dấu phẩy.
+Sau khi lưu, Restart ứng dụng Node.js trong cPanel để nạp lại cấu hình; không cần build lại frontend.
 Các biến `VITE_*` công khai trong trình duyệt, không chứa bí mật.
 
 ## Cấu trúc
