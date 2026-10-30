@@ -55,7 +55,7 @@ be/src/
 be/test/             # Unit, API và integration MariaDB
 ```
 
-Runtime hiện dùng `mysql2/promise`; đã có Sequelize/sequelize-auto để reverse engineer, chưa thay repository runtime. Migration SQL cần sổ phiên bản. D-22 xác nhận đăng nhập dùng JWT access RS256 qua Bearer và refresh opaque xoay vòng trong cookie HttpOnly/Secure; DB giữ phiên để thu hồi ngay. Baseline đề xuất access 15 phút, phiên refresh tối đa 7 ngày; kiểm session/user/quyền mỗi request và CSRF cho endpoint cookie. Xem [thiết kế JWT](auth-jwt.md); X-01 chốt domain/keyring/TTL trước code auth. Tác vụ chạy bằng CLI/cron hoặc worker độc lập, dùng chung service nghiệp vụ, không phụ thuộc việc người dùng mở web.
+Runtime dùng Sequelize 6 và các models/associations đã scaffold; repository nghiệp vụ không viết query SQL thủ công. Một Sequelize instance quản lý pool và transaction, driver mysql2 đảm bảo BIGINT dạng string/UTC. Migration được quản lý riêng, không chạy `sync()` từ ứng dụng. D-22 xác nhận đăng nhập dùng JWT access RS256 qua Bearer và refresh opaque xoay vòng trong cookie HttpOnly/Secure; DB giữ phiên để thu hồi ngay. Baseline đề xuất access 15 phút, phiên refresh tối đa 7 ngày; kiểm session/user/quyền mỗi request và CSRF cho endpoint cookie. Xem [thiết kế JWT](auth-jwt.md) và [tiến độ thực hiện](demo-progress.md). Tác vụ chạy bằng CLI/cron hoặc worker độc lập, dùng chung service nghiệp vụ.
 
 ### Frontend
 

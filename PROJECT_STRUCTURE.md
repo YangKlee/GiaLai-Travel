@@ -10,8 +10,8 @@ Dự án là monorepo dùng **npm workspaces**, gồm hai workspace `be` và `fe
 | --- | --- | --- |
 | Runtime | Node.js 20.20.2, ES modules | Chạy backend và công cụ phát triển frontend |
 | Backend | Express 5, Zod, Pino, Helmet, CORS | HTTP API, validation, logging và middleware |
-| CSDL | MariaDB/MySQL qua `mysql2/promise` | Pool kết nối, truy vấn tham số hóa, transaction |
-| Models | Sequelize 6, `sequelize-auto` | Model và quan hệ sinh từ metadata CSDL; chưa tích hợp vào runtime API |
+| CSDL | MariaDB/MySQL qua Sequelize 6, driver mysql2 | Pool kết nối UTC và Sequelize transactions |
+| Models | Sequelize 6, `sequelize-auto` | 59 scaffold models và associations dùng trực tiếp trong runtime |
 | Frontend | React 19, TypeScript 6, Vite 8, React Router 7 | SPA khám phá, chi tiết và bản nháp chuyến đi |
 | Giao diện và dữ liệu FE | Tailwind 4, Inter, Lucide, cva/cn, Axios, Zustand 5 | Essential tokens, API client và state theo domain |
 | Kiểm tra | `node:test`, Vitest/Testing Library, Playwright, ESLint, `tsc -b`/Vite | Unit, API, E2E desktop/mobile và build |
@@ -52,7 +52,8 @@ be/
 │   │   ├── env.js                   # Đọc và kiểm tra biến môi trường
 │   │   └── logger.js                # Khởi tạo logger Pino
 │   ├── db/
-│   │   ├── database.js              # Pool mysql2, UTC, execute và transaction
+│   │   ├── database.js              # Sequelize instance/pool UTC và transaction
+│   │   ├── model-runtime.js         # Model subclasses và chuẩn hóa default timestamp
 │   │   └── models/
 │   │       ├── init-models.js       # Khởi tạo Sequelize models và quan hệ
 │   │       └── *.js                 # Models theo bảng: users, bookings, places...
@@ -102,7 +103,7 @@ be/
 
 Hiện có `GET /api/health`, `GET /api/ready` và các alias `/api/v1/health`, `/api/v1/ready`. Health kiểm tra ứng dụng còn hoạt động; readiness kiểm tra truy cập CSDL. API khám phá gồm `/api/v1/catalog`, `/api/v1/places` và `/api/v1/places/:id`, chỉ đọc nội dung công bố tiếng Việt thuộc vùng giai đoạn 1. API đăng nhập, lưu lịch trình và đặt dịch vụ chưa được triển khai.
 
-Runtime hiện dùng `src/db/database.js` qua `mysql2/promise`. Việc có Sequelize models hoặc migration JWT chưa có nghĩa API đã dùng ORM hoặc đã có chức năng xác thực. Chưa có migration runner tự động.
+Runtime dùng Sequelize và các models đã scaffold. Repository nghiệp vụ dùng model APIs/associations; service truyền Sequelize transaction khi ghi nhiều bảng. Không viết query SQL thủ công trong module nghiệp vụ, không gọi `sync()` khi chạy app. Tình trạng migration và xác thực theo [tiến độ](docs/implementation/demo-progress.md).
 
 `be/demo/server.js` dùng cùng router/service/validation và contract với runtime CSDL, nhưng inject repository mẫu từ `be/demo/`. Chế độ này chỉ chạy khi gọi `dev:demo`, không load `.env`, không ghi DB và trả `dataset: demo`. Runtime CSDL không tự fallback sang mẫu khi lỗi; repository SQL còn cần nghiệm thu MariaDB thật.
 
@@ -116,7 +117,7 @@ Khi triển khai chức năng, thêm module trong `src/modules/<module>/` theo n
 ├── <module>.schema.js        # Zod schema kiểm tra đầu vào
 ├── <module>.controller.js    # Nhận request, gọi service, trả HTTP response
 ├── <module>.service.js       # Quyền truy cập, nghiệp vụ và transaction
-└── <module>.repository.js    # Truy vấn SQL tham số hóa
+└── <module>.repository.js    # Sequelize model APIs, associations và bộ lọc ORM
 ```
 
 Các nhóm dự kiến gồm `auth`, `users`, `privacy`, `content`, `media`, `catalog`, `events`, `itineraries`, `ai`, `offline`, `bookings`, `payments`, `notifications`, `issues`, `admin`; các module giai đoạn sau theo backlog. `adapters/` và `jobs/` chỉ bổ sung khi có tích hợp ngoài hoặc tác vụ nền thực tế.

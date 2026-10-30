@@ -17,15 +17,16 @@ src/middleware/   Request ID, validation error, error handler
 src/routes/       Mount module API
 src/modules/      Module nghiệp vụ, hiện có health
 src/shared/       AppError, validation, pagination, GUID và tiền VND
-src/db/           Pool UTC, truy vấn tham số hóa, transaction
+src/db/           Sequelize, scaffold models, pool UTC và transaction
 scripts/          Lệnh vận hành, kiểm tra DB chỉ đọc
 test/             Test node:test, không gọi hosting trong bộ test mặc định
 migrations/       Hướng dẫn baseline; chưa có migration runner
 openapi.yaml      Contract endpoint đã triển khai
 ```
 
-Route gọi controller; service chứa nghiệp vụ/transaction; repository chứa SQL
-tham số hóa. Chỉ thêm module khi triển khai chức năng tương ứng, xem
+Route gọi controller; service chứa nghiệp vụ/transaction; repository dùng Sequelize
+models đã scaffold (`findOne`, `findAll`, `create`, `update`, associations). Không viết
+SQL thủ công trong nghiệp vụ. Chỉ thêm module khi triển khai chức năng tương ứng, xem
 [backlog](../docs/implementation/backend-tasks.md) và [quy ước module](src/modules/README.md).
 
 ## HTTP contract
@@ -56,8 +57,8 @@ triển khai theo backlog; scaffold không mở CRUD mẫu hay tự import CSDL.
 
 ## CSDL
 
-`npm run db:check -w be` kết nối bằng env, đọc version/UTC/danh sách bảng và view,
-đối chiếu tên với `schema.sql`. Lệnh chỉ đọc; không tự import hoặc sửa DB.
+`npm run db:check -w be` dùng Sequelize để kiểm tra kết nối, version, danh sách bảng/view
+và đối chiếu tên bảng với scaffold models. Lệnh chỉ đọc; không tự import hoặc sửa DB.
 `DB_SSL=true` bật xác minh TLS; `DB_SSL_CA` tùy chọn trỏ tới CA PEM khi hosting yêu cầu.
 
 ### Sinh Sequelize model từ DB hiện có
@@ -78,14 +79,19 @@ node --env-file=be/.env.example be/scripts/scaffold-models.js
 Model ES modules và `init-models.js` được sinh vào `be/src/db/models/`.
 Lệnh chỉ đọc cấu trúc DB, không import `schema.sql`, không gọi `sync()` và
 không sinh model cho view báo cáo. Nếu thư mục output đã có, lệnh dừng để
-tránh ghi đè; hãy di chuyển bản cũ trước khi sinh lại. Backend hiện vẫn dùng
-repository mysql2; model sinh ra chưa tự được gắn vào các module nghiệp vụ.
-Kiểm tra lại các cột generated, JSON trên MariaDB, BIGINT và khóa ngoại ghép
-trước khi dùng model để ghi dữ liệu. Không dùng `sync({ alter: true })` trên hosting.
+tránh ghi đè; hãy di chuyển bản cũ trước khi sinh lại. Runtime khởi tạo models qua
+`init-models.js`; `prepare-generated-models.js` giữ bước chuẩn bị runtime sau mỗi lần scaffold.
+Lệnh bỏ qua bảng sổ migration. Không gọi `sync()` hoặc `sync({ alter: true })`.
 
-Pool dùng UTF-8, UTC, `BIGINT`/`DECIMAL` dạng string và tắt multiple statements.
-Mỗi lần mượn connection đặt `time_zone='+00:00'`. Repository dùng `database.execute`
-và tham số `?`; nghiệp vụ nhiều bảng dùng `database.transaction(async (tx) => ...)`.
+Một Sequelize instance quản lý pool UTF-8/UTC, `BIGINT`/`DECIMAL` dạng string và tắt
+multiple statements. Models của từng instance có subclass riêng, không bị bind
+nhầm khi mở nhiều database. Chuỗi default `CURRENT_TIMESTAMP(6)` từ scaffold được
+chuyển thành biểu thức ORM UTC; các cột generated bị chặn ghi. Association sai do
+scaffold khóa ngoại ghép được loại bỏ; ownership revision kiểm tra bằng association
+và điều kiện ORM, đồng thời vẫn có ràng buộc DB.
+
+Nghiệp vụ nhiều bảng dùng `database.transaction(async (transaction) => ...)`, truyền
+`{ transaction }` vào model call. Sequelize transaction dùng REPEATABLE READ.
 Deadlock/lock timeout chỉ retry khi gọi rõ `maxRetries` (0–3) và callback chỉ chứa
 thao tác DB an toàn khi lặp. Mất phản hồi COMMIT có kết quả chưa xác định nên helper
 không tự replay; module nghiệp vụ phải hòa giải bằng khóa idempotency.

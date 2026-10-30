@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import SequelizeAuto from 'sequelize-auto';
 import { loadConfig } from '../src/config/env.js';
-import { buildPoolOptions } from '../src/db/database.js';
+import { buildDialectOptions } from '../src/db/database.js';
+import { prepareGeneratedModels } from './prepare-generated-models.js';
 
 // Reverse engineer live metadata only; never call sync() or execute schema.sql.
 const output = fileURLToPath(new URL('../src/db/models/', import.meta.url));
@@ -12,7 +13,7 @@ try {
   if (existsSync(output)) throw Object.assign(new Error('Output exists'), { code: 'OUTPUT_EXISTS' });
   const { database } = loadConfig();
   stage = 'connection';
-  const { ssl, ...dialectOptions } = buildPoolOptions(database);
+  const { ssl, ...dialectOptions } = buildDialectOptions(database);
   auto = new SequelizeAuto(database.database, database.user, database.password, {
     host: database.host,
     port: database.port,
@@ -24,6 +25,7 @@ try {
     caseFile: 'o',
     caseProp: 'o',
     views: false,
+    skipTables: ['schema_migrations'],
     logging: false,
     closeConnectionAutomatically: false,
     pool: { max: 1, min: 0, acquire: database.connectTimeout, idle: 1000 },
@@ -51,6 +53,7 @@ try {
   result.text = auto.generate(result);
   stage = 'write';
   await auto.write(result);
+  prepareGeneratedModels(output);
   console.log(JSON.stringify({ status: 'scaffolded', tableCount: Object.keys(result.tables).length, output }));
 } catch (error) {
   // Do not print raw driver errors: they can contain connection details.

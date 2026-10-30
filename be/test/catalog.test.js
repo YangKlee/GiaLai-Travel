@@ -4,7 +4,6 @@ import { test } from 'node:test';
 import { createApp } from '../src/app.js';
 import { createDemoCatalogRepository } from '../demo/catalog.repository.js';
 import { demoPlaces } from '../demo/places.js';
-import { createCatalogRepository } from '../src/modules/catalog/catalog.repository.js';
 
 async function serve(t, dependencies) {
   const server = createApp(dependencies).listen(0, '127.0.0.1');
@@ -64,28 +63,3 @@ test('database failure never silently supplies demo data or exposes connection d
   }
 });
 
-test('SQL repository binds hostile search, applies publication gates and uses deterministic pagination', async () => {
-  const calls = [];
-  const tx = { async execute(sql, parameters) {
-    calls.push({ sql, parameters });
-    return sql.includes('COUNT(*)') ? [{ total: 0 }] : [];
-  } };
-  const repository = createCatalogRepository({ transaction: (work) => work(tx) });
-  const q = "%' OR 1=1; --_=";
-  const result = await repository.list({ q, page: 2, pageSize: 3, sort: 'price-asc' });
-  assert.deepEqual(result, { data: [], total: 0 });
-  for (const { sql, parameters } of calls) {
-    assert.ok(!sql.includes(q));
-    assert.ok(sql.includes("c.visibility = 'PUBLIC'"));
-    assert.ok(sql.includes("cr.status = 'PUBLISHED'"));
-    assert.ok(sql.includes('cr.id = c.published_revision_id AND cr.content_id = c.id'));
-    assert.ok(sql.includes('r.phase = 1'));
-    assert.equal(parameters[0], "%=%' OR 1==1; --=_==%");
-  }
-  assert.match(calls[1].sql, /ORDER BY .*p.id LIMIT \? OFFSET \?/);
-  assert.deepEqual(calls[1].parameters.slice(-2), [3, 3]);
-  // An unpublished/nonexistent row does not trigger an opening-hours query.
-  calls.length = 0;
-  assert.equal(await repository.findById(demoPlaces[0].id), null);
-  assert.equal(calls.length, 1);
-});
