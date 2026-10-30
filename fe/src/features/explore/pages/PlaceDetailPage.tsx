@@ -1,9 +1,12 @@
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowUpRight,
   CalendarDays,
   Clock3,
+  Flag,
   Info,
   MapPin,
   Sparkles,
@@ -20,6 +23,10 @@ import { CATEGORY_NAMES, EVENT_STATUS_NAMES, SERVICE_TYPE_NAMES } from '../types
 import { PlaceArtwork } from '../components/PlaceArtwork';
 import { AddToTripButton } from '../components/AddToTripButton';
 import { AudioGuidePlayer } from '../components/AudioGuidePlayer';
+import { useAuthStore } from '@/store/useAuthStore';
+import { createIssueReport } from '@/services/operations';
+import type { IssueCategory } from '@/services/operations';
+import { Button } from '@/components/ui/Button';
 
 const weekdays = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
 
@@ -34,6 +41,36 @@ export default function PlaceDetailPage() {
   const audioGuides = place.audioGuides ?? [];
   const services = place.services ?? [];
   const events = place.events ?? [];
+
+  const user = useAuthStore((state) => state.user);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCategory, setReportCategory] = useState<IssueCategory>('INACCURATE_INFO');
+  const [reportDesc, setReportDesc] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+
+  async function handleSubmitIssue(e: FormEvent) {
+    e.preventDefault();
+    if (!reportDesc.trim()) return;
+    setSubmittingReport(true);
+    setReportError(null);
+    try {
+      await createIssueReport({
+        contentId: place.id,
+        category: reportCategory,
+        description: reportDesc.trim(),
+      });
+      setReportSuccess(true);
+      setReportDesc('');
+    } catch (err: unknown) {
+      setReportError(
+        err instanceof Error ? err.message : 'Không thể gửi phản ánh. Vui lòng thử lại.',
+      );
+    } finally {
+      setSubmittingReport(false);
+    }
+  }
 
   return (
     <>
@@ -237,6 +274,87 @@ export default function PlaceDetailPage() {
               </a>
             ) : (
               <p className="muted">Chưa có tọa độ được xác minh.</p>
+            )}
+          </section>
+
+          <section className="content-card">
+            <h3>Đóng góp chất lượng dữ liệu</h3>
+            <p className="muted" style={{ fontSize: '0.88rem', marginBottom: '12px' }}>
+              Phát hiện thông tin chưa chính xác, địa điểm đóng cửa hoặc giá vé thay đổi? Hãy gửi phản ánh để ban quản trị xác minh.
+            </p>
+
+            {user ? (
+              <Button
+                variant="secondary"
+                onClick={() => setShowReportModal(!showReportModal)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Flag size={16} />
+                Báo lỗi / Góp ý nội dung
+              </Button>
+            ) : (
+              <Link to={APP_PATHS.LOGIN} className="button button-outline" style={{ display: 'block', textAlign: 'center' }}>
+                Đăng nhập để góp ý dữ liệu
+              </Link>
+            )}
+
+            {showReportModal && (
+              <form onSubmit={handleSubmitIssue} style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '12px' }}>
+                {reportSuccess ? (
+                  <p style={{ color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600 }}>
+                    Cảm ơn bạn! Báo cáo đã được ghi nhận vào hệ thống.
+                  </p>
+                ) : (
+                  <>
+                    {reportError && (
+                      <p style={{ color: '#dc3545', fontSize: '0.85rem', marginBottom: '8px' }}>
+                        {reportError}
+                      </p>
+                    )}
+                    <div style={{ marginBottom: '10px' }}>
+                      <label htmlFor="issueCategory" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+                        Loại phản ánh:
+                      </label>
+                      <select
+                        id="issueCategory"
+                        value={reportCategory}
+                        onChange={(e) => setReportCategory(e.target.value as IssueCategory)}
+                        style={{ width: '100%', padding: '6px', fontSize: '0.88rem' }}
+                      >
+                        <option value="INACCURATE_INFO">Thông tin không chính xác</option>
+                        <option value="CLOSED_DOWN">Địa điểm đã ngừng hoạt động</option>
+                        <option value="OUTDATED_PRICE">Giá vé / Giờ mở cửa thay đổi</option>
+                        <option value="INAPPROPRIATE">Nội dung không phù hợp</option>
+                        <option value="OTHER">Vấn đề khác</option>
+                      </select>
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <label htmlFor="issueDesc" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '4px' }}>
+                        Mô tả chi tiết:
+                      </label>
+                      <textarea
+                        id="issueDesc"
+                        rows={3}
+                        value={reportDesc}
+                        onChange={(e) => setReportDesc(e.target.value)}
+                        placeholder="Mô tả cụ thể thông tin cần cập nhật..."
+                        style={{ width: '100%', padding: '8px', fontSize: '0.88rem' }}
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={submittingReport || !reportDesc.trim()}
+                      style={{ width: '100%' }}
+                    >
+                      {submittingReport ? 'Đang gửi…' : 'Gửi phản ánh'}
+                    </Button>
+                  </>
+                )}
+              </form>
             )}
           </section>
         </aside>

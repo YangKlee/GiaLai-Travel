@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   EyeOff,
   FileEdit,
+  Flag,
+  History,
   Layers,
   ShieldCheck,
   Ticket,
@@ -20,6 +22,8 @@ import {
 } from '@/services/admin';
 import { completeAdminBooking, reviewAdminBooking } from '@/services/bookings';
 import type { BookingRecord } from '@/services/bookings';
+import { listAdminAuditLogs, listAdminIssues, reviewAdminIssue } from '@/services/operations';
+import type { AuditLogItem, IssueItem, IssueStatus } from '@/services/operations';
 import { ApiError } from '@/services/api';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -82,11 +86,55 @@ export default function AdminContentPage() {
   const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({});
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
 
-  const [adminTab, setAdminTab] = useState<'CMS' | 'BOOKINGS'>('CMS');
+  const [adminTab, setAdminTab] = useState<'CMS' | 'BOOKINGS' | 'ISSUES' | 'AUDIT'>('CMS');
   const [bookings, setBookings] = useState<BookingRecord[]>(initialData.bookings ?? []);
   const [bookingFilter, setBookingFilter] = useState<string>('ALL');
   const [bookingActionId, setBookingActionId] = useState<string | null>(null);
   const [bookingRejectReason, setBookingRejectReason] = useState<Record<string, string>>({});
+
+  const [issues, setIssues] = useState<IssueItem[]>([]);
+  const [issuesLoaded, setIssuesLoaded] = useState(false);
+  const [issueResponse, setIssueResponse] = useState<Record<string, string>>({});
+  const [issueBusyId, setIssueBusyId] = useState<string | null>(null);
+
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [auditLoaded, setAuditLoaded] = useState(false);
+
+  async function loadIssues() {
+    try {
+      const res = await listAdminIssues({ pageSize: 50 });
+      setIssues(res.data);
+      setIssuesLoaded(true);
+    } catch (err) {
+      setErrorMessage(getErrorMessage(err, 'Không thể tải danh sách báo lỗi.'));
+    }
+  }
+
+  async function loadAuditLogs() {
+    try {
+      const res = await listAdminAuditLogs({ pageSize: 50 });
+      setAuditLogs(res.data);
+      setAuditLoaded(true);
+    } catch (err) {
+      setErrorMessage(getErrorMessage(err, 'Không thể tải nhật ký kiểm toán.'));
+    }
+  }
+
+  async function handleReviewIssue(issueId: string, status: IssueStatus) {
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIssueBusyId(issueId);
+    try {
+      const resp = issueResponse[issueId];
+      const res = await reviewAdminIssue(issueId, { status, response: resp });
+      setIssues((prev) => prev.map((i) => (i.id === issueId ? res.data : i)));
+      setStatusMessage(`Đã cập nhật trạng thái phiếu phản hồi thành ${status}.`);
+    } catch (err) {
+      setErrorMessage(getErrorMessage(err, 'Không thể xử lý phản hồi.'));
+    } finally {
+      setIssueBusyId(null);
+    }
+  }
 
   async function handleReviewBooking(bookingId: string, decision: 'APPROVE' | 'REJECT') {
     setErrorMessage(null);
@@ -337,6 +385,28 @@ export default function AdminContentPage() {
         >
           <Ticket size={16} style={{ marginRight: '6px' }} />
           Quản lý Đặt chỗ &amp; Hoa hồng ({bookings.length})
+        </button>
+        <button
+          type="button"
+          className={`button ${adminTab === 'ISSUES' ? 'button-primary' : 'button-outline'}`}
+          onClick={() => {
+            setAdminTab('ISSUES');
+            if (!issuesLoaded) void loadIssues();
+          }}
+        >
+          <Flag size={16} style={{ marginRight: '6px' }} />
+          Báo lỗi &amp; Góp ý dữ liệu
+        </button>
+        <button
+          type="button"
+          className={`button ${adminTab === 'AUDIT' ? 'button-primary' : 'button-outline'}`}
+          onClick={() => {
+            setAdminTab('AUDIT');
+            if (!auditLoaded) void loadAuditLogs();
+          }}
+        >
+          <History size={16} style={{ marginRight: '6px' }} />
+          Nhật ký Kiểm toán (Audit)
         </button>
       </div>
 
@@ -773,7 +843,7 @@ export default function AdminContentPage() {
         </div>
       </div>
         </>
-      ) : (
+      ) : adminTab === 'BOOKINGS' ? (
         <div style={{ marginTop: '16px' }}>
           <div className="place-grid">
             <div className="content-card">
@@ -953,6 +1023,154 @@ export default function AdminContentPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      ) : adminTab === 'ISSUES' ? (
+        <div style={{ marginTop: '16px' }}>
+          <div className="card-header-inline" style={{ marginBottom: '16px' }}>
+            <Flag size={22} className="text-primary" />
+            <div>
+              <h2>Quản lý Phản ánh chất lượng nội dung &amp; Báo lỗi</h2>
+              <p className="muted">
+                Tiếp nhận và giải quyết các phản ánh đóng góp từ du khách đối với thông tin điểm đến, giá cả, và giờ mở cửa.
+              </p>
+            </div>
+          </div>
+
+          {issues.length === 0 ? (
+            <div className="content-card" style={{ textAlign: 'center', padding: '36px' }}>
+              <p className="muted">Chưa có phản ánh báo lỗi nào cần xử lý.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {issues.map((issue) => {
+                const isBusy = issueBusyId === issue.id;
+                return (
+                  <div key={issue.id} className="content-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Badge>{issue.status}</Badge>
+                          <strong style={{ fontSize: '1.05rem' }}>{issue.contentTitle}</strong>
+                          <span className="muted">({issue.category})</span>
+                        </div>
+                        <p style={{ margin: '8px 0', fontSize: '0.92rem', color: '#333' }}>
+                          {issue.description}
+                        </p>
+                        <small className="muted">
+                          Người gửi: {issue.reporterName ?? 'Ẩn danh'} · Ngày gửi: {formatDate(issue.createdAt)}
+                        </small>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #eee' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder="Phản hồi của ban quản trị gửi cho du khách..."
+                          value={issueResponse[issue.id] ?? issue.response ?? ''}
+                          onChange={(e) =>
+                            setIssueResponse((prev) => ({
+                              ...prev,
+                              [issue.id]: e.target.value,
+                            }))
+                          }
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--color-border-subtle)',
+                            fontSize: '0.88rem',
+                            flex: '1 1 250px',
+                          }}
+                        />
+                        <Button
+                          variant="primary"
+                          disabled={isBusy}
+                          onClick={() => void handleReviewIssue(issue.id, 'ACCEPTED')}
+                        >
+                          <CheckCircle2 size={16} style={{ marginRight: '4px' }} />
+                          Chấp thuận
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          disabled={isBusy}
+                          onClick={() => void handleReviewIssue(issue.id, 'REJECTED')}
+                        >
+                          <XCircle size={16} style={{ marginRight: '4px' }} />
+                          Từ chối
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          disabled={isBusy}
+                          onClick={() => void handleReviewIssue(issue.id, 'CLOSED')}
+                        >
+                          Đóng phiếu
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginTop: '16px' }}>
+          <div className="card-header-inline" style={{ marginBottom: '16px' }}>
+            <History size={22} className="text-primary" />
+            <div>
+              <h2>Nhật ký Kiểm toán Hệ thống (Audit Logs)</h2>
+              <p className="muted">
+                Lịch sử các thao tác nghiệp vụ, bảo mật, và kiểm duyệt trên hệ thống (đã che giấu dữ liệu nhạy cảm).
+              </p>
+            </div>
+          </div>
+
+          {auditLogs.length === 0 ? (
+            <div className="content-card" style={{ textAlign: 'center', padding: '36px' }}>
+              <p className="muted">Chưa có nhật ký kiểm toán nào.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {auditLogs.map((log) => (
+                <div key={log.id} className="content-card" style={{ padding: '12px 16px', fontSize: '0.88rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          background: log.result === 'SUCCESS' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                          color: log.result === 'SUCCESS' ? '#28a745' : '#dc3545',
+                        }}
+                      >
+                        {log.result}
+                      </span>
+                      <strong>{log.action}</strong>
+                      <span className="muted">({log.targetType}{log.targetId ? `: ${log.targetId.slice(0, 8)}…` : ''})</span>
+                    </div>
+                    <span className="muted">{formatDate(log.createdAt)}</span>
+                  </div>
+
+                  {log.metadata && (
+                    <pre
+                      style={{
+                        margin: '8px 0 0',
+                        padding: '8px',
+                        background: '#f8f9fa',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem',
+                        overflowX: 'auto',
+                      }}
+                    >
+                      {JSON.stringify(log.metadata, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -13,6 +13,8 @@ import { listMyItineraries } from '@/services/itineraries';
 import type { SavedItinerarySummary } from '@/services/itineraries';
 import { listAdminBookings, listMyBookings } from '@/services/bookings';
 import type { BookingRecord } from '@/services/bookings';
+import { listMyNotifications } from '@/services/notifications';
+import type { NotificationItem } from '@/services/notifications';
 import { bootstrapAuth } from '@/services/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { APP_PATHS } from '@/constants/path';
@@ -98,6 +100,25 @@ export async function bookingsLoader({ request }: LoaderFunctionArgs) {
     bookings = [];
   }
   return { dataset, bookings, user: state.user };
+}
+
+export async function notificationsLoader({ request }: LoaderFunctionArgs) {
+  const { dataset } = await getCatalog(request.signal);
+  await bootstrapAuth();
+  const state = useAuthStore.getState();
+  if (state.phase !== 'authenticated') {
+    return redirect(APP_PATHS.LOGIN);
+  }
+  let notifications: NotificationItem[];
+  let unreadCount = 0;
+  try {
+    const res = await listMyNotifications({ pageSize: 50 });
+    notifications = res.data;
+    unreadCount = res.meta.unreadCount;
+  } catch {
+    notifications = [];
+  }
+  return { dataset, notifications, unreadCount, user: state.user };
 }
 
 export async function adminContentLoader({ request }: LoaderFunctionArgs) {

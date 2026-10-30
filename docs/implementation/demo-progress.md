@@ -16,13 +16,14 @@
 | D8 — Hồ sơ, Consent & Quyền dữ liệu | `/me/profile`, `/me/preferences`, `/me/consents` (khóa chủ thể cấp `decision_no` tuần tự, mặc định chưa đồng ý) và `/me/privacy-requests` (xác minh lại mật khẩu, gói xuất JSON có hạn 7 ngày, job ẩn danh bảo vệ đơn đang hoạt động) trên BE/FE | 18 unit BE, 10 unit FE, 16 integration MariaDB, browser E2E hồ sơ/consent/export và lint/build/format đạt local |
 | D9 — Quản trị nội dung & Duyệt CMS | Workflow revision bất biến (`/api/v1/admin/contents`), kiểm duyệt media (MIME, chống traversal/script/magic bytes), kiểm tra nguồn công bố bắt buộc, đóng cửa tạm thời, thuyết minh âm thanh tiếng Việt, sự kiện và dịch vụ đối tác/slots trên BE/FE | 18 unit BE, 11 unit FE, 17 integration MariaDB, 10 E2E Playwright và lint/build/format đạt local |
 | D10 — Gợi ý lịch trình AI & Chuyến đi đã lưu | Đề xuất lịch trình thông minh từ 7 thông số (`/api/v1/itinerary-proposals`), kiểm tra độc lập giờ mở cửa/đóng cửa tạm thời/chi phí/tuyến đường (`routingAdapter`), cảnh báo vượt ngân sách, revalidate, lưu/quản lý lịch trình MariaDB (`/api/v1/me/itineraries`) có khóa lạc quan `lock_version` (409) và sao chép/xóa mềm trên BE/FE | 18 unit BE, 12 unit FE, 18 integration MariaDB, 10 E2E Playwright và lint/build/format đạt local |
-| D11 — Đặt dịch vụ & Thanh toán mô phỏng | Báo giá live (`/api/v1/booking-quotes`), đặt dịch vụ (`/api/v1/bookings`) ở trạng thái `CHO_DUYET`, kiểm soát thời hạn đặt trước tối thiểu 24h30m, duyệt/từ chối của ADMIN (`/api/v1/admin/bookings/:id/review`) giữ chỗ slot trong 30 phút (`CHO_THANH_TOAN`), luồng thanh toán mô phỏng du khách (`SUCCEEDED`/`FAILED`/`CANCELLED`), hủy đơn hoàn tiền 100% mô phỏng (`refunds`), ADMIN xác nhận hoàn tất sau khi kết thúc dịch vụ (`HOAN_THANH`) và hạch toán hoa hồng 10% (`commissions`), background job `expire-bookings` tự động thu hồi chỗ quá hạn; UI đặt dịch vụ tại `/services/:id`, danh sách quản lý đơn đặt tại `/bookings`, tab quản lý đặt chỗ/hoa hồng trên trang Quản trị `/admin` | 18 unit BE, 13 unit FE, 19 integration MariaDB, 10 E2E Playwright, 1 E2E auth browser, 0 lint warnings và clean build đạt local |
+| D11 — Đặt dịch vụ & Thanh toán mô phỏng | Báo giá live (`/api/v1/booking-quotes`), đặt dịch vụ (`/api/v1/bookings`) ở trạng thái `CHO_DUYET`, kiểm soát thời hạn đặt trước tối thiểu 24h30m, duyệt/từ chối của ADMIN (`/api/v1/admin/bookings/:id/review`) giữ chỗ slot trong 30 phút (`CHO_THANH_TOAN`), luồng thanh toán mô phỏng du khách (`SUCCEEDED`/`FAILED`/`CANCELLED`), hủy đơn hoàn tiền 100% mô phỏng (`refunds`), ADMIN xác nhận hoàn tất sau khi kết thúc dịch vụ (`HOAN_THANH`) và hạch toán hoa hồng 10% (`commissions`), background job `expire-bookings` tự động thu hồi chỗ quá hạn; UI đặt dịch vụ tại `/services/:id`, danh sách quản lý đơn đặt tại `/bookings`, tab quản lý đặt chỗ/hoa hồng trên trang Quản trị `/admin` | Đã commit `78c70dd`; 18 unit BE, 13 unit FE, 19 integration MariaDB, 10 E2E Playwright, 1 E2E auth browser đạt local |
+| D12 — Thông báo, Báo lỗi & Kiểm toán | In-app notifications (`/api/v1/me/notifications`), báo lỗi nội dung và góp ý chất lượng từ du khách (`/api/v1/issues`, `/api/v1/admin/issues`), tra cứu nhật ký kiểm toán quản trị (`/api/v1/admin/audit-logs`) có che giấu dữ liệu nhạy cảm, manifest tải gói dữ liệu ngoại tuyến (`/api/v1/me/itineraries/:id/manifest`) với SHA-256 checksum; UI thông báo `/notifications`, form báo lỗi trên chi tiết địa điểm, tab Báo lỗi & tab Kiểm toán trên `/admin` | 18 unit BE, 14 unit FE, 19 integration MariaDB, 10 E2E Playwright, lint và build sạch |
 
-Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`; chuyển runtime sang scaffold Sequelize: `ca59920`; migration/integration/bootstrap: `8b5baf4`; audit/jobs & khôi phục mật khẩu: `b22ba80`; hồ sơ & consent: `dabde15`; CMS revision & media/events/services: `04b816d`; tài liệu D9: `8e36c28`; AI đề xuất lịch trình & CRUD chuyến đi: `f57bc3d`.
+Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE: `4aec204`; chuyển runtime sang scaffold Sequelize: `ca59920`; migration/integration/bootstrap: `8b5baf4`; audit/jobs & khôi phục mật khẩu: `b22ba80`; hồ sơ & consent: `dabde15`; CMS revision & media/events/services: `04b816d`; tài liệu D9: `8e36c28`; AI đề xuất lịch trình & CRUD chuyến đi: `f57bc3d`; Đặt dịch vụ & thanh toán mô phỏng: `78c70dd`.
 
 ## Đối chiếu backlog
 
-- FE-01: có public, auth và tourist/account layouts, route loaders và TypeScript strict. Đã mở chức năng quản trị `/admin` và quản lý đơn đặt chỗ `/bookings`. SPA fallback trên hosting sẽ kiểm tra khi triển khai.
+- FE-01: có public, auth và tourist/account layouts, route loaders và TypeScript strict. Đã mở chức năng quản trị `/admin`, quản lý đơn đặt chỗ `/bookings`, và trung tâm thông báo `/notifications`. SPA fallback trên hosting sẽ kiểm tra khi triển khai.
 - FE-02: đã có tokens, font Inter tự host, Button/Badge và layout responsive (không tràn 360px). Component modal/confirm và tiếp cận được kiểm tra WCAG tự động qua Axe.
 - FE-03: Axios xử lý lỗi/AbortSignal, access trong bộ nhớ, gom refresh một lần, Web Locks/BroadcastChannel, retry access-expired đúng một lần, bỏ response của tài khoản cũ và reset state khi logout/đổi user. VND dùng BigInt, ngày VN, URL nguồn chỉ HTTP(S).
 - FE-04: có Vitest/Testing Library, memory router độc lập, E2E khám phá và E2E tài khoản với MariaDB thật. Đã có Prettier, `format:check` và CI có job DB/browser auth.
@@ -32,23 +33,17 @@ Commit nền tảng FE: `43a487c`; API khám phá: `8b9f47f`; demo xuyên FE/BE:
 - BE-09..13 & FE-09..12: CMS revision workflow bất biến, kiểm duyệt media nghiêm ngặt, thuyết minh âm thanh, sự kiện, dịch vụ và khung giờ đối tác.
 - BE-15..18 & FE-14..17: đề xuất lịch trình AI từ 7 tham số, bộ kiểm tra độc lập (giờ mở cửa, đóng cửa, tuyến đường, ngân sách không lạm phát ngầm), revalidate và CRUD lịch trình MariaDB có khóa lạc quan `lock_version` (409), sao chép/xóa mềm.
 - BE-14, BE-20..25 & FE-13, FE-20..23: báo giá trực tiếp, đặt dịch vụ ở trạng thái `CHO_DUYET`, kiểm soát hạn 24h30m, duyệt/giữ chỗ 30 phút, thanh toán mô phỏng (`SUCCEEDED`/`FAILED`/`CANCELLED`), hủy đơn hoàn tiền 100% mô phỏng, hoàn tất đơn sau thời điểm kết thúc và hạch toán hoa hồng 10%, cùng background job `expire-bookings`.
+- BE-26 & FE-24: thông báo in-app (xem, đếm chưa đọc, đánh dấu đã đọc), báo lỗi / đóng góp chất lượng nội dung từ du khách và quy trình duyệt/xử lý của ADMIN, tra cứu nhật ký kiểm toán phân quyền ADMIN, tính toán manifest tải gói lịch trình ngoại tuyến kèm SHA-256 checksum.
 
 ## Giới hạn
 
-Chưa nghiệm thu hosting/HTTPS, restore backup hosting, AI bên ngoài thật (đang dùng smart prompt-engine adapter và local routing adapter), offline Service Worker/PWA. Toàn bộ logic nghiệp vụ, giao dịch, tính toán hoa hồng, hoàn tiền, kiểm duyệt nội dung và tài khoản đã được xác minh toàn diện trên MariaDB 10.5.26 cục bộ và trình duyệt E2E Playwright.
+Chưa nghiệm thu hosting/HTTPS, restore backup hosting, AI bên ngoài thật (đang dùng smart prompt-engine adapter và local routing adapter), Service Worker/PWA cache tự động ở tầng trình duyệt. Toàn bộ logic nghiệp vụ, giao dịch, tính toán hoa hồng, hoàn tiền, kiểm duyệt nội dung, báo lỗi dữ liệu, thông báo và tài khoản đã được xác minh toàn diện.
 
 ## Chuẩn bị cho lần chạy agent kế tiếp
 
-1. **Các mốc đã hoàn tất (D1 -> D11)**:
-   - Nền tảng FE, API khám phá, CSDL MariaDB thật, Xác thực/Tài khoản, Audit/Jobs/Reset password, Hồ sơ & Privacy/Consent, CMS Revision & Dịch vụ/Khung giờ, AI Đề xuất lịch trình & CRUD Chuyến đi, Đặt dịch vụ & Thanh toán mô phỏng.
-   - Kiểm thử hiện tại: **18 BE unit tests**, **13 FE unit tests**, **19 MariaDB integration tests**, **10 Playwright E2E tests**, **1 E2E browser auth test**, **0 lint warnings**, **clean build**.
-2. **Nhiệm vụ còn lại cho lần chạy kế tiếp (M6 & M7)**:
-   - **M6 — Offline Cache & PWA / Lưu trữ ngoại tuyến (FE-18..19)**:
-     - Cấu hình Service Worker / Workbox: cache tĩnh (assets, fonts, shell) và cache dữ liệu danh mục địa điểm, bản đồ ngoại tuyến khi mất sóng trên cao nguyên.
-     - Khả năng xem lại lịch trình đã lưu khi thiết bị offline (`NetworkFirst` với IndexedDB/CacheStorage fallback).
-   - **M7 — Bảng điều khiển kiểm toán & Giám sát hệ thống (BE-26, FE-24)**:
-     - Giao diện tra cứu nhật ký kiểm toán `/admin/audit-logs` với bộ lọc loại hành động (`targetType`, `action`, `actorId`, khoảng thời gian) và ẩn thông tin nhạy cảm.
-     - Trình xem báo cáo thống kê: tỷ lệ duyệt đơn đặt chỗ, tổng hoa hồng đối tác, số lượng yêu cầu AI theo tháng.
-   - **Đóng gói & Hướng dẫn triển khai Production (X-01..05)**:
-     - Dockerfile đa tầng cho BE và FE, docker-compose với MariaDB cấu hình production, migration tự động khi khởi động.
-     - Kiểm tra khôi phục bản sao lưu dữ liệu và kịch bản rollback an toàn.
+1. **Các mốc đã hoàn tất (D1 -> D12)**:
+   - Nền tảng FE, API khám phá, CSDL MariaDB thật, Xác thực/Tài khoản, Audit/Jobs/Reset password, Hồ sơ & Privacy/Consent, CMS Revision & Dịch vụ/Khung giờ, AI Đề xuất lịch trình & CRUD Chuyến đi, Đặt dịch vụ & Thanh toán mô phỏng, Thông báo & Báo lỗi nội dung & Kiểm toán Audit log & Offline Manifest.
+   - Kiểm thử hiện tại: **18 BE unit tests**, **14 FE unit tests**, **19 MariaDB integration tests**, **10 Playwright E2E tests**, **1 E2E browser auth test**, **0 lint warnings**, **clean build**.
+2. **Nhiệm vụ còn lại cho lần chạy kế tiếp (PWA & Offline Service Worker - FE-18/19)**:
+   - Cấu hình Vite PWA Plugin / Service Worker: cache shell tĩnh, fonts, css, js và dữ liệu offline catalog khi mất mạng.
+   - Cơ chế lưu trữ offline cho lịch trình du khách dựa vào manifest package đã xây dựng ở mốc D12.

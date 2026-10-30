@@ -1200,6 +1200,73 @@ test('MariaDB: Booking lifecycle — quote, lead-time check, admin review/capaci
 
     const reloadedOverdue = await database.models.Bookings.findByPk(overdueBooking.id);
     assert.equal(reloadedOverdue.status, 'HET_HAN');
+
+    // 14. Test BE-26: Notifications list, unread count, mark read, mark all read
+    const notifsRes = await fetch(`${baseUrl}/api/v1/me/notifications`, { headers: touristHeaders });
+    assert.equal(notifsRes.status, 200);
+    const { data: userNotifs, meta: notifsMeta } = await notifsRes.json();
+    assert.ok(userNotifs.length >= 1);
+    assert.ok(notifsMeta.unreadCount >= 1);
+
+    const firstNotifId = userNotifs[0].id;
+    const markReadRes = await fetch(`${baseUrl}/api/v1/me/notifications/${firstNotifId}/read`, {
+      method: 'PATCH',
+      headers: touristHeaders,
+    });
+    assert.equal(markReadRes.status, 200);
+    const { data: readNotif } = await markReadRes.json();
+    assert.ok(readNotif.readAt);
+
+    const markAllReadRes = await fetch(`${baseUrl}/api/v1/me/notifications/read-all`, {
+      method: 'POST',
+      headers: touristHeaders,
+    });
+    assert.equal(markAllReadRes.status, 200);
+
+    const unreadCountRes = await fetch(`${baseUrl}/api/v1/me/notifications/unread-count`, {
+      headers: touristHeaders,
+    });
+    assert.equal(unreadCountRes.status, 200);
+    assert.equal((await unreadCountRes.json()).data.unreadCount, 0);
+
+    // 15. Test BE-26: Content Issue Reporting & Admin review
+    const issueReportRes = await fetch(`${baseUrl}/api/v1/issues`, {
+      method: 'POST',
+      headers: touristHeaders,
+      body: JSON.stringify({
+        contentId: serviceCreate.data.id,
+        category: 'OUTDATED_PRICE',
+        description: 'Giá dịch vụ tour leo núi đã thay đổi so với thực tế.',
+      }),
+    });
+    assert.equal(issueReportRes.status, 201);
+    const { data: createdIssue } = await issueReportRes.json();
+    assert.equal(createdIssue.status, 'NEW');
+    assert.equal(createdIssue.category, 'OUTDATED_PRICE');
+
+    // Admin reviews issue
+    const adminReviewIssueRes = await fetch(`${baseUrl}/api/v1/admin/issues/${createdIssue.id}`, {
+      method: 'PATCH',
+      headers: adminHeaders,
+      body: JSON.stringify({
+        status: 'ACCEPTED',
+        response: 'Cảm ơn phản ánh. Ban quản trị đã liên hệ đối tác cập nhật giá.',
+      }),
+    });
+    assert.equal(adminReviewIssueRes.status, 200);
+    const { data: reviewedIssue } = await adminReviewIssueRes.json();
+    assert.equal(reviewedIssue.status, 'ACCEPTED');
+    assert.ok(reviewedIssue.response);
+
+    // 16. Test BE-26: Admin audit logs querying
+    const auditLogsRes = await fetch(`${baseUrl}/api/v1/admin/audit-logs?pageSize=10`, {
+      headers: adminHeaders,
+    });
+    assert.equal(auditLogsRes.status, 200);
+    const { data: logs } = await auditLogsRes.json();
+    assert.ok(logs.length >= 1);
+    assert.ok(logs[0].action);
+    assert.ok(logs[0].correlationId);
   } finally {
     await new Promise((resolve) => {
       server.close(resolve);

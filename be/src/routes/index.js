@@ -14,6 +14,12 @@ import {
   createBookingsRouter,
   createMyBookingsRouter,
 } from '../modules/bookings/booking.routes.js';
+import {
+  createAdminOperationsRouter,
+  createIssuesRouter,
+  createNotificationsRouter,
+  createOfflineManifestRouter,
+} from '../modules/operations/operations.routes.js';
 
 export function createApiRouter(dependencies) {
   const router = Router();
@@ -58,8 +64,29 @@ export function createApiRouter(dependencies) {
       }),
     );
     router.use(
+      '/v1/me/itineraries',
+      createOfflineManifestRouter({
+        ...dependencies,
+        authService,
+      }),
+    );
+    router.use(
       '/v1/me/bookings',
       createMyBookingsRouter({
+        ...dependencies,
+        authService,
+      }),
+    );
+    router.use(
+      '/v1/me/notifications',
+      createNotificationsRouter({
+        ...dependencies,
+        authService,
+      }),
+    );
+    router.use(
+      '/v1/issues',
+      createIssuesRouter({
         ...dependencies,
         authService,
       }),
@@ -70,6 +97,10 @@ export function createApiRouter(dependencies) {
     router.use(
       '/v1/admin/bookings',
       createAdminBookingsRouter({ ...dependencies, authService }),
+    );
+    router.use(
+      '/v1/admin',
+      createAdminOperationsRouter({ ...dependencies, authService }),
     );
   }
   return router;

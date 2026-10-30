@@ -49,6 +49,18 @@ import {
   listMyBookings,
   recordPaymentAttempt,
 } from '@/services/bookings';
+import {
+  getUnreadNotificationCount,
+  listMyNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '@/services/notifications';
+import {
+  createIssueReport,
+  listAdminAuditLogs,
+  listAdminIssues,
+  reviewAdminIssue,
+} from '@/services/operations';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ApiError } from '@/services/api';
 
@@ -110,6 +122,19 @@ vi.mock('@/services/bookings', () => ({
   listAdminBookings: vi.fn(),
   reviewAdminBooking: vi.fn(),
   completeAdminBooking: vi.fn(),
+}));
+vi.mock('@/services/notifications', () => ({
+  listMyNotifications: vi.fn(),
+  getUnreadNotificationCount: vi.fn(),
+  markNotificationRead: vi.fn(),
+  markAllNotificationsRead: vi.fn(),
+}));
+vi.mock('@/services/operations', () => ({
+  createIssueReport: vi.fn(),
+  listMyIssues: vi.fn(),
+  listAdminIssues: vi.fn(),
+  reviewAdminIssue: vi.fn(),
+  listAdminAuditLogs: vi.fn(),
 }));
 beforeEach(() => {
   vi.mocked(getCatalog).mockResolvedValue(catalogFixture);
@@ -852,6 +877,55 @@ describe('Điều hướng ứng dụng', () => {
     const cancelBtn = screen.getByRole('button', { name: 'Hủy đơn đặt' });
     await user.click(cancelBtn);
     expect(cancelBooking).toHaveBeenCalledWith('book-sample-1234', expect.any(String));
+
+    router.dispose();
+  });
+
+  it('xem thông báo hệ thống và đóng góp phản hồi/báo lỗi dữ liệu địa điểm', async () => {
+    const user = userEvent.setup();
+    useAuthStore.setState({
+      enabled: true,
+      phase: 'authenticated',
+      user: {
+        id: 'user-tourist-1',
+        email: 'tourist@example.com',
+        displayName: 'Du Khách Mẫu',
+        roles: ['TOURIST'],
+      },
+      note: null,
+    });
+
+    const mockNotification = {
+      id: 'notif-1',
+      userId: 'user-tourist-1',
+      eventKey: 'booking-created',
+      kind: 'BOOKING',
+      title: 'Đơn đặt dịch vụ thành công',
+      body: 'Bạn có một đơn đặt dịch vụ Chư Đang Ya đang chờ duyệt.',
+      targetType: 'BOOKING',
+      targetId: 'book-1',
+      readAt: null,
+      createdAt: '2026-10-30T04:00:00.000Z',
+    };
+
+    vi.mocked(listMyNotifications).mockResolvedValue({
+      data: [mockNotification],
+      meta: { page: 1, pageSize: 50, total: 1, totalPages: 1, unreadCount: 1 },
+    });
+    vi.mocked(markAllNotificationsRead).mockResolvedValue({ data: { success: true } });
+
+    const router = createMemoryRouter(appRoutes, { initialEntries: [APP_PATHS.NOTIFICATIONS] });
+    render(<RouterProvider router={router} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Hộp thư thông báo hệ thống' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Đơn đặt dịch vụ thành công')).toBeInTheDocument();
+    expect(screen.getByText('Đánh dấu tất cả đã đọc (1)')).toBeInTheDocument();
+
+    const markAllBtn = screen.getByRole('button', { name: /Đánh dấu tất cả đã đọc/ });
+    await user.click(markAllBtn);
+    expect(markAllNotificationsRead).toHaveBeenCalled();
 
     router.dispose();
   });

@@ -1433,6 +1433,273 @@ paths:
           $ref: "#/components/responses/InvalidCatalogRequest"
         "409": *a4
         "422": *a5
+  /api/v1/me/notifications:
+    get:
+      operationId: listMyNotifications
+      summary: List notifications for current user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: unreadOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Paginated notifications
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+  /api/v1/me/notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      summary: Get quick count of unread notifications for badge
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+  /api/v1/me/notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      summary: Mark a single notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+  /api/v1/me/notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      summary: Mark all notifications as read
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Success acknowledgement
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+  /api/v1/issues:
+    post:
+      operationId: createIssueReport
+      summary: Submit a content issue or correction report
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Created issue report
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422": *a5
+  /api/v1/issues/me:
+    get:
+      operationId: listMyIssues
+      summary: List user's submitted issue reports
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated issues
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+  /api/v1/admin/issues:
+    get:
+      operationId: listAdminIssues
+      summary: List all issue reports for moderation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated admin issues
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+  /api/v1/admin/issues/{id}:
+    patch:
+      operationId: reviewAdminIssue
+      summary: Update issue status and response
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated issue
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422": *a5
+  /api/v1/admin/audit-logs:
+    get:
+      operationId: listAdminAuditLogs
+      summary: Search redacted audit logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: targetType
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: result
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated audit logs
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+  /api/v1/me/itineraries/{id}/manifest:
+    get:
+      operationId: getItineraryOfflineManifest
+      summary: Download offline package manifest with POIs, coordinates and checksum
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Offline package manifest
+          content:
+            application/json:
+              schema:
+                type: object
+        "401": *a2
+        "403": *a3
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422": *a5
 components:
   responses:
     InvalidCatalogRequest:

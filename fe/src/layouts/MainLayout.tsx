@@ -1,5 +1,6 @@
 import {
   ArrowUpRight,
+  Bell,
   Compass,
   MapPinned,
   Mountain,
@@ -53,6 +54,12 @@ export function MainLayout() {
               <NavLink to={APP_PATHS.BOOKINGS}>
                 <Ticket size={18} aria-hidden="true" />
                 Đơn đặt chỗ
+              </NavLink>
+            )}
+            {user && (
+              <NavLink to={APP_PATHS.NOTIFICATIONS}>
+                <Bell size={18} aria-hidden="true" />
+                Thông báo
               </NavLink>
             )}
             {isAdmin && (

@@ -201,3 +201,51 @@ export async function deleteMyItinerary(id: string): Promise<{ id: string; delet
   );
   return response.data;
 }
+
+export interface OfflineManifestData {
+  manifestVersion: string;
+  packageId: string;
+  itineraryName: string;
+  startDate: string;
+  daysCount: number;
+  partySize: number;
+  totalBudgetVnd: string;
+  transportMode: string;
+  origin: {
+    latitude: number;
+    longitude: number;
+    label?: string;
+  };
+  days: Array<{
+    dayNumber: number;
+    date: string;
+    title: string;
+    notes?: string;
+    stops: Array<{
+      id: string;
+      stopOrder: number;
+      placeId: string;
+      placeTitle?: string;
+      contentRevisionId?: string | null;
+      lat: number | null;
+      lng: number | null;
+      arrivalMinutes: number;
+      departureMinutes: number;
+      estimatedCostVnd: string;
+    }>;
+    legs: Array<{
+      fromStopId: string;
+      toStopId: string;
+      transportMode: string;
+      durationMinutes: number;
+      distanceMeters: number;
+      estimatedCostVnd: string;
+    }>;
+  }>;
+  checksum: string;
+  generatedAt: string;
+}
+
+export async function getItineraryOfflineManifest(id: string): Promise<{ data: OfflineManifestData }> {
+  return get<{ data: OfflineManifestData }>(`/api/v1/me/itineraries/${encodeURIComponent(id)}/manifest`);
+}

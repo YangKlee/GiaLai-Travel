@@ -10,6 +10,7 @@ import {
   eventDetailLoader,
   eventsLoader,
   exploreLoader,
+  notificationsLoader,
   placeLoader,
   serviceDetailLoader,
   tripsLoader,
@@ -25,6 +26,7 @@ const EventDetailPage = lazy(() => import('@/features/explore/pages/EventDetailP
 const ServiceDetailPage = lazy(() => import('@/features/explore/pages/ServiceDetailPage'));
 const TripsPage = lazy(() => import('@/features/trips/pages/TripsPage'));
 const BookingsPage = lazy(() => import('@/features/bookings/pages/BookingsPage'));
+const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
 const AdminContentPage = lazy(() => import('@/features/admin/pages/AdminContentPage'));
 const ServerErrorPage = lazy(() =>
   import('@/features/errors/pages/ErrorPages').then((m) => ({ default: m.ServerErrorPage })),
@@ -134,6 +136,20 @@ export const mainRoutes: RouteObject[] = [
         element: (
           <RouteSuspense>
             <BookingsPage />
+          </RouteSuspense>
+        ),
+        errorElement: (
+          <RouteSuspense>
+            <ServerErrorPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.NOTIFICATIONS,
+        loader: notificationsLoader,
+        element: (
+          <RouteSuspense>
+            <NotificationsPage />
           </RouteSuspense>
         ),
         errorElement: (
