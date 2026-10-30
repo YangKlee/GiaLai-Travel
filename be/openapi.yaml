@@ -740,6 +740,233 @@ paths:
           $ref: "#/components/responses/InvalidCatalogRequest"
         "503":
           $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/itinerary-proposals:
+    post:
+      operationId: proposeItinerary
+      summary: Generate smart itinerary proposal from 7 inputs via AI adapter and independent validator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Generated itinerary proposal
+          content:
+            application/json:
+              schema:
+                type: object
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/itinerary-proposals/revalidate:
+    post:
+      operationId: revalidateItinerary
+      summary: Revalidate itinerary days, stops, legs, opening hours and budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Validation result with warnings and violations
+          content:
+            application/json:
+              schema:
+                type: object
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/me/itineraries:
+    get:
+      operationId: listMyItineraries
+      summary: List authenticated user's active itineraries
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: List of itineraries
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+    post:
+      operationId: createMyItinerary
+      summary: Save an itinerary with initial revision
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Created itinerary
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/me/itineraries/{id}:
+    get:
+      operationId: getMyItineraryDetail
+      summary: Get itinerary detail with current revision days, stops and legs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Itinerary details
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+    patch:
+      operationId: renameMyItinerary
+      summary: Rename an itinerary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Renamed itinerary
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+    delete:
+      operationId: deleteMyItinerary
+      summary: Soft-delete an itinerary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted itinerary
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/me/itineraries/{id}/revisions:
+    put:
+      operationId: updateMyItineraryRevision
+      summary: Append new revision with optimistic concurrency check (lock_version)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated itinerary
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "409":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "422":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
+  /api/v1/me/itineraries/{id}/copy:
+    post:
+      operationId: copyMyItinerary
+      summary: Deep copy an itinerary into a new itinerary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Cloned itinerary
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "404":
+          $ref: "#/components/responses/InvalidCatalogRequest"
+        "503":
+          $ref: "#/components/responses/CatalogUnavailable"
   /api/v1/admin/meta:
     get:
       operationId: getAdminContentMeta

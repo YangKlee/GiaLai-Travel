@@ -76,3 +76,7 @@ export async function put<T, B = unknown>(path: string, body: B): Promise<T> {
 export async function patch<T, B = unknown>(path: string, body: B): Promise<T> {
   return (await client.patch<T>(path, body)).data;
 }
+
+export async function del<T>(path: string): Promise<T> {
+  return (await client.delete<T>(path)).data;
+}

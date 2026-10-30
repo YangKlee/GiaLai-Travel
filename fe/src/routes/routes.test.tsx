@@ -37,6 +37,12 @@ import {
   updateMyPreferences,
   updateMyProfile,
 } from '@/services/account';
+import {
+  createMyItinerary,
+  generateItineraryProposal,
+  listMyItineraries,
+  revalidateItineraryProposal,
+} from '@/services/itineraries';
 import { useAuthStore } from '@/store/useAuthStore';
 import { ApiError } from '@/services/api';
 
@@ -76,6 +82,17 @@ vi.mock('@/services/account', () => ({
   listMyPrivacyRequests: vi.fn(),
   createMyPrivacyRequest: vi.fn(),
   downloadMyPrivacyExport: vi.fn(),
+}));
+vi.mock('@/services/itineraries', () => ({
+  generateItineraryProposal: vi.fn(),
+  revalidateItineraryProposal: vi.fn(),
+  listMyItineraries: vi.fn(),
+  getMyItinerary: vi.fn(),
+  createMyItinerary: vi.fn(),
+  updateMyItineraryRevision: vi.fn(),
+  renameMyItinerary: vi.fn(),
+  copyMyItinerary: vi.fn(),
+  deleteMyItinerary: vi.fn(),
 }));
 beforeEach(() => {
   vi.mocked(getCatalog).mockResolvedValue(catalogFixture);
@@ -607,5 +624,118 @@ describe('Điều hướng ứng dụng', () => {
       ),
     ).toBeInTheDocument();
     adminRouter.dispose();
+  });
+
+  it('tạo gợi ý lịch trình AI từ 7 thông số, kiểm tra lại (revalidate) và lưu vào chuyến đi đã lưu', async () => {
+    const user = userEvent.setup();
+    useAuthStore.setState({
+      enabled: true,
+      phase: 'authenticated',
+      user: {
+        id: 'u-planner',
+        email: 'tourist@example.test',
+        displayName: 'Du khách Lập Lịch',
+        roles: ['TOURIST'],
+      },
+      note: null,
+    });
+
+    vi.mocked(listMyItineraries).mockResolvedValue([
+      {
+        id: 'it-saved-1',
+        name: 'Chuyến Pleiku cuối tuần',
+        lockVersion: 1,
+        currentRevisionId: 'rev-1',
+        startDate: '2026-11-05',
+        daysCount: 2,
+        partySize: 2,
+        totalBudgetVnd: '2500000',
+        estimatedTotalVnd: '1800000',
+        createdAt: '2026-10-30T00:00:00.000Z',
+        updatedAt: '2026-10-30T01:00:00.000Z',
+      },
+    ]);
+
+    const mockProposal = {
+      startDate: '2026-11-01',
+      daysCount: 2,
+      partySize: 2,
+      totalBudgetVnd: '3000000',
+      estimatedTotalVnd: '1200000',
+      origin: { latitude: 13.9833, longitude: 108.0, label: 'Quảng trường Pleiku' },
+      transportMode: 'MOTORBIKE' as const,
+      preferences: { categories: ['NATURE' as const], pace: 'BALANCED' as const },
+      warnings: [],
+      violations: [],
+      isValid: true,
+      aiRequestId: 'ai-req-123',
+      days: [
+        {
+          dayNumber: 1,
+          travelDate: '2026-11-01',
+          stops: [
+            {
+              placeId: 'pl-1',
+              placeTitle: 'Biển Hồ Pleiku',
+              sequenceNo: 1,
+              arrivesAt: '2026-11-01T08:30:00.000Z',
+              departsAt: '2026-11-01T10:30:00.000Z',
+              estimatedCostVnd: 40000,
+            },
+          ],
+          legs: [],
+        },
+      ],
+    };
+
+    vi.mocked(generateItineraryProposal).mockResolvedValue(mockProposal);
+    vi.mocked(revalidateItineraryProposal).mockResolvedValue({
+      ...mockProposal,
+      warnings: ['Lưu ý: Thời gian di chuyển có thể tăng vào giờ cao điểm.'],
+    });
+    vi.mocked(createMyItinerary).mockResolvedValue({
+      id: 'it-new-1',
+      ownerId: 'u-planner',
+      name: 'Khám phá Gia Lai 2N1Đ',
+      lockVersion: 0,
+      currentRevisionId: 'rev-new-1',
+      createdAt: '2026-10-30T03:00:00.000Z',
+      updatedAt: '2026-10-30T03:00:00.000Z',
+      revision: {
+        id: 'rev-new-1',
+        revisionNo: 1,
+        validatedAt: '2026-10-30T03:00:00.000Z',
+        ...mockProposal,
+      },
+    });
+
+    const router = createMemoryRouter(appRoutes, { initialEntries: [APP_PATHS.TRIPS] });
+    render(<RouterProvider router={router} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Chuyến đi & Lịch trình AI' }),
+    ).toBeInTheDocument();
+
+    // Switch to AI planner tab
+    await user.click(screen.getByRole('button', { name: /Tạo lịch trình AI/ }));
+    expect(await screen.findByRole('heading', { name: /Thông số chuyến đi/ })).toBeInTheDocument();
+
+    // Click submit AI proposal generator
+    await user.click(screen.getByRole('button', { name: 'Lập lịch trình với AI' }));
+    expect(await screen.findByText('Biển Hồ Pleiku')).toBeInTheDocument();
+    expect(screen.getByText('Lịch trình hợp lệ')).toBeInTheDocument();
+
+    // Revalidate
+    await user.click(screen.getByRole('button', { name: /Kiểm tra lại/ }));
+    expect(
+      await screen.findByText('Lưu ý: Thời gian di chuyển có thể tăng vào giờ cao điểm.'),
+    ).toBeInTheDocument();
+
+    // Save to account
+    await user.click(screen.getByRole('button', { name: 'Lưu vào tài khoản' }));
+    expect(
+      await screen.findByText(/Đã lưu "Khám phá Gia Lai 2N1Đ" vào danh sách chuyến đi/),
+    ).toBeInTheDocument();
+    router.dispose();
   });
 });

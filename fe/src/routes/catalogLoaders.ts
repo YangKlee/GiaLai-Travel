@@ -9,6 +9,8 @@ import {
   getService,
 } from '@/services/catalog';
 import { getAdminContentMeta, listAdminContents } from '@/services/admin';
+import { listMyItineraries } from '@/services/itineraries';
+import type { SavedItinerarySummary } from '@/services/itineraries';
 import { bootstrapAuth } from '@/services/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { APP_PATHS } from '@/constants/path';
@@ -66,7 +68,17 @@ export async function serviceDetailLoader({ params, request }: LoaderFunctionArg
 
 export async function tripsLoader({ request }: LoaderFunctionArgs) {
   const { dataset } = await getCatalog(request.signal);
-  return { dataset };
+  await bootstrapAuth();
+  const state = useAuthStore.getState();
+  let savedItineraries: SavedItinerarySummary[] = [];
+  if (state.phase === 'authenticated') {
+    try {
+      savedItineraries = await listMyItineraries(request.signal);
+    } catch {
+      savedItineraries = [];
+    }
+  }
+  return { dataset, savedItineraries, isAuthenticated: state.phase === 'authenticated' };
 }
 
 export async function adminContentLoader({ request }: LoaderFunctionArgs) {

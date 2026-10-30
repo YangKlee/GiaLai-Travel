@@ -497,3 +497,293 @@ test('MariaDB: CMS content revision workflow, media validation, audio guides, ev
     });
   }
 });
+
+test('MariaDB: AI itinerary proposal (7 inputs), independent validator, revalidation and saved itineraries CRUD', async (t) => {
+  const { database } = await isolatedDatabase(t);
+  const regionId = randomUUID();
+  await database.models.Regions.create({ id: regionId, code: 'PLEIKU', name: 'Pleiku & phụ cận' });
+
+  // 1. Create a published POI and a closure
+  const adminCredentials = {
+    email: 'tourist-planner@example.test',
+    password: 'Planner-test-password-🌿!',
+    displayName: 'Du khách Lập lịch',
+  };
+  await bootstrapAdmin(database, adminCredentials);
+
+  const { createAiAdapter, createRoutingAdapter } = await import('../src/adapters/index.js');
+  const aiAdapter = createAiAdapter({ mode: 'prompt-engine' });
+  const routingAdapter = createRoutingAdapter({ mode: 'local' });
+
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const auth = {
+    privateKey,
+    publicKeys: new Map([['integration', publicKey]]),
+    kid: 'integration',
+    issuer: 'integration-api',
+    audience: 'integration-web',
+    origins: ['http://localhost:5173'],
+    secure: false,
+    accessSeconds: 900,
+    sessionMilliseconds: 7 * 86400_000,
+    resetMilliseconds: 15 * 60_000,
+  };
+
+  const server = createApp({ database, auth, aiAdapter, routingAdapter }).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        'X-CSRF-Protection': '1',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ email: adminCredentials.email, password: adminCredentials.password }),
+    });
+    const {
+      data: { accessToken },
+    } = await loginRes.json();
+    const authHeaders = {
+      Origin: 'http://localhost:5173',
+      'X-CSRF-Protection': '1',
+      'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
+    };
+
+    // Create 2 published places
+    const p1Res = await fetch(`${baseUrl}/api/v1/admin/contents`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        kind: 'PLACE',
+        title: 'Biển Hồ Pleiku',
+        body: 'Thắng cảnh Biển Hồ T’Nưng.',
+        sourceReference: 'https://gialai.gov.vn/bien-ho',
+        submitImmediately: true,
+        payload: {
+          regionId,
+          category: 'NATURE',
+          latitude: 14.0462,
+          longitude: 108.0002,
+          referencePriceVnd: '20000',
+          typicalDurationMinutes: 90,
+          openingHours: [{ weekday: 1, opensAt: '07:00:00', closesAt: '17:30:00' }],
+        },
+      }),
+    });
+    const p1 = (await p1Res.json()).data;
+    await fetch(`${baseUrl}/api/v1/admin/contents/${p1.id}/revisions/${p1.revisions[0].id}/review`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ decision: 'APPROVE' }),
+    });
+
+    const p2Res = await fetch(`${baseUrl}/api/v1/admin/contents`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        kind: 'PLACE',
+        title: 'Chùa Minh Thành',
+        body: 'Kiến trúc tâm linh độc đáo Pleiku.',
+        sourceReference: 'https://gialai.gov.vn/chua-minh-thanh',
+        submitImmediately: true,
+        payload: {
+          regionId,
+          category: 'CULTURE',
+          latitude: 13.9667,
+          longitude: 107.9833,
+          referencePriceVnd: '0',
+          typicalDurationMinutes: 60,
+          openingHours: [{ weekday: 1, opensAt: '07:30:00', closesAt: '18:00:00' }],
+        },
+      }),
+    });
+    const p2 = (await p2Res.json()).data;
+    await fetch(`${baseUrl}/api/v1/admin/contents/${p2.id}/revisions/${p2.revisions[0].id}/review`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ decision: 'APPROVE' }),
+    });
+
+    // 2. Generate AI proposal (POST /api/v1/itinerary-proposals) with 7 inputs
+    const proposalRes = await fetch(`${baseUrl}/api/v1/itinerary-proposals`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        startDate: '2026-11-02',
+        daysCount: 2,
+        partySize: 2,
+        totalBudgetVnd: '2000000',
+        origin: {
+          latitude: 13.9833,
+          longitude: 108.0,
+          label: 'Quảng trường Đại Đoàn Kết, TP. Pleiku',
+        },
+        transportMode: 'MOTORBIKE',
+        preferences: {
+          categories: ['NATURE', 'CULTURE'],
+          pace: 'BALANCED',
+          dietaryNotes: 'Ưu tiên cà phê Pleiku',
+        },
+      }),
+    });
+    assert.equal(proposalRes.status, 200);
+    const { data: proposal } = await proposalRes.json();
+    assert.equal(proposal.daysCount, 2);
+    assert.equal(proposal.days.length, 2);
+    assert.ok(proposal.isValid);
+    assert.ok(proposal.aiRequestId);
+    assert.ok(Number(proposal.estimatedTotalVnd) > 0);
+    assert.ok(Number(proposal.estimatedTotalVnd) <= 2000000);
+
+    // Verify AI request was logged in ai_requests and ai_request_sources
+    const aiReqCount = await database.models.AiRequests.count({
+      where: { id: proposal.aiRequestId },
+    });
+    assert.equal(aiReqCount, 1);
+    const aiSourcesCount = await database.models.AiRequestSources.count({
+      where: { ai_request_id: proposal.aiRequestId },
+    });
+    assert.ok(aiSourcesCount >= 1);
+
+    // 3. Revalidate proposal with modified times (POST /api/v1/itinerary-proposals/revalidate)
+    const revalidateRes = await fetch(`${baseUrl}/api/v1/itinerary-proposals/revalidate`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        startDate: proposal.startDate,
+        daysCount: proposal.daysCount,
+        partySize: proposal.partySize,
+        totalBudgetVnd: '10000', // Intentionally very low budget to trigger warning
+        origin: proposal.origin,
+        transportMode: proposal.transportMode,
+        preferences: proposal.preferences,
+        days: proposal.days,
+      }),
+    });
+    assert.equal(revalidateRes.status, 200);
+    const { data: revalidated } = await revalidateRes.json();
+    assert.ok(revalidated.warnings.some((w) => w.includes('vượt ngân sách')));
+
+    // 4. Save to My Itineraries (POST /api/v1/me/itineraries)
+    const saveRes = await fetch(`${baseUrl}/api/v1/me/itineraries`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        name: 'Hành trình Pleiku 2N1Đ',
+        startDate: proposal.startDate,
+        daysCount: proposal.daysCount,
+        partySize: proposal.partySize,
+        totalBudgetVnd: proposal.totalBudgetVnd,
+        origin: proposal.origin,
+        transportMode: proposal.transportMode,
+        preferences: proposal.preferences,
+        aiRequestId: proposal.aiRequestId,
+        days: proposal.days,
+      }),
+    });
+    assert.equal(saveRes.status, 201);
+    const { data: savedItinerary } = await saveRes.json();
+    assert.equal(savedItinerary.name, 'Hành trình Pleiku 2N1Đ');
+    assert.equal(savedItinerary.lockVersion, 0);
+    assert.equal(savedItinerary.revision.days.length, 2);
+
+    // 5. List and Get detail
+    const listRes = await fetch(`${baseUrl}/api/v1/me/itineraries`, { headers: authHeaders });
+    assert.equal(listRes.status, 200);
+    const { data: userItineraries } = await listRes.json();
+    assert.equal(userItineraries.length, 1);
+    assert.equal(userItineraries[0].id, savedItinerary.id);
+
+    const getDetailRes = await fetch(`${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}`, {
+      headers: authHeaders,
+    });
+    assert.equal(getDetailRes.status, 200);
+    const { data: detail } = await getDetailRes.json();
+    assert.equal(detail.revision.days[0].stops.length, proposal.days[0].stops.length);
+
+    // 6. Optimistic concurrency conflict check (PUT /api/v1/me/itineraries/:id/revisions)
+    // Stale lock_version returns 409
+    const conflictRes = await fetch(
+      `${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}/revisions`,
+      {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({
+          baseLockVersion: 999, // Stale!
+          name: 'Tên sửa đổi xung đột',
+          startDate: proposal.startDate,
+          daysCount: proposal.daysCount,
+          partySize: proposal.partySize,
+          totalBudgetVnd: proposal.totalBudgetVnd,
+          origin: proposal.origin,
+          transportMode: proposal.transportMode,
+          days: proposal.days,
+        }),
+      },
+    );
+    assert.equal(conflictRes.status, 409);
+
+    // Correct lock_version: 0 succeeds and increments lock_version to 1
+    const updateRes = await fetch(
+      `${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}/revisions`,
+      {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({
+          baseLockVersion: 0,
+          name: 'Hành trình Pleiku 2N1Đ (Đã cập nhật #2)',
+          startDate: proposal.startDate,
+          daysCount: proposal.daysCount,
+          partySize: proposal.partySize,
+          totalBudgetVnd: proposal.totalBudgetVnd,
+          origin: proposal.origin,
+          transportMode: proposal.transportMode,
+          days: proposal.days,
+        }),
+      },
+    );
+    assert.equal(updateRes.status, 200);
+    const { data: updatedItinerary } = await updateRes.json();
+    assert.equal(updatedItinerary.lockVersion, 1);
+    assert.equal(updatedItinerary.name, 'Hành trình Pleiku 2N1Đ (Đã cập nhật #2)');
+
+    // 7. Rename (PATCH /api/v1/me/itineraries/:id)
+    const renameRes = await fetch(`${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}`, {
+      method: 'PATCH',
+      headers: authHeaders,
+      body: JSON.stringify({ name: 'Chuyến đi Pleiku mùa thu' }),
+    });
+    assert.equal(renameRes.status, 200);
+
+    // 8. Copy (POST /api/v1/me/itineraries/:id/copy)
+    const copyRes = await fetch(`${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}/copy`, {
+      method: 'POST',
+      headers: authHeaders,
+    });
+    assert.equal(copyRes.status, 201);
+    const { data: copiedItinerary } = await copyRes.json();
+    assert.ok(copiedItinerary.name.startsWith('[Bản sao]'));
+    assert.notEqual(copiedItinerary.id, savedItinerary.id);
+
+    // 9. Soft-delete (DELETE /api/v1/me/itineraries/:id)
+    const delRes = await fetch(`${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}`, {
+      method: 'DELETE',
+      headers: authHeaders,
+    });
+    assert.equal(delRes.status, 200);
+
+    const getDeletedRes = await fetch(`${baseUrl}/api/v1/me/itineraries/${savedItinerary.id}`, {
+      headers: authHeaders,
+    });
+    assert.equal(getDeletedRes.status, 404);
+  } finally {
+    await new Promise((resolve) => {
+      server.close(resolve);
+      server.closeAllConnections();
+    });
+  }
+});
