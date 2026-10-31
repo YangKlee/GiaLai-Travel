@@ -393,8 +393,8 @@ export function OriginLocationPicker({
         </label>
 
         <div style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
               <input
                 id="ai-origin-label"
                 type="text"
@@ -469,7 +469,7 @@ export function OriginLocationPicker({
       {/* Tìm kiếm & Suy ra tọa độ (Search to Deduce Coordinates) */}
       <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
             <input
               type="text"
               aria-label="Tìm kiếm địa điểm hoặc địa chỉ để suy ra tọa độ"

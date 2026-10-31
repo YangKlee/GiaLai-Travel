@@ -1,0 +1,47 @@
+[
+  {
+    "w": 320,
+    "firstCard": 523.90625,
+    "titleTop": 720.09375
+  },
+  {
+    "w": 320,
+    "outside": []
+  },
+  {
+    "w": 360,
+    "firstCard": 501.515625,
+    "titleTop": 697.703125
+  },
+  {
+    "w": 360,
+    "outside": []
+  },
+  {
+    "w": 390,
+    "firstCard": 501.515625,
+    "titleTop": 697.703125
+  },
+  {
+    "w": 390,
+    "outside": []
+  },
+  {
+    "w": 430,
+    "firstCard": 501.515625,
+    "titleTop": 697.703125
+  },
+  {
+    "w": 430,
+    "outside": []
+  },
+  {
+    "draftReload": 1
+  },
+  {
+    "filter": "https://gialaitravel.yangkleeserver.io.vn/explore?q=&category=&regionId=&sort=price-asc&minPrice=&maxPrice="
+  },
+  {
+    "accessibility": []
+  }
+]

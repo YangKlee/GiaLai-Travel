@@ -137,7 +137,7 @@ export function MainLayout() {
                 <Mountain size={22} aria-hidden="true" />
               </span>
               <span className="brand-text">
-                GiaLai<span className="text-primary">Travel</span>
+                GiaLai<span className="brand-accent">Travel</span>
                 <small>ĐI ĐỂ THẤY. Ở ĐỂ NHỚ.</small>
               </span>
             </Link>
@@ -460,7 +460,7 @@ export function MainLayout() {
           <span>Chuyến đi</span>
         </NavLink>
         <NavLink
-          to={user ? APP_PATHS.BOOKINGS : APP_PATHS.LOGIN}
+          to={APP_PATHS.BOOKINGS}
           className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
         >
           <Ticket size={20} aria-hidden="true" />

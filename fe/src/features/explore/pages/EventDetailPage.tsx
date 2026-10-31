@@ -1,3 +1,5 @@
+import { eventStatusLabel } from '@/utils/event-status';
+import { catalogImageUrl } from '@/utils/catalog-image';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,13 +15,13 @@ import { DatasetNotice } from '@/components/common/DatasetNotice';
 import { Badge } from '@/components/ui/Badge';
 import { buttonVariants } from '@/components/ui/button-variants';
 import { formatDate, safeHttpUrl } from '@/utils/format';
-import { EVENT_STATUS_NAMES } from '../types/catalog';
 
 export default function EventDetailPage() {
   const { data: eventItem, dataset } = useLoaderData<typeof eventDetailLoader>();
+  const banner = catalogImageUrl(eventItem.bannerUrl) || catalogImageUrl(eventItem.imageUrl);
   const sourceUrl = safeHttpUrl(eventItem.sourceReference);
   const isCancelled = eventItem.eventStatus === 'CANCELLED';
-  const isCompleted = eventItem.eventStatus === 'COMPLETED';
+  const isCompleted = eventStatusLabel(eventItem) === 'Đã kết thúc';
 
   return (
     <>
@@ -30,7 +32,7 @@ export default function EventDetailPage() {
       </Link>
       <div className="detail-heading">
         <div>
-          <Badge>{EVENT_STATUS_NAMES[eventItem.eventStatus]}</Badge>
+          <Badge>{eventStatusLabel(eventItem)}</Badge>
           <h1>{eventItem.title}</h1>
           <p className="meta-line">
             <MapPin size={16} aria-hidden="true" />
@@ -57,13 +59,9 @@ export default function EventDetailPage() {
 
       <div className="detail-grid">
         <article className="detail-main">
-          {(eventItem.bannerUrl || eventItem.imageUrl) && (
+          {banner && (
             <div className="detail-banner-wrapper">
-              <img
-                src={eventItem.bannerUrl || eventItem.imageUrl || ''}
-                alt={eventItem.title}
-                className="detail-banner-img"
-              />
+              <img src={banner} alt={eventItem.title} className="detail-banner-img" />
             </div>
           )}
           <section className="content-card">
@@ -100,7 +98,7 @@ export default function EventDetailPage() {
               </div>
               <div>
                 <dt>Trạng thái hiện tại</dt>
-                <dd>{EVENT_STATUS_NAMES[eventItem.eventStatus]}</dd>
+                <dd>{eventStatusLabel(eventItem)}</dd>
               </div>
             </dl>
             {!isCancelled && !isCompleted ? (

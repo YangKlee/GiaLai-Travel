@@ -1,3 +1,5 @@
+import { eventStatusLabel } from '@/utils/event-status';
+import { catalogImageUrl } from '@/utils/catalog-image';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import {
@@ -20,7 +22,7 @@ import { DatasetNotice } from '@/components/common/DatasetNotice';
 import { Badge } from '@/components/ui/Badge';
 import { buttonVariants } from '@/components/ui/button-variants';
 import { formatDate, formatDuration, formatVnd, safeHttpUrl } from '@/utils/format';
-import { CATEGORY_NAMES, EVENT_STATUS_NAMES, SERVICE_TYPE_NAMES } from '../types/catalog';
+import { CATEGORY_NAMES, SERVICE_TYPE_NAMES } from '../types/catalog';
 import { PlaceArtwork } from '../components/PlaceArtwork';
 import { AddToTripButton } from '../components/AddToTripButton';
 import { AudioGuidePlayer } from '../components/AudioGuidePlayer';
@@ -33,6 +35,7 @@ const weekdays = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ n
 
 export default function PlaceDetailPage() {
   const { data: place, dataset } = useLoaderData<typeof placeLoader>();
+  const banner = catalogImageUrl(place.bannerUrl) || catalogImageUrl(place.imageUrl);
   const sourceUrl = safeHttpUrl(place.sourceReference);
   const mapUrl =
     place.latitude !== null && place.longitude !== null
@@ -111,13 +114,9 @@ export default function PlaceDetailPage() {
 
       <div className="detail-grid">
         <article className="detail-main">
-          {place.bannerUrl || place.imageUrl ? (
+          {banner ? (
             <div className="detail-banner-wrapper">
-              <img
-                src={place.bannerUrl || place.imageUrl || ''}
-                alt={place.title}
-                className="detail-banner-img"
-              />
+              <img src={banner} alt={place.title} className="detail-banner-img" />
             </div>
           ) : (
             <PlaceArtwork category={place.category} large />
@@ -203,7 +202,7 @@ export default function PlaceDetailPage() {
                         <h3>
                           <Link to={APP_PATHS.event(eventItem.id)}>{eventItem.title}</Link>
                         </h3>
-                        <Badge>{EVENT_STATUS_NAMES[eventItem.eventStatus]}</Badge>
+                        <Badge>{eventStatusLabel(eventItem)}</Badge>
                       </div>
                       <p className="muted">{eventItem.description}</p>
                       <p className="muted">

@@ -1,6 +1,7 @@
 import { Op, col, fn, where } from 'sequelize';
 import { serializeUtc } from '../../shared/time.js';
 import { serializeVnd } from '../../shared/money.js';
+import { effectiveEventStatus } from '../../shared/event-status.js';
 
 const placeAttributes = [
   'id',
@@ -129,7 +130,7 @@ function serializeEvent(instance, placeMap) {
     description: translation.body,
     startsAt: serializeUtc(row.starts_at),
     endsAt: serializeUtc(row.ends_at),
-    eventStatus: row.event_status,
+    eventStatus: effectiveEventStatus(row.event_status, row.ends_at),
     sourceReference: revision.source_reference,
     bannerUrl: payload.bannerUrl || null,
     imageUrl: payload.imageUrl || payload.bannerUrl || null,
@@ -418,7 +419,6 @@ export function createCatalogRepository(database) {
       return database.transaction(async (transaction) => {
         const conditions = {};
         if (query.placeId) conditions.place_id = query.placeId;
-        if (query.status) conditions.event_status = query.status;
         if (query.q) {
           conditions[Op.and] = where(
             fn('LOCATE', query.q, col('content.published_revision.content_translations.title')),
@@ -440,6 +440,7 @@ export function createCatalogRepository(database) {
           transaction,
         );
         const visible = rows.filter((r) => {
+          if (query.status && effectiveEventStatus(r.event_status, r.ends_at) !== query.status) return false;
           const place = placeMap.get(r.place_id);
           if (!place) return false;
           if (query.regionId && place.region.id !== query.regionId) return false;

@@ -1,3 +1,4 @@
+import { catalogImageUrl } from '@/utils/catalog-image';
 import { useState } from 'react';
 import { ArrowUpRight, Clock3, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -11,7 +12,7 @@ import { AddToTripButton } from './AddToTripButton';
 
 export function PlaceCard({ place, dataset }: { place: Place; dataset: Dataset }) {
   const [imgError, setImgError] = useState(false);
-  const banner = place.bannerUrl || place.imageUrl;
+  const banner = catalogImageUrl(place.bannerUrl) || catalogImageUrl(place.imageUrl);
 
   return (
     <article className="place-card">

@@ -45,7 +45,8 @@ export function clearAuthSession(note: string | null = null): void {
   generation++;
   accessToken = null;
   useAuthStore.setState({ phase: 'anonymous', user: null, note });
-  useTripDraftStore.getState().reset();
+  // An anonymous visitor's failed refresh must not erase their device draft.
+  if (currentUser) useTripDraftStore.getState().reset();
   if (currentUser?.id) {
     void purgeUserOfflineData(currentUser.id).catch(() => {});
   } else {

@@ -968,7 +968,7 @@ export default function TripsPage() {
             </div>
           </div>
 
-          <div className="account-grid">
+          <div className="account-grid ai-planner-grid">
             {/* STEP 1: Form 7 inputs + Custom AI Demand + Pre-selected Places */}
             <div className="content-card account-section-card">
               <div className="card-header-inline">
@@ -993,7 +993,13 @@ export default function TripsPage() {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: '12px',
+                  }}
+                >
                   <div className="form-field">
                     <label htmlFor="ai-days-count">Số ngày ({daysCount} ngày)</label>
                     <input
@@ -1076,9 +1082,7 @@ export default function TripsPage() {
                       </button>
                     ))}
                   </div>
-                  <div
-                    style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap' }}
-                  >
+                  <div className="pace-options">
                     <label className="preference-chip">
                       <input
                         type="radio"

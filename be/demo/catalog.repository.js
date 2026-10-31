@@ -1,3 +1,4 @@
+import { effectiveEventStatus } from '../src/shared/event-status.js';
 import { demoAudioGuides, demoEvents, demoPlaces, demoServices } from './places.js';
 
 const normalize = (text) =>
@@ -52,7 +53,8 @@ export function createDemoCatalogRepository(
       };
     },
     async findById(id) {
-      return places.find((place) => place.id === id) ?? null;
+      const place = places.find((place) => place.id === id);
+      return place ? { ...place, events: place.events?.map((event) => ({ ...event, eventStatus: effectiveEventStatus(event.eventStatus, event.endsAt) })) } : null;
     },
     async catalog() {
       return {
@@ -66,7 +68,7 @@ export function createDemoCatalogRepository(
       return audioGuides.filter((guide) => guide.placeId === placeId);
     },
     async listEvents(query) {
-      const filtered = events.filter(
+      const filtered = events.map((event) => ({ ...event, eventStatus: effectiveEventStatus(event.eventStatus, event.endsAt) })).filter(
         (ev) =>
           (!query.placeId || ev.placeId === query.placeId) &&
           (!query.regionId || ev.region.id === query.regionId) &&
@@ -79,7 +81,8 @@ export function createDemoCatalogRepository(
       };
     },
     async findEventById(id) {
-      return events.find((ev) => ev.id === id) ?? null;
+      const event = events.find((ev) => ev.id === id);
+      return event ? { ...event, eventStatus: effectiveEventStatus(event.eventStatus, event.endsAt) } : null;
     },
     async listServices(query) {
       const filtered = services.filter(

@@ -1,0 +1,419 @@
+[
+  {
+    "test": "search",
+    "url": "https://gialaitravel.yangkleeserver.io.vn/explore?q=Bi%E1%BB%83n+H%E1%BB%93&regionId=&sort=name&category=&minPrice=&maxPrice=",
+    "cards": 2
+  },
+  {
+    "test": "reload search",
+    "value": "Biển Hồ"
+  },
+  {
+    "test": "detail",
+    "url": "https://gialaitravel.yangkleeserver.io.vn/places/30000000-0000-4000-8000-000000000004",
+    "heading": "Biển Hồ Chè & Hàng Thông Trăm Tuổi"
+  },
+  {
+    "test": "add draft",
+    "stops": 0
+  },
+  {
+    "test": "draft persistence",
+    "stops": 0
+  },
+  {
+    "test": "viewport",
+    "width": 320,
+    "path": "/explore",
+    "overflow": false,
+    "firstCard": 1026.65625,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Khám phá"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 320,
+    "path": "/events",
+    "overflow": false,
+    "firstCard": 533.9375,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Sự kiện"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 320,
+    "path": "/trips",
+    "overflow": false,
+    "inputs": [],
+    "activeNav": [
+      "Chuyến đi"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 320,
+    "path": "/login",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Đơn đặt",
+      "Đăng nhập"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 320,
+    "path": "/register",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": []
+  },
+  {
+    "test": "viewport",
+    "width": 360,
+    "path": "/explore",
+    "overflow": false,
+    "firstCard": 971.875,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Khám phá"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 360,
+    "path": "/events",
+    "overflow": false,
+    "firstCard": 511.546875,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Sự kiện"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 360,
+    "path": "/trips",
+    "overflow": false,
+    "inputs": [],
+    "activeNav": [
+      "Chuyến đi"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 360,
+    "path": "/login",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Đơn đặt",
+      "Đăng nhập"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 360,
+    "path": "/register",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": []
+  },
+  {
+    "test": "viewport",
+    "width": 390,
+    "path": "/explore",
+    "overflow": false,
+    "firstCard": 971.875,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Khám phá"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 390,
+    "path": "/events",
+    "overflow": false,
+    "firstCard": 511.546875,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Sự kiện"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 390,
+    "path": "/trips",
+    "overflow": false,
+    "inputs": [],
+    "activeNav": [
+      "Chuyến đi"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 390,
+    "path": "/login",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Đơn đặt",
+      "Đăng nhập"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 390,
+    "path": "/register",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": []
+  },
+  {
+    "test": "viewport",
+    "width": 430,
+    "path": "/explore",
+    "overflow": false,
+    "firstCard": 916.484375,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Khám phá"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 430,
+    "path": "/events",
+    "overflow": false,
+    "firstCard": 511.546875,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Sự kiện"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 430,
+    "path": "/trips",
+    "overflow": false,
+    "inputs": [],
+    "activeNav": [
+      "Chuyến đi"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 430,
+    "path": "/login",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": [
+      "Đơn đặt",
+      "Đăng nhập"
+    ]
+  },
+  {
+    "test": "viewport",
+    "width": 430,
+    "path": "/register",
+    "overflow": false,
+    "inputs": [
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      },
+      {
+        "font": "16px"
+      }
+    ],
+    "activeNav": []
+  },
+  {
+    "test": "ai form",
+    "text": "Chuyến đi & Lịch trình AI\n\nChọn điểm vào bản nháp nhanh hoặc sử dụng trợ lý AI tối ưu hóa lộ trình theo ngân sách, giờ đến/đi và bản đồ Google Maps.\n\nThêm điểm đến\nBản nháp (0)\nTạo lịch trình AI\n1\nThông số & Sở thích\nThời gian, người, ngân sách & điểm đón\n2\nLộ trình AI & Bản đồ\nKhung giờ, quãng đường & Google Maps\n3\nLưu & Ngoại tuyến\nTải về máy dùng khi mất sóng\nThông số chuyến đi\n\nDữ liệu giờ mở cửa, giá vé và khoảng cách thực tế tại Gia Lai.\n\nNgày khởi hành (YYYY-MM-DD)\nSố ngày (2 ngày)\nSố khách (2 người)\nTổng ngân sách dự kiến (VND)\nƯớc tính: 3.000.000 ₫\n5. Điểm xuất phát (Tìm kiếm địa chỉ hoặc chọn trực tiếp trên Google Maps)\nChọn trên bản đồ\nGPS\nTọa độ xuất phát:\nXem trên Google Maps\nPhương tiện di chuyển chính\nXe máy\nÔ tô riêng\nTaxi / Xe công nghệ\nXe buýt / Công cộng\nĐi bộ\nKết hợp linh hoạt\nSở thích du lịch & Nhịp độ\nThiên nhiên\nVăn hóa\nẨm thực\nLưu trú\nTrải nghiệm\nKhác\nThong thả (2-3 điểm/ngày)\nCân bằng (3-4 điểm/ngày)\nNăng động (4-5 điểm/ngày)\n8. Nói nhu cầu & lịch trình mong muốn cho AI (Ăn sáng / Giờ xuất phát / Ăn nghỉ)\n9. Chọn trước địa điểm muốn đi (0 đã chọn — Tùy chọn)\nChọn địa điểm trước\nĐể trống nếu muốn AI tự động gợi ý 100%, hoặc tích chọn trước các điểm bạn muốn ghé để AI sắp xếp lộ trình tối ưu.\nLập lịch trình với AI\nĐề xuất lịch trình thông minh\n\nChi tiết giờ đến/đi (GMT+7), khoảng cách, thời gian xuất phát di chuyển thực tế, địa điểm ăn/nghỉ và tùy chỉnh trực tiếp.\n\nĐiền thông số bên trái và nhấn \"Lập lịch trình với AI\" để AI tạo lộ trình chi tiết theo ngày."
+  },
+  {
+    "errors": []
+  }
+]

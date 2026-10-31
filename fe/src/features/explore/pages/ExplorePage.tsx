@@ -28,7 +28,7 @@ export default function ExplorePage() {
       <section className="hero explore-hero">
         <div>
           <h1>
-            Một Gia Lai,
+            Một Gia Lai,{' '}
             <br />
             nhiều điều để khám phá.
           </h1>
@@ -72,24 +72,6 @@ export default function ExplorePage() {
                 maxLength={120}
               />
             </label>
-            <label className="filter-field">
-              <span>Khu vực</span>
-              <select name="regionId" defaultValue={params.get('regionId') ?? ''}>
-                <option value="">Tất cả khu vực</option>
-                {catalog.data.regions.map((region) => (
-                  <option key={region.id} value={region.id}>
-                    {region.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="filter-field">
-              <span>Sắp xếp</span>
-              <select name="sort" defaultValue={params.get('sort') ?? 'name'}>
-                <option value="name">Theo tên</option>
-                <option value="price-asc">Giá tăng dần</option>
-              </select>
-            </label>
             <input type="hidden" name="category" value={params.get('category') ?? ''} />
             <Button type="submit">
               <Search size={18} aria-hidden="true" />
@@ -97,14 +79,44 @@ export default function ExplorePage() {
             </Button>
           </div>
           <details
-            className="price-filter"
-            open={Boolean(params.get('minPrice') || params.get('maxPrice'))}
+            className="price-filter advanced-filters"
+            open={Boolean(
+              params.get('regionId') ||
+              params.get('minPrice') ||
+              params.get('maxPrice') ||
+              params.get('sort') === 'price-asc',
+            )}
           >
             <summary>
               <SlidersHorizontal size={14} aria-hidden="true" />
-              Khoảng giá tham khảo
+              Bộ lọc nâng cao (
+              {
+                ['regionId', 'minPrice', 'maxPrice', 'sort'].filter(
+                  (key) => params.get(key) && !(key === 'sort' && params.get(key) === 'name'),
+                ).length
+              }
+              )
             </summary>
             <div className="price-filter-fields">
+              <label className="filter-field">
+                <span>Khu vực</span>
+                <select name="regionId" defaultValue={params.get('regionId') ?? ''}>
+                  <option value="">Tất cả khu vực</option>
+                  {catalog.data.regions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="filter-field">
+                <span>Sắp xếp</span>
+                <select name="sort" defaultValue={params.get('sort') ?? 'name'}>
+                  <option value="name">Theo tên</option>
+                  <option value="price-asc">Giá tăng dần</option>
+                </select>
+              </label>
+
               <label className="filter-field">
                 <span>Giá từ (VND)</span>
                 <input
@@ -125,6 +137,8 @@ export default function ExplorePage() {
                   placeholder="Không giới hạn"
                 />
               </label>
+              <Button type="submit">Áp dụng bộ lọc</Button>
+              <Link to={APP_PATHS.EXPLORE}>Xóa bộ lọc nâng cao</Link>
             </div>
           </details>
         </Form>

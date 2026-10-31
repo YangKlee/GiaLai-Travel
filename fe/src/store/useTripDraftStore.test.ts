@@ -38,3 +38,37 @@ it('đổi thứ tự đúng điểm, không làm mất dữ liệu tại biên 
     false,
   );
 });
+
+it('khôi phục bản nháp đã lưu và bỏ qua điểm hỏng hoặc trùng', async () => {
+  useTripDraftStore.getState().add('live', placeFixture);
+  useTripDraftStore.getState().rename('live', 'Cuối tuần');
+  const saved = localStorage.getItem('gialai:trip-drafts');
+  useTripDraftStore.getState().reset();
+  localStorage.setItem('gialai:trip-drafts', saved!);
+  await useTripDraftStore.persist.rehydrate();
+  expect(useTripDraftStore.getState().drafts.live).toEqual({
+    name: 'Cuối tuần',
+    places: [placeFixture],
+  });
+  localStorage.setItem(
+    'gialai:trip-drafts',
+    JSON.stringify({
+      version: 1,
+      state: {
+        drafts: {
+          live: { name: 'Đã lưu', places: [placeFixture, placeFixture, { id: 'broken' }] },
+          demo: null,
+        },
+      },
+    }),
+  );
+  await useTripDraftStore.persist.rehydrate();
+  expect(useTripDraftStore.getState().drafts.live.places).toEqual([placeFixture]);
+});
+
+it('dữ liệu lưu lỗi không làm mất bản nháp đang dùng', async () => {
+  useTripDraftStore.getState().add('demo', placeFixture);
+  localStorage.setItem('gialai:trip-drafts', '{broken');
+  await useTripDraftStore.persist.rehydrate();
+  expect(useTripDraftStore.getState().drafts.demo.places).toEqual([placeFixture]);
+});

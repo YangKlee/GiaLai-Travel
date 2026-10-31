@@ -1,3 +1,4 @@
+import { eventStatusLabel } from '@/utils/event-status';
 import { ArrowUpRight, CalendarDays, MapPin, Search, Sparkles } from 'lucide-react';
 import { Form, Link, useLoaderData, useSearchParams } from 'react-router-dom';
 import type { eventsLoader } from '@/routes/catalogLoaders';
@@ -82,7 +83,7 @@ export default function EventsPage() {
           {events.data.map((eventItem) => (
             <article key={eventItem.id} className="place-card">
               <div className="place-card-body">
-                <Badge>{EVENT_STATUS_NAMES[eventItem.eventStatus]}</Badge>
+                <Badge>{eventStatusLabel(eventItem)}</Badge>
                 <h3>
                   <Link to={APP_PATHS.event(eventItem.id)}>
                     <span>{eventItem.title}</span>

@@ -315,6 +315,9 @@
     color: var(--color-text-muted);
     line-height: 1;
   }
+  .brand-accent {
+    color: var(--color-primary-hover);
+  }
   .header-right {
     display: flex;
     align-items: center;
@@ -920,6 +923,27 @@
     flex-wrap: nowrap;
     justify-content: space-between;
   }
+  .header-left {
+    min-width: 0;
+    gap: 8px;
+  }
+  .header-right,
+  .sidebar-toggle-btn,
+  .brand-mark {
+    flex-shrink: 0;
+  }
+  .brand-text {
+    white-space: nowrap;
+  }
+  .auth-header-actions {
+    gap: 6px;
+  }
+  .auth-header-actions .button {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
   .brand {
     font-size: 18px;
     gap: 8px;
@@ -1020,6 +1044,22 @@
   }
   .ai-step {
     padding: 10px 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-inner {
+    padding-inline: 8px;
+    gap: 6px;
+  }
+  .header-left {
+    gap: 6px;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .brand-mark {
+    display: none;
   }
 }
 
@@ -1887,7 +1927,7 @@
     font-weight: 600;
     font-size: 12px;
   }
-  .form-field input,
+  .form-field input:not([type='radio']):not([type='checkbox']),
   .form-field select {
     min-height: 48px;
     width: 100%;
@@ -2035,6 +2075,33 @@
     color: var(--color-primary-hover);
     font-weight: 600;
   }
+  .pace-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .pace-options .preference-chip {
+    min-height: 44px;
+  }
+  .pace-options input[type='radio'] {
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+    flex: 0 0 16px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--color-primary-action);
+  }
+  .pace-options .preference-chip:has(:checked) {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary-hover);
+    color: var(--color-primary-hover);
+  }
+  .pace-options .preference-chip:has(:focus-visible) {
+    outline: 2px solid var(--color-primary-hover);
+    outline-offset: 2px;
+  }
   .consent-list {
     display: flex;
     flex-direction: column;
@@ -2157,15 +2224,14 @@
 
 @media (max-width: 768px) {
   .account-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .auth-grid {
     grid-template-columns: 1fr;
     margin-block: 0;
   }
   .auth-intro {
-    padding: 24px;
-    gap: 16px;
+    display: none;
   }
   .auth-intro > svg,
   .auth-intro > span {
@@ -2208,5 +2274,107 @@
   .section-heading p.lead,
   .page-header p.lead {
     font-size: 0.9rem;
+  }
+}
+
+/* Keep planner contents within their grid tracks, including narrow phones. */
+.ai-planner-grid > *,
+.ai-planner-grid .auth-form,
+.ai-planner-grid .form-field,
+.origin-picker-wrapper {
+  min-width: 0;
+  max-width: 100%;
+}
+.ai-planner-grid .card-header-inline > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ai-planner-grid input,
+.ai-planner-grid select,
+.ai-planner-grid textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.ai-planner-grid .button {
+  white-space: normal;
+}
+.advanced-filters .price-filter-fields {
+  flex-wrap: wrap;
+}
+.advanced-filters .filter-field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.advanced-filters select,
+.advanced-filters input {
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .explore-hero {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .explore-hero h1 {
+    font-size: 22px;
+    line-height: 1.2;
+    margin-block: 0;
+  }
+  .explore-hero h1 br,
+  .explore-hero .hero-link,
+  .discovery-section .section-heading p {
+    display: none;
+  }
+  .explore-hero p {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .discovery-section {
+    margin-top: 16px;
+  }
+  .discovery-section .section-heading > div {
+    display: none;
+  }
+  .discovery-section .section-heading {
+    justify-content: flex-end;
+  }
+  .discovery-section .filter-panel {
+    padding: 12px;
+  }
+  .discovery-section .place-card-banner,
+  .discovery-section .place-card .place-art {
+    height: 140px;
+  }
+  .discovery-section .section-heading {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .discovery-section .section-heading h2 {
+    font-size: 18px;
+  }
+  .discovery-section .filter-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .discovery-section .search-field,
+  .discovery-section .filter-main > .button {
+    grid-column: auto;
+    min-width: 0;
+  }
+  .discovery-section .search-field {
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .discovery-section .category-tabs {
+    margin-top: 12px;
+    margin-bottom: 8px;
+  }
+  .ai-planner-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ai-planner-grid .account-section-card {
+    padding: 16px;
   }
 }
