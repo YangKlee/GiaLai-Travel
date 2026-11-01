@@ -791,6 +791,8 @@
     padding: 4px 12px;
     font-size: 12px;
     font-weight: 600;
+    max-width: 100%;
+    word-break: break-word;
   }
   .badge-dot {
     width: 6px;
@@ -1667,6 +1669,8 @@
     font-size: 12px;
     font-weight: 600;
     color: var(--color-primary-hover);
+    flex-shrink: 0;
+    line-height: 1.5;
   }
   .stop-art {
     width: 72px;
@@ -1684,7 +1688,8 @@
   .stop-info {
     flex: 1;
     min-width: 0;
-    overflow-wrap: anywhere;
+    word-break: normal;
+    overflow-wrap: break-word;
   }
   .stop-info h3 {
     margin-bottom: 4px;
@@ -1699,6 +1704,42 @@
   .stop-actions .button {
     padding: 8px;
     min-height: 36px;
+  }
+  .itinerary-stop-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+  }
+  .itinerary-stop-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .itinerary-stop-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .stop-action-btn.button {
+    padding: 6px !important;
+    min-height: 34px !important;
+    min-width: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: var(--radius-md, 6px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .stop-action-btn.stop-delete-btn:hover {
+    color: var(--color-danger, #ef4444);
+    background: var(--color-danger-soft, rgba(239, 68, 68, 0.1));
   }
   .trip-summary {
     position: sticky;
@@ -2274,6 +2315,48 @@
   .section-heading p.lead,
   .page-header p.lead {
     font-size: 0.9rem;
+  }
+
+  /* Responsive itinerary stop rows */
+  .itinerary-stop-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .itinerary-stop-main {
+    width: 100%;
+    gap: 10px;
+  }
+  .itinerary-stop-row .stop-info {
+    flex: 1;
+    min-width: 0;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .itinerary-stop-row .stop-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .itinerary-stop-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border-subtle, #e2e8f0);
+    margin-top: 2px;
+    gap: 8px;
+  }
+  .itinerary-stop-actions .stop-action-btn.button {
+    min-height: 38px !important;
+    min-width: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    background: var(--color-surface-subtle, #f8fafc);
+    border: 1px solid var(--color-border-subtle, #e2e8f0);
+    border-radius: var(--radius-md, 6px);
   }
 }
 

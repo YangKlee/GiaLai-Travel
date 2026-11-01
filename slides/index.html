@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiaLai Travel - Slide Thuyết Trình Ý Tưởng Khởi Nghiệp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #0047AB;
+      --blue-dark: #0A2540;
+      --blue-deep: #061826;
+      --blue-light: #EBF4FF;
+      --primary-red: #DC2626;
+      --red-dark: #991B1B;
+      --red-light: #FEF2F2;
+      --white: #FFFFFF;
+      --slate-50: #F8FAFC;
+      --slate-100: #F1F5F9;
+      --slate-200: #E2E8F0;
+      --slate-400: #94A3B8;
+      --slate-600: #475569;
+      --slate-800: #1E293B;
+      --slate-900: #0F172A;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --shadow-glow: 0 0 25px rgba(0, 71, 171, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--blue-deep);
+      color: var(--slate-900);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* Presentation Container */
+    .deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* 16:9 Aspect Ratio Slide Stage */
+    .slide-stage {
+      position: relative;
+      width: 100%;
+      max-width: 1360px;
+      aspect-ratio: 16 / 9;
+      background: var(--white);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Slides */
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateX(30px);
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+      z-index: 10;
+    }
+
+    /* Header Bar */
+    .slide-header {
+      padding: 24px 44px 14px 44px;
+      border-bottom: 1.5px solid var(--slate-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      background: var(--white);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .slide-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-red) 0%, var(--primary-blue) 100%);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-red);
+    }
+
+    .header-badge span.dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary-red);
+      border-radius: 50%;
+    }
+
+    .slide-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--blue-dark);
+      letter-spacing: -0.02em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--slate-400);
+      font-weight: 600;
+    }
+
+    .brand-pill {
+      background: var(--blue-light);
+      color: var(--primary-blue);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* Slide Content Area */
+    .slide-body {
+      padding: 28px 44px;
+      flex: 1;
+      display: flex;
+      gap: 32px;
+      overflow-y: auto;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      width: 100%;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      width: 100%;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      width: 100%;
+    }
+
+    .grid-left-heavy {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      width: 100%;
+    }
+
+    .grid-right-heavy {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 28px;
+      width: 100%;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--white);
+      border: 1.5px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card.blue-card {
+      border-color: #BFDBFE;
+      background: #F8FAFF;
+    }
+
+    .card.red-card {
+      border-color: #FECACA;
+      background: #FFFBFB;
+    }
+
+    .card.accent-card {
+      border-left: 4px solid var(--primary-red);
+    }
+
+    .card.blue-accent-card {
+      border-left: 4px solid var(--primary-blue);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--blue-dark);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--slate-600);
+      line-height: 1.55;
+    }
+
+    /* Image Preview & Frame */
+    .mockup-frame {
+      background: var(--white);
+      border: 1.5px solid var(--slate-200);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .mockup-bar {
+      height: 24px;
+      background: var(--slate-100);
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 6px;
+    }
+
+    .dot-circle {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #EF4444; }
+    .dot-yellow { background: #F59E0B; }
+    .dot-green { background: #10B981; }
+
+    .mockup-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mockup-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(10, 37, 64, 0.85);
+      backdrop-filter: blur(4px);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Bullets & Lists */
+    ul.feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    ul.feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13.5px;
+      color: var(--slate-800);
+      line-height: 1.5;
+    }
+
+    .list-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .list-icon.blue {
+      background: var(--blue-light);
+      color: var(--primary-blue);
+    }
+
+    .list-icon.red {
+      background: var(--red-light);
+      color: var(--primary-red);
+    }
+
+    /* Metrics & Stats */
+    .stat-box {
+      background: linear-gradient(135deg, var(--white) 0%, var(--slate-50) 100%);
+      border: 1.5px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .stat-number.red {
+      color: var(--primary-red);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--slate-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--slate-200);
+    }
+
+    .compare-table th {
+      background: var(--blue-dark);
+      color: var(--white);
+      padding: 12px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .compare-table th.highlight {
+      background: var(--primary-red);
+    }
+
+    .compare-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--slate-200);
+      color: var(--slate-800);
+    }
+
+    .compare-table tr:nth-child(even) {
+      background: var(--slate-50);
+    }
+
+    .compare-table td.highlight {
+      background: #FFF5F5;
+      font-weight: 600;
+      color: var(--red-dark);
+      border-left: 2px solid var(--primary-red);
+    }
+
+    /* Cover Slide Specifics */
+    .slide-cover {
+      background: linear-gradient(135deg, #071C35 0%, #0047AB 70%, #991B1B 140%);
+      color: var(--white);
+      padding: 56px 64px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .slide-cover::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 380px;
+      height: 100%;
+      background: radial-gradient(circle, rgba(220, 38, 38, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cover-left {
+      max-width: 680px;
+      z-index: 2;
+    }
+
+    .cover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(220, 38, 38, 0.95);
+      color: var(--white);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    }
+
+    .cover-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 54px;
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 16px;
+      letter-spacing: -0.03em;
+      color: var(--white);
+    }
+
+    .cover-title span {
+      color: #F87171;
+    }
+
+    .cover-tagline {
+      font-size: 18px;
+      color: #E2E8F0;
+      margin-bottom: 30px;
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    .cover-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .cover-feat-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      color: #CBD5E1;
+    }
+
+    .cover-feat-icon {
+      width: 24px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-size: 13px;
+    }
+
+    .cover-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 12.5px;
+      color: #94A3B8;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 18px;
+    }
+
+    .cover-meta strong {
+      color: var(--white);
+    }
+
+    .cover-right {
+      position: relative;
+      z-index: 2;
+      width: 440px;
+    }
+
+    .cover-mockup {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.2);
+      transform: perspective(1000px) rotateY(-6deg) rotateX(2deg);
+      transition: transform 0.3s ease;
+    }
+
+    .cover-mockup:hover {
+      transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+    }
+
+    .cover-mockup img {
+      width: 100%;
+      border-radius: 10px;
+      display: block;
+    }
+
+    /* Bottom Control Bar */
+    .deck-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1360px;
+      padding-top: 16px;
+      color: var(--slate-400);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .controls-left, .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--white);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+    }
+
+    .btn.btn-red {
+      background: var(--primary-red);
+      border-color: var(--primary-red);
+    }
+
+    .btn.btn-red:hover {
+      background: var(--red-dark);
+      border-color: var(--red-dark);
+    }
+
+    .slide-counter {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+
+    /* Notes Drawer */
+    .notes-drawer {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 380px;
+      max-height: 240px;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--slate-200);
+      padding: 16px;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .notes-drawer.open {
+      display: flex;
+    }
+
+    .notes-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--primary-red);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .notes-content {
+      font-size: 13px;
+      color: var(--slate-800);
+      line-height: 1.5;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+    <div class="slide-stage" id="stage">
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 1: COVER -->
+      <!-- ============================================================== -->
+      <div class="slide slide-cover active" data-title="Giới thiệu Dự án" data-notes="Mở đầu bài thuyết trình: Kính thưa ban giám khảo và các nhà đầu tư, hôm nay em xin đại diện nhóm dự án trình bày ý tưởng khởi nghiệp GiaLai Travel - Nền tảng du lịch số thông minh và trợ lý đồng hành khám phá Tây Nguyên bản địa. Hệ thống đã được lập trình thực tế và triển khai chạy trực tiếp trên tên miền gialaitravel.yangkleeserver.io.vn.">
+        <div class="cover-left">
+          <div class="cover-badge">
+            <span>🔥</span> DỰ ÁN KHỞI NGHIỆP ĐỔI MỚI SÁNG TẠO
+          </div>
+          <h1 class="cover-title">GiaLai <span>Travel</span></h1>
+          <p class="cover-tagline">Nền tảng Du lịch số Thông minh & Trợ lý Đồng hành Khám phá Bản địa Gia Lai “All-in-One”</p>
+          
+          <div class="cover-features">
+            <div class="cover-feat-item">
+              <div class="cover-feat-icon">🧠</div>
+              <span>Trợ lý AI lập lịch trình cá nhân hóa</span>
+            </div>
+            <div class="cover-feat-item">
+              <div class="cover-feat-icon">📶</div>
+              <span>Kiến trúc Ngoại tuyến (Offline-First)</span>
+            </div>
+            <div class="cover-feat-item">
+              <div class="cover-feat-icon">🏛️</div>
+              <span>Số hóa Di sản & Văn hóa Jrai</span>
+            </div>
+            <div class="cover-feat-item">
+              <div class="cover-feat-icon">🤝</div>
+              <span>Hỗ trợ kết nối Dịch vụ bản địa (Phí 8-10%)</span>
+            </div>
+          </div>
+
+          <div class="cover-meta">
+            <div>Đội ngũ sáng lập: <strong>YangKlee (Dương Khánh)</strong></div>
+            <div>Trạng thái: <strong style="color: #4ADE80;">Live Demo Ready</strong></div>
+            <div>Màu chủ đạo: <strong>Xanh dương • Đỏ • Trắng</strong></div>
+          </div>
+        </div>
+
+        <div class="cover-right">
+          <div class="cover-mockup">
+            <div class="mockup-bar">
+              <div class="dot-circle dot-red"></div>
+              <div class="dot-circle dot-yellow"></div>
+              <div class="dot-circle dot-green"></div>
+              <span style="font-size: 10px; color: #64748B; margin-left: 6px;">gialaitravel.yangkleeserver.io.vn</span>
+            </div>
+            <img src="screenshots/01_home_hero.png" alt="GiaLai Travel Web Demo">
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 2: BỐI CẢNH & NỖI ĐAU THỊ TRƯỜNG (PROBLEM) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Bối cảnh & Vấn đề" data-notes="Nhấn mạnh vào 4 nỗi đau lớn: 1. Du khách tìm thông tin phân tán, sợ bị 'chặt chém' hoặc tin giả. 2. Gia Lai rộng lớn, đèo dốc nhiều, khách tự túc không biết sắp xếp tuyến đường thế nào cho hợp lý ngân sách và thời gian. 3. Vấn đề mất mạng 4G khi vào rừng thác sâu như K50 hay núi lửa. 4. Nỗi đau của người dân địa phương khi phải trả 20-25% cho OTA nước ngoài.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 01. Bối cảnh & Thực trạng</div>
+            <div class="slide-title">Tiềm Năng Khổng Lồ Cùng 4 Nỗi Đau Lớn Của Du Lịch Gia Lai</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Pain Points</span>
+          </div>
+        </div>
+        <div class="slide-body grid-left-heavy">
+          <!-- Left: 4 Problem Cards -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="card red-card accent-card">
+              <div class="card-title"><span style="color: var(--primary-red);">⚠️</span> 1. Thông Tin Rời Rạc & Thiếu Kiểm Chứng</div>
+              <div class="card-desc">Du khách phải tìm lẻ tẻ qua Facebook, TikTok. Dữ liệu về giờ mở cửa, chi phí, lưu ý an toàn không đồng nhất, dễ bị lạc hoặc gặp sự cố.</div>
+            </div>
+            <div class="card red-card accent-card">
+              <div class="card-title"><span style="color: var(--primary-red);">🗺️</span> 2. Khó Khăn Lên Lịch Trình Tự Túc</div>
+              <div class="card-desc">Khoảng cách giữa các điểm rất xa (Biển Hồ, Chư Đăng Ya, Thác Phú Cường, Kbang). Du khách lúng túng cân đối ngân sách, phương tiện và thời gian.</div>
+            </div>
+            <div class="card red-card accent-card">
+              <div class="card-title"><span style="color: var(--primary-red);">📵</span> 3. Mất Sóng 4G Khi Khám Phá Rừng Núi</div>
+              <div class="card-desc">Khi trekking Thác K50, Kon Chư Răng hay leo núi lửa, sóng di động thường xuyên chập chờn hoặc mất hẳn. Ứng dụng bản đồ thông thường trở nên vô dụng.</div>
+            </div>
+            <div class="card red-card accent-card">
+              <div class="card-title"><span style="color: var(--primary-red);">💸</span> 4. Doanh Nghiệp Bản Địa Chịu Phí OTA Cao</div>
+              <div class="card-desc">Homestay, hướng dẫn viên, hộ làm nông nghiệp sinh thái Gia Lai bị các sàn OTA quốc tế thu phí 18% - 25%, giảm sút nghiêm trọng lợi nhuận cộng đồng.</div>
+            </div>
+          </div>
+
+          <!-- Right: Context Stats -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card blue-card" style="flex: 1;">
+              <div class="card-title" style="color: var(--primary-blue);">📍 Bối Cảnh Địa Phương</div>
+              <p class="card-desc" style="margin-bottom: 14px;">Gia Lai là vùng đất giàu tiềm năng bậc nhất Tây Nguyên: Di sản Cồng chiêng UNESCO, Biển Hồ T’Nưng, Rừng nguyên sinh và văn hóa bản địa độc đáo.</p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="stat-box">
+                  <div class="stat-number">1.2M+</div>
+                  <div class="stat-label">Lượt khách / năm</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number red">70%</div>
+                  <div class="stat-label">Khách đi tự túc</div>
+                </div>
+              </div>
+              <p style="font-size: 11.5px; color: var(--slate-600); margin-top: 10px; font-style: italic;">Nhu cầu về một giải pháp số bản địa hóa, chuyên sâu và tin cậy là cực kỳ cấp thiết!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 3: GIẢI PHÁP ĐỘT PHÁ (SOLUTION) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Giải pháp Đột phá" data-notes="Giải pháp GiaLai Travel xây dựng xung quanh 4 trụ cột chính: AI tạo lịch trình cá nhân hóa, Kiến trúc Ngoại tuyến Offline-first đảm bảo không mất dấu khi mất mạng, Kho nội dung số hóa di sản cồng chiêng và Nền tảng kết nối trực tiếp cộng đồng bản địa với chi phí hoa hồng minh bạch chỉ 8-10%.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 02. Giải pháp Đột phá</div>
+            <div class="slide-title">GiaLai Travel: Nền Tảng Du Lịch Số Bản Địa "All-in-One"</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Core Pillars</span>
+          </div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card blue-card" style="border-top: 4px solid var(--primary-blue);">
+              <div style="font-size: 24px; margin-bottom: 8px;">🧠</div>
+              <div class="card-title">Trợ Lý AI Lập Lịch Trình</div>
+              <p class="card-desc">Lập lịch trình tự động theo số ngày (1-7 ngày), số khách, ngân sách dự kiến (VND), phương tiện và nhịp độ du lịch (Thong thả / Năng động).</p>
+            </div>
+
+            <div class="card red-card" style="border-top: 4px solid var(--primary-red);">
+              <div style="font-size: 24px; margin-bottom: 8px;">📶</div>
+              <div class="card-title">Kiến Trúc Offline-First</div>
+              <p class="card-desc">Lưu trữ toàn bộ cẩm nang điểm đến và lịch trình chuyến đi vào bộ nhớ trình duyệt. Vẫn tra cứu đường đi và liên hệ khẩn cấp khi mất sóng giữa rừng.</p>
+            </div>
+
+            <div class="card blue-card" style="border-top: 4px solid var(--blue-dark);">
+              <div style="font-size: 24px; margin-bottom: 8px;">🏛️</div>
+              <div class="card-title">Số Hóa Di Sản & Audio</div>
+              <p class="card-desc">Kho dữ liệu chuẩn hóa về di tích lịch sử, không gian cồng chiêng, từ vựng Jrai và lịch lễ hội địa phương (Lễ hội hoa dã quỳ, đua thuyền).</p>
+            </div>
+
+            <div class="card red-card" style="border-top: 4px solid var(--red-dark);">
+              <div style="font-size: 24px; margin-bottom: 8px;">🤝</div>
+              <div class="card-title">Kết Nối Bản Địa (Take-rate 10%)</div>
+              <p class="card-desc">Đặt trực tiếp homestay, thuê xe máy/ô tô, tour trải nghiệm người Jrai với mức chiết khấu hỗ trợ cộng đồng chỉ 8-10% (tiết kiệm hơn 50% so với OTA lớn).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 4: SẢN PHẨM THỰC TẾ - KHÁM PHÁ (EXPLORE) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Demo: Khám phá POI" data-notes="Đây là ảnh chụp thực tế trên website đang chạy. Người dùng có thể tìm kiếm, lọc theo từng huyện thị của Gia Lai (Pleiku, Chư Păh, Kbang), lọc theo loại hình thiên nhiên, văn hóa, ẩm thực. Mỗi điểm đến đều có thông tin tọa độ, giá vé, bài thuyết minh và nút thêm nhanh vào bản nháp lịch trình.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 03. Sản phẩm Thực tế</div>
+            <div class="slide-title">Khám Phá Điểm Đến Chuẩn Hóa Với Bộ Lọc Đa Tầng</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Live Web Demo</span>
+          </div>
+        </div>
+        <div class="slide-body grid-left-heavy">
+          <!-- Left: Screenshots -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="mockup-frame" style="height: 200px;">
+              <div class="mockup-bar">
+                <div class="dot-circle dot-red"></div>
+                <div class="dot-circle dot-yellow"></div>
+                <div class="dot-circle dot-green"></div>
+                <span style="font-size: 10px; color: #64748B;">gialaitravel.yangkleeserver.io.vn/explore</span>
+              </div>
+              <img src="screenshots/02_explore.png" class="mockup-img" alt="Explore Page">
+              <div class="mockup-badge">Danh mục Điểm đến & Bộ lọc</div>
+            </div>
+
+            <div class="mockup-frame" style="height: 190px;">
+              <div class="mockup-bar">
+                <div class="dot-circle dot-red"></div>
+                <div class="dot-circle dot-yellow"></div>
+                <div class="dot-circle dot-green"></div>
+                <span style="font-size: 10px; color: #64748B;">gialaitravel.yangkleeserver.io.vn/places/biên-hồ</span>
+              </div>
+              <img src="screenshots/03_place_detail.png" class="mockup-img" alt="Place Detail">
+              <div class="mockup-badge">Chi tiết Điểm đến: Tọa độ, Thuyết minh, Mẹo du lịch</div>
+            </div>
+          </div>
+
+          <!-- Right: Key Features -->
+          <div class="card blue-card" style="justify-content: center;">
+            <div class="card-title" style="color: var(--primary-blue);">✨ Tính Năng Nổi Bật</div>
+            <ul class="feature-list" style="margin-top: 10px;">
+              <li>
+                <div class="list-icon blue">✓</div>
+                <div><strong>Kho dữ liệu bản địa chọn lọc:</strong> Biển Hồ T’Nưng, Núi lửa Chư Đăng Ya, Thác Phú Cường, Thác K50, Chùa Minh Thành, Hàng thông trăm tuổi.</div>
+              </li>
+              <li>
+                <div class="list-icon blue">✓</div>
+                <div><strong>Bộ lọc thông minh:</strong> Phân loại theo Thiên nhiên, Văn hóa - Di tích, Ẩm thực bản địa, Check-in giới trẻ và khoảng ngân sách.</div>
+              </li>
+              <li>
+                <div class="list-icon red">✓</div>
+                <div><strong>1-Click thêm vào chuyến đi:</strong> Khách chỉ cần ấn nút "+" để gom các điểm mong muốn vào Bản nháp chuyến đi của mình.</div>
+              </li>
+              <li>
+                <div class="list-icon blue">✓</div>
+                <div><strong>Tọa độ GPS & Chỉ đường:</strong> Tích hợp bản đồ trực quan, hỗ trợ tính toán khoảng cách di chuyển thực tế.</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 5: TRỌNG TÂM CÔNG NGHỆ - TRỢ LÝ AI (AI PLANNER) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Công nghệ: Trợ lý AI" data-notes="Điểm đột phá nhất của GiaLai Travel là Trợ lý AI lập lịch trình. Khác với các hệ thống mẫu tĩnh, AI của GiaLai Travel cho phép người dùng tùy chọn số ngày, ngân sách VND thực tế, số người, nhịp độ thong thả hoặc năng động, và nhập câu lệnh tự nhiên tiếng Việt như 'Tôi muốn ăn phở khô Gia Lai sáng sớm và chụp ảnh hoa dã quỳ'. Lịch trình sinh ra có thể sửa đổi và lưu vào tài khoản.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 04. Trọng Tâm Công Nghệ</div>
+            <div class="slide-title">Trợ Lý AI Lập Lịch Trình Tự Động Theo Nhu Cầu Thực Tế</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">AI Trip Planner</span>
+          </div>
+        </div>
+        <div class="slide-body grid-2">
+          <!-- Left: Modal screenshot -->
+          <div class="mockup-frame">
+            <div class="mockup-bar">
+              <div class="dot-circle dot-red"></div>
+              <div class="dot-circle dot-yellow"></div>
+              <div class="dot-circle dot-green"></div>
+              <span style="font-size: 10px; color: #64748B;">Modal tạo lịch trình bằng AI thực tế</span>
+            </div>
+            <img src="screenshots/05b_ai_form_modal.png" class="mockup-img" alt="AI Form Modal">
+            <div class="mockup-badge">Form AI nhận đa tiêu chí</div>
+          </div>
+
+          <!-- Right: AI Highlights & Draft -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card red-card accent-card">
+              <div class="card-title" style="color: var(--primary-red);">🤖 Thông Số Đầu Vào Đa Chiều Cho AI</div>
+              <ul class="feature-list" style="margin-top: 8px;">
+                <li><strong>1. Ngày & Thời lượng:</strong> Tùy chọn 1 đến 7 ngày du lịch.</li>
+                <li><strong>2. Đoàn khách & Ngân sách:</strong> Nhập số khách và tổng ngân sách (VND).</li>
+                <li><strong>3. Nhịp độ du lịch:</strong> Thong thả (2-3 điểm/ngày), Cân bằng, Năng động (4-5 điểm/ngày).</li>
+                <li><strong>4. Nhận diện ngôn ngữ tự nhiên:</strong> Nhập yêu cầu ăn uống, giờ xuất phát, sở thích check-in.</li>
+              </ul>
+            </div>
+
+            <div class="mockup-frame" style="height: 180px;">
+              <img src="screenshots/05d_trips_with_draft.png" class="mockup-img" alt="Trips Draft">
+              <div class="mockup-badge">Bản nháp lịch trình trực quan có thể hoán đổi vị trí</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 6: SỐ HÓA VĂN HÓA & OFFLINE-READY -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Bản sắc & Ngoại tuyến" data-notes="Tại slide này, chúng ta chứng minh tính bản địa hóa và kiến trúc công nghệ: 1. Trang sự kiện cập nhật lễ hội Cồng chiêng, mùa hoa dã quỳ núi lửa Chư Đăng Ya. 2. Công nghệ Offline-First giúp web hoạt động ngay cả khi không có sóng di động giữa rừng Thác K50. 3. Giao diện tối ưu hoàn hảo trên thiết bị di động (Mobile Responsive).">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 05. Bản Sắc & Công Nghệ</div>
+            <div class="slide-title">Số Hóa Lễ Hội Bản Địa & Kiến Trúc Ngoại Tuyến (Offline-First)</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Culture & Offline</span>
+          </div>
+        </div>
+        <div class="slide-body grid-3">
+          <!-- Col 1: Events -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="mockup-frame" style="height: 240px;">
+              <img src="screenshots/04_events.png" class="mockup-img" alt="Events Page">
+              <div class="mockup-badge">Lịch Sự kiện & Lễ hội Gia Lai</div>
+            </div>
+            <div class="card red-card">
+              <div class="card-title" style="font-size: 14px; color: var(--primary-red);">Lễ Hội Thời Gian Thực</div>
+              <p class="card-desc" style="font-size: 12.5px;">Cập nhật Lễ hội Cồng chiêng, Tuần lễ Hoa Dã Quỳ Chư Đăng Ya, Đua thuyền sông Ayun... Giúp du khách đi trúng mùa đẹp nhất.</p>
+            </div>
+          </div>
+
+          <!-- Col 2: Mobile Screenshots -->
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            <div class="mockup-frame" style="width: 200px; height: 380px; border-radius: 20px;">
+              <div class="mockup-bar" style="justify-content: center;">
+                <span style="font-size: 9px; color: #64748B;">Mobile View</span>
+              </div>
+              <img src="screenshots/m_01_home.png" class="mockup-img" alt="Mobile Home">
+            </div>
+          </div>
+
+          <!-- Col 3: Offline Features -->
+          <div class="card blue-card blue-accent-card" style="justify-content: center;">
+            <div class="card-title" style="color: var(--primary-blue);">📶 Lợi Thế Ngoại Tuyến (Offline-First)</div>
+            <ul class="feature-list" style="margin-top: 12px;">
+              <li>
+                <div class="list-icon blue">⚡</div>
+                <div><strong>Không cần sóng 4G:</strong> Lịch trình và danh sách điểm đến đã mở được lưu thẳng vào bộ nhớ cache của máy.</div>
+              </li>
+              <li>
+                <div class="list-icon red">📍</div>
+                <div><strong>An toàn du lịch sinh thái:</strong> Du khách khi trekking Thác K50 hay rừng sâu vẫn mở xem được ghi chú an toàn, lộ trình và số điện thoại cứu hộ.</div>
+              </li>
+              <li>
+                <div class="list-icon blue">🚀</div>
+                <div><strong>PWA Siêu Nhanh:</strong> Tốc độ mở trang cực nhanh dưới 1.5s, không cần tải ứng dụng 100MB từ App Store.</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 7: PHÂN HỆ QUẢN TRỊ B2B & ĐỐI TÁC -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Phân hệ Quản trị" data-notes="GiaLai Travel không chỉ là ứng dụng cho du khách mà có sẵn phân hệ Quản trị (Admin Dashboard) hoàn chỉnh. Với tài khoản Admin yangklee, quản trị viên có thể thêm, sửa, kiểm duyệt POI, duyệt đơn đặt dịch vụ homestay/tour, quản lý sự kiện và giám sát an ninh người dùng với chuẩn JWT.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 06. Nền Tảng Vận Hành</div>
+            <div class="slide-title">Phân Hệ Quản Trị Hệ Thống & Nền Tảng Hợp Tác B2B</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Admin & Partner</span>
+          </div>
+        </div>
+        <div class="slide-body grid-left-heavy">
+          <!-- Left: Admin Screenshots -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="mockup-frame" style="height: 195px;">
+              <div class="mockup-bar">
+                <span style="font-size: 10px; color: #64748B;">Admin Content & POI Manager</span>
+              </div>
+              <img src="screenshots/13_admin_places_manager.png" class="mockup-img" alt="Admin Places">
+              <div class="mockup-badge">Quản lý & Duyệt dữ liệu Điểm đến (POI)</div>
+            </div>
+
+            <div class="mockup-frame" style="height: 195px;">
+              <div class="mockup-bar">
+                <span style="font-size: 10px; color: #64748B;">Admin Event & Booking Operations</span>
+              </div>
+              <img src="screenshots/14_admin_events_manager.png" class="mockup-img" alt="Admin Events">
+              <div class="mockup-badge">Điều phối Sự kiện & Đặt dịch vụ đối tác</div>
+            </div>
+          </div>
+
+          <!-- Right: Admin Capabilities -->
+          <div class="card blue-card">
+            <div class="card-title" style="color: var(--blue-dark);">⚙️ Năng Lực Vận Hành Thực Tế</div>
+            <ul class="feature-list" style="margin-top: 10px;">
+              <li>
+                <div class="list-icon blue">1</div>
+                <div><strong>Kiểm duyệt nội dung:</strong> Dữ liệu POI, ảnh bản quyền, giờ mở cửa, giá vé được ban quản trị rà soát trước khi xuất bản.</div>
+              </li>
+              <li>
+                <div class="list-icon red">2</div>
+                <div><strong>Quản lý đối tác địa phương:</strong> Kết nối các nhà xe, homestay bản địa, lưu vết đơn đặt phòng minh bạch.</div>
+              </li>
+              <li>
+                <div class="list-icon blue">3</div>
+                <div><strong>Phân quyền & Bảo mật JWT:</strong> Đăng nhập xác thực bằng JSON Web Token an toàn, phân tách vai trò Khách hàng / Đối tác / Admin.</div>
+              </li>
+              <li>
+                <div class="list-icon red">4</div>
+                <div><strong>Nhật ký kiểm toán (Audit Log):</strong> Lưu vết mọi hành động thêm/sửa/xóa đảm bảo tính toàn vẹn hệ thống.</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 8: THỊ TRƯỜNG MỤC TIÊU (MARKET SIZE) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Thị trường Mục tiêu" data-notes="Trình bày quy mô thị trường TAM - SAM - SOM. Gia Lai có 1.2 triệu khách mỗi năm, trong đó hơn 70% là khách du lịch tự túc. Mục tiêu của GiaLai Travel trong 1-2 năm đầu là chiếm lĩnh 10-15% thị phần du lịch số tại Gia Lai, tương đương 150.000 người dùng tích cực và 20.000 đơn đặt dịch vụ.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 07. Tiềm Năng Thị Trường</div>
+            <div class="slide-title">Dung Lượng Thị Trường (TAM - SAM - SOM) & Khách Hàng Mục Tiêu</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Market Opportunity</span>
+          </div>
+        </div>
+        <div class="slide-body grid-2">
+          <!-- Left: Customer Segments -->
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="card blue-card blue-accent-card">
+              <div class="card-title" style="font-size: 14.5px;">🎒 Gen Z & Millennials Đi Tự Túc (Chiếm 60%)</div>
+              <div class="card-desc">Thích khám phá check-in, săn mây, chuộng công nghệ, tìm kiếm trải nghiệm mới mẻ và muốn tự do lên kế hoạch theo ngân sách cá nhân.</div>
+            </div>
+
+            <div class="card red-card accent-card">
+              <div class="card-title" style="font-size: 14.5px;">👨‍👩‍👧‍👦 Nhóm Gia Đình & Bạn Bè (Chiếm 30%)</div>
+              <div class="card-desc">Ưu tiên sự an toàn, nhịp độ di chuyển vừa phải, cần thông tin chuẩn xác về ẩm thực và nơi lưu trú tiện nghi cho cả đoàn.</div>
+            </div>
+
+            <div class="card blue-card blue-accent-card">
+              <div class="card-title" style="font-size: 14.5px;">🏪 Hộ Kinh Doanh Du Lịch Địa Phương (B2B)</div>
+              <div class="card-desc">Homestay, quán ăn đặc sản Gia Lai cần một kênh số tiếp cận khách du lịch với mức chiết khấu công bằng, không bị ép giá.</div>
+            </div>
+          </div>
+
+          <!-- Right: TAM SAM SOM -->
+          <div class="card" style="background: var(--slate-50); justify-content: space-around;">
+            <div class="stat-box" style="background: var(--white); border-color: var(--primary-blue);">
+              <div style="font-size: 12px; font-weight: 700; color: var(--primary-blue);">TAM (TOTAL ADDRESSABLE MARKET)</div>
+              <div class="stat-number">12.000+ TỶ ĐỒNG</div>
+              <div class="card-desc">Toàn bộ thị trường chi tiêu du lịch 5 tỉnh Tây Nguyên (10+ triệu khách/năm)</div>
+            </div>
+
+            <div class="stat-box" style="background: var(--white); border-color: var(--primary-red);">
+              <div style="font-size: 12px; font-weight: 700; color: var(--primary-red);">SAM (SERVICEABLE ADDRESSABLE MARKET)</div>
+              <div class="stat-number red">1.800+ TỶ ĐỒNG</div>
+              <div class="card-desc">Quy mô chi tiêu du lịch tự túc tại tỉnh Gia Lai (1.2+ triệu lượt khách hàng năm)</div>
+            </div>
+
+            <div class="stat-box" style="background: var(--primary-blue); color: var(--white);">
+              <div style="font-size: 12px; font-weight: 700; color: #93C5FD;">SOM (SERVICEABLE OBTAINABLE MARKET) - NĂM 1-2</div>
+              <div class="stat-number" style="color: var(--white);">15+ TỶ ĐỒNG</div>
+              <div class="card-desc" style="color: #E2E8F0;">Mục tiêu 150.000 người dùng hoạt động và 20.000 giao dịch dịch vụ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 9: MÔ HÌNH KINH DOANH (BUSINESS MODEL) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Mô hình Kinh doanh" data-notes="Mô hình kinh doanh của GiaLai Travel đa dạng và bền vững: 1. Gói Premium 49k/tháng cho du khách muốn trải nghiệm audio không giới hạn và tải offline trọn gói. 2. Hoa hồng đặt dịch vụ 8-10% cạnh tranh trực tiếp với OTA ngoại. 3. Gói quảng cáo nổi bật cho nhà hàng, homestay bản địa. 4. Báo cáo phân tích dữ liệu du lịch B2G/B2B cho Sở và hiệp hội du lịch.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 08. Doanh Thu & Kinh Doanh</div>
+            <div class="slide-title">Mô Hình Đa Dòng Doanh Thu Bền Vững (B2C • B2B • B2G)</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Monetization</span>
+          </div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card blue-card" style="border-top: 4px solid var(--primary-blue);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--primary-blue); margin-bottom: 6px;">DÒNG THU 1 • B2C</div>
+              <div class="card-title" style="font-size: 15px;">Gói Hội Viên Premium</div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--primary-red); margin: 8px 0;">49.000đ / tháng<br><span style="font-size: 13px; color: var(--slate-600);">(199.000đ / năm)</span></div>
+              <div class="card-desc" style="font-size: 12.5px;">• Tải bản đồ ngoại tuyến toàn phần.<br>• Thuyết minh Audio Guide chất lượng cao.<br>• Không quảng cáo, nhận voucher ưu đãi đối tác.</div>
+            </div>
+
+            <div class="card red-card" style="border-top: 4px solid var(--primary-red);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--primary-red); margin-bottom: 6px;">DÒNG THU 2 • B2C/B2B</div>
+              <div class="card-title" style="font-size: 15px;">Hoa Hồng Đặt Chỗ (Take-Rate)</div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--primary-blue); margin: 8px 0;">8% - 10%<br><span style="font-size: 13px; color: var(--slate-600);">(Trên đơn thành công)</span></div>
+              <div class="card-desc" style="font-size: 12.5px;">• Thu từ dịch vụ Homestay, thuê xe tự lái, trải nghiệm tour văn hóa.<br>• Mức phí cực thấp so với 20-25% của Booking/Agoda.</div>
+            </div>
+
+            <div class="card blue-card" style="border-top: 4px solid var(--blue-dark);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--blue-dark); margin-bottom: 6px;">DÒNG THU 3 • B2B</div>
+              <div class="card-title" style="font-size: 15px;">Gói Quảng Cáo Bản Địa</div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--primary-red); margin: 8px 0;">500k - 2Tr / tháng<br><span style="font-size: 13px; color: var(--slate-600);">(Cho đối tác địa phương)</span></div>
+              <div class="card-desc" style="font-size: 12.5px;">• Vị trí nổi bật (Featured POI) trên trang chủ & gợi ý AI.<br>• Gói truyền thông đẩy thương hiệu đặc sản Gia Lai.</div>
+            </div>
+
+            <div class="card red-card" style="border-top: 4px solid var(--red-dark);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--red-dark); margin-bottom: 6px;">DÒNG THU 4 • B2G</div>
+              <div class="card-title" style="font-size: 15px;">Báo Cáo Phân Tích Dữ Liệu</div>
+              <div style="font-size: 16px; font-weight: 800; color: var(--primary-blue); margin: 8px 0;">Hợp đồng dự án<br><span style="font-size: 13px; color: var(--slate-600);">(Định kỳ theo quý/năm)</span></div>
+              <div class="card-desc" style="font-size: 12.5px;">• Báo cáo tổng hợp xu hướng du khách, điểm đến yêu thích phục vụ cơ quan quản lý và hiệp hội du lịch tỉnh.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 10: MA TRẬN CẠNH TRANH (COMPETITIVE ADVANTAGE) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Lợi thế Cạnh tranh" data-notes="So sánh trực diện với Google Maps và các sàn OTA lớn: Google Maps mạnh về chỉ đường nhưng thiếu ngữ cảnh văn hóa, không có lập lịch trình ngân sách. Các OTA quốc tế phí quá cao và chỉ tập trung khách sạn lớn ở Pleiku. GiaLai Travel tạo ra rào cản phòng thủ nhờ độ sâu bản địa, AI tạo lịch thông minh và chế độ offline độc quyền.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 09. Ma Trận Cạnh Tranh</div>
+            <div class="slide-title">Điểm Vượt Trội Của GiaLai Travel So Với Các Nền Tảng Khác</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Competitive MOAT</span>
+          </div>
+        </div>
+        <div class="slide-body">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">Tiêu Chí So Sánh</th>
+                <th style="width: 22%;">Google Maps</th>
+                <th style="width: 24%;">OTA Quốc Tế (Booking, Agoda)</th>
+                <th class="highlight" style="width: 26%;">GiaLai Travel (Khởi Nghiệp)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Độ sâu dữ liệu bản địa (Hyper-local)</strong></td>
+                <td>Chung chung, nhiều quán nhỏ không có thông tin</td>
+                <td>Chỉ tập trung khách sạn lớn tại trung tâm Pleiku</td>
+                <td class="highlight">★★★ Rất sâu sắc: Điểm đến sinh thái, quán ăn địa phương, bản làng, mùa hoa</td>
+              </tr>
+              <tr>
+                <td><strong>AI Lập lịch trình cá nhân hóa</strong></td>
+                <td>Không có (Chỉ chỉ đường từng chặng riêng lẻ)</td>
+                <td>Không có (Chỉ phục vụ tìm phòng và mua vé)</td>
+                <td class="highlight">★★★ AI thông minh: Tự động cân bằng tuyến đường, ngân sách VND và sở thích</td>
+              </tr>
+              <tr>
+                <td><strong>Chế độ Ngoại tuyến (Offline-First)</strong></td>
+                <td>Tải map nặng máy, không kèm cẩm nang kinh nghiệm</td>
+                <td>Không hỗ trợ (bắt buộc phải có sóng internet)</td>
+                <td class="highlight">★★★ Hoạt động trơn tru: Lưu lịch trình & POI ngay trên trình duyệt di động</td>
+              </tr>
+              <tr>
+                <td><strong>Số hóa văn hóa & Thuyết minh</strong></td>
+                <td>Không có</td>
+                <td>Không có</td>
+                <td class="highlight">★★★ Thuyết minh bản địa, lịch sự kiện hoa dã quỳ, văn hóa cồng chiêng Jrai</td>
+              </tr>
+              <tr>
+                <td><strong>Mức phí hoa hồng dịch vụ</strong></td>
+                <td>Không áp dụng</td>
+                <td>Rất cao (18% - 25% giá trị đơn hàng)</td>
+                <td class="highlight">★★★ Hợp lý (8% - 10%), đồng hành bảo vệ lợi nhuận cho hộ kinh doanh địa phương</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 11: LỘ TRÌNH PHÁT TRIỂN (ROADMAP) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Lộ trình Phát triển" data-notes="Lộ trình phát triển 3 giai đoạn rõ ràng: Giai đoạn 1 đã hoàn thành MVP và chạy live trực tiếp. Giai đoạn 2 trong năm 2026-2027 tập trung mở rộng đối tác homestay, tích hợp thanh toán VNPAY/Momo và đa ngôn ngữ Anh-Hàn-Trung. Giai đoạn 3 đến 2028 mở rộng liên kết vùng Tây Nguyên với Măng Đen Kon Tum và Đắk Lắk.">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 10. Kế Hoạch Triển Khai</div>
+            <div class="slide-title">Lộ Trình Phát Triển 3 Giai Đoạn (2026 - 2028)</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">Product Roadmap</span>
+          </div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card blue-card" style="border-top: 4px solid var(--primary-blue);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--primary-blue);">GIAI ĐOẠN 1 (HIỆN TẠI)</div>
+              <div class="card-title" style="margin-top: 4px;">Nền Tảng MVP & Live Demo</div>
+              <div style="display: inline-block; background: #DCFCE7; color: #166534; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-bottom: 12px;">✅ ĐÃ HOÀN THÀNH</div>
+              <ul class="feature-list" style="font-size: 12.5px;">
+                <li>• Web Responsive chạy live trên hosting.</li>
+                <li>• Số hóa 50+ điểm đến tiêu biểu Gia Lai.</li>
+                <li>• Tích hợp Trợ lý AI lập lịch trình v1.</li>
+                <li>• Cơ chế Offline-First lưu trữ Local Storage.</li>
+                <li>• Hệ thống Quản trị & Xác thực JWT.</li>
+              </ul>
+            </div>
+
+            <div class="card red-card" style="border-top: 4px solid var(--primary-red);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--primary-red);">GIAI ĐOẠN 2 (2026 - 2027)</div>
+              <div class="card-title" style="margin-top: 4px;">Mở Rộng & Tăng Trưởng</div>
+              <div style="display: inline-block; background: #FEE2E2; color: #991B1B; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-bottom: 12px;">🚀 KẾ HOẠCH BỨC PHÁ</div>
+              <ul class="feature-list" style="font-size: 12.5px;">
+                <li>• Cổng tự phục vụ cho Đối tác Homestay/Xe.</li>
+                <li>• Nâng cấp Audio đa ngôn ngữ (Anh, Hàn, Trung).</li>
+                <li>• Tích hợp Cổng thanh toán VNPAY, MoMo, VietQR.</li>
+                <li>• Hợp tác 100+ cơ sở lưu trú và tour bản địa.</li>
+                <li>• Chiến dịch truyền thông TikTok/Reels về Gia Lai.</li>
+              </ul>
+            </div>
+
+            <div class="card blue-card" style="border-top: 4px solid var(--blue-dark);">
+              <div style="font-size: 11px; font-weight: 800; color: var(--blue-dark);">GIAI ĐOẠN 3 (2027 - 2028)</div>
+              <div class="card-title" style="margin-top: 4px;">Liên Kết Vùng Tây Nguyên</div>
+              <div style="display: inline-block; background: #DBEAFE; color: #1E40AF; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-bottom: 12px;">🌟 TẦM NHÌN DÀI HẠN</div>
+              <ul class="feature-list" style="font-size: 12.5px;">
+                <li>• Mở rộng tuyến du lịch: Gia Lai - Măng Đen - Đắk Lắk.</li>
+                <li>• Hợp tác chiến lược B2G với Sở Du Lịch tỉnh.</li>
+                <li>• Chatbot thông minh dự báo thời tiết & mật độ POI.</li>
+                <li>• Đạt mốc 500.000 người dùng thường xuyên.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- SLIDE 12: ĐỘI NGŨ & KÊU GỌI HỢP TÁC (TEAM & THE ASK) -->
+      <!-- ============================================================== -->
+      <div class="slide" data-title="Đội ngũ & Kêu gọi" data-notes="Kết bài: Đội ngũ sáng lập với tình yêu quê hương Gia Lai và năng lực kỹ thuật vững chắc. Chúng tôi đang tìm kiếm các cố vấn, đối tác địa phương và nguồn vốn hạt giống 200 - 500 triệu đồng để đẩy mạnh kho dữ liệu và xúc tiến du lịch số cho tỉnh. Xin chân thành cảm ơn ban giám khảo và các nhà đầu tư!">
+        <div class="slide-header">
+          <div class="header-left">
+            <div class="header-badge"><span class="dot"></span> 11. Đội Ngũ & Kêu Gọi Đầu Tư</div>
+            <div class="slide-title">Khát Vọng Nâng Tầm Du Lịch Tây Nguyên Cùng GiaLai Travel</div>
+          </div>
+          <div class="header-right">
+            <span class="brand-pill">The Ask</span>
+          </div>
+        </div>
+        <div class="slide-body grid-2">
+          <!-- Left: Team & Mission -->
+          <div class="card blue-card">
+            <div class="card-title" style="color: var(--primary-blue);">🌟 Sứ Mệnh Đội Ngũ</div>
+            <p style="font-size: 15px; font-style: italic; font-weight: 600; color: var(--primary-red); margin: 8px 0 16px 0; line-height: 1.45;">
+              “Ứng dụng sức mạnh công nghệ số để đánh thức tiềm năng du lịch Gia Lai, mang lại trải nghiệm trọn vẹn cho du khách và sinh kế bền vững cho đồng bào bản địa.”
+            </p>
+            <ul class="feature-list">
+              <li>
+                <div class="list-icon blue">👤</div>
+                <div><strong>Đội ngũ sáng lập (YangKlee - Dương Khánh):</strong> Trực tiếp thiết kế kiến trúc và phát triển toàn diện Full-stack hệ thống.</div>
+              </li>
+              <li>
+                <div class="list-icon red">💡</div>
+                <div><strong>Năng lực cốt lõi:</strong> Am hiểu văn hóa Tây Nguyên, thành thạo công nghệ Web hiện đại, AI lập lịch trình và PWA Offline-First.</div>
+              </li>
+              <li>
+                <div class="list-icon blue">🔥</div>
+                <div><strong>Cam kết:</strong> Nhiệt huyết của tuổi trẻ khởi nghiệp, kiên định với mục tiêu tạo giá trị thực cho quê hương.</div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Right: The Ask -->
+          <div class="card red-card accent-card" style="justify-content: space-between;">
+            <div>
+              <div class="card-title" style="color: var(--red-dark); font-size: 18px;">🎯 Kêu Gọi Hợp Tác & Đầu Tư</div>
+              <ul class="feature-list" style="margin-top: 14px;">
+                <li>
+                  <div class="list-icon red">1</div>
+                  <div><strong>Vốn Hạt Giống (Seed Round):</strong> Kêu gọi 200 - 500 triệu VND đầu tư cho hạ tầng máy chủ, chuẩn hóa kho dữ liệu và truyền thông cộng đồng.</div>
+                </li>
+                <li>
+                  <div class="list-icon blue">2</div>
+                  <div><strong>Đối tác địa phương:</strong> Chào đón các Homestay, Tour du lịch sinh thái tham gia thử nghiệm miễn phí hệ thống đối tác.</div>
+                </li>
+                <li>
+                  <div class="list-icon red">3</div>
+                  <div><strong>Cố vấn chuyên môn:</strong> Rất mong nhận được sự đồng hành từ các chuyên gia du lịch, công nghệ và chuyển đổi số.</div>
+                </li>
+              </ul>
+            </div>
+
+            <div style="background: var(--blue-dark); color: var(--white); border-radius: 10px; padding: 14px; text-align: center; margin-top: 16px;">
+              <div style="font-size: 11px; font-weight: 700; color: #93C5FD; text-transform: uppercase;">Trải nghiệm Demo Trực Tuyến Ngay Hôm Nay</div>
+              <div style="font-size: 16px; font-weight: 800; margin: 4px 0;">gialaitravel.yangkleeserver.io.vn</div>
+              <div style="font-size: 12px; color: #CBD5E1;">Email: khanhduong18072005@gmail.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="deck-controls">
+      <div class="controls-left">
+        <button class="btn" id="prevBtn" title="Phím mũi tên Trái">← Slide Trước</button>
+        <button class="btn" id="nextBtn" title="Phím mũi tên Phải hoặc Phím Cách">Slide Sau →</button>
+        <span class="slide-counter" id="counter">1 / 12</span>
+      </div>
+
+      <div class="controls-right">
+        <button class="btn" id="notesToggleBtn">🎙️ Ghi chú thuyết minh</button>
+        <button class="btn" id="fullscreenBtn">⛶ Toàn màn hình (F)</button>
+        <a href="GiaLai_Travel_Pitch_Deck.pptx" download class="btn btn-red">📥 Tải file PowerPoint (.pptx)</a>
+        <a href="https://gialaitravel.yangkleeserver.io.vn" target="_blank" class="btn">🌐 Mở Demo Web</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speaker Notes Drawer -->
+  <div class="notes-drawer" id="notesDrawer">
+    <div class="notes-title">
+      <span>Gợi Ý Lời Thoại Thuyết Trình</span>
+      <span style="cursor: pointer;" id="closeNotes">✕</span>
+    </div>
+    <div class="notes-content" id="notesContent">
+      Đang tải ghi chú...
+    </div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const counter = document.getElementById('counter');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const notesToggleBtn = document.getElementById('notesToggleBtn');
+    const notesDrawer = document.getElementById('notesDrawer');
+    const closeNotes = document.getElementById('closeNotes');
+    const notesContent = document.getElementById('notesContent');
+    let currentIndex = 0;
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= slides.length) index = slides.length - 1;
+
+      slides.forEach((s, i) => {
+        s.classList.toggle('active', i === index);
+      });
+
+      currentIndex = index;
+      counter.textContent = `${currentIndex + 1} / ${slides.length}`;
+      prevBtn.disabled = currentIndex === 0;
+      nextBtn.disabled = currentIndex === slides.length - 1;
+
+      // Update speaker notes
+      const notes = slides[currentIndex].getAttribute('data-notes') || 'Chưa có ghi chú cho slide này.';
+      notesContent.textContent = notes;
+    }
+
+    prevBtn.addEventListener('click', () => showSlide(currentIndex - 1));
+    nextBtn.addEventListener('click', () => showSlide(currentIndex + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        showSlide(currentIndex + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        showSlide(currentIndex - 1);
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'n' || e.key === 'N') {
+        notesDrawer.classList.toggle('open');
+      }
+    });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    notesToggleBtn.addEventListener('click', () => {
+      notesDrawer.classList.toggle('open');
+    });
+
+    closeNotes.addEventListener('click', () => {
+      notesDrawer.classList.remove('open');
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>

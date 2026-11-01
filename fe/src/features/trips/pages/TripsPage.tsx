@@ -872,6 +872,7 @@ export default function TripsPage() {
                       <div className="stop-actions">
                         <Button
                           variant="ghost"
+                          className="stop-action-btn"
                           aria-label={`Đưa ${place.title} lên`}
                           disabled={index === 0}
                           onClick={() => move(dataset, place.id, -1)}
@@ -880,6 +881,7 @@ export default function TripsPage() {
                         </Button>
                         <Button
                           variant="ghost"
+                          className="stop-action-btn"
                           aria-label={`Đưa ${place.title} xuống`}
                           disabled={index === draft.places.length - 1}
                           onClick={() => move(dataset, place.id, 1)}
@@ -888,6 +890,7 @@ export default function TripsPage() {
                         </Button>
                         <Button
                           variant="ghost"
+                          className="stop-action-btn stop-delete-btn"
                           aria-label={`Bỏ ${place.title}`}
                           onClick={() => remove(dataset, place.id)}
                         >
@@ -1256,7 +1259,7 @@ export default function TripsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {/* Header & Step 3 Save Actions */}
                   <div className="consent-title-row">
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
                           display: 'flex',
@@ -1614,18 +1617,19 @@ export default function TripsPage() {
                                       alignItems: 'center',
                                       flexWrap: 'wrap',
                                       gap: '8px',
-                                      padding: '6px 10px',
-                                      borderRadius: '6px',
+                                      padding: '8px 12px',
+                                      borderRadius: '8px',
                                       background: 'rgba(59, 130, 246, 0.08)',
                                       fontSize: '0.84rem',
+                                      lineHeight: 1.45,
                                     }}
                                   >
-                                    <span>
+                                    <span style={{ minWidth: 0, flex: '1 1 200px' }}>
                                       <ArrowRight
                                         size={13}
                                         aria-hidden="true"
-                                        style={{ display: 'inline', verticalAlign: 'middle' }}
-                                      />{' '}
+                                        style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}
+                                      />
                                       <strong>
                                         {transitStartVn} → {stopArriveVn} · Xuất phát di chuyển:
                                       </strong>{' '}
@@ -1662,6 +1666,11 @@ export default function TripsPage() {
                                           display: 'inline-flex',
                                           alignItems: 'center',
                                           gap: '4px',
+                                          flexShrink: 0,
+                                          padding: '4px 8px',
+                                          borderRadius: '6px',
+                                          background: 'rgba(59, 130, 246, 0.12)',
+                                          textDecoration: 'none',
                                         }}
                                       >
                                         <Navigation size={12} aria-hidden="true" /> Bản đồ chặng
@@ -1671,79 +1680,68 @@ export default function TripsPage() {
                                 )}
 
                                 {/* Main Stop Row */}
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    justifyContent: 'space-between',
-                                    gap: '12px',
-                                  }}
-                                >
-                                  <span className="stop-number">#{stop.sequenceNo}</span>
-                                  <div className="stop-info" style={{ flex: 1 }}>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        flexWrap: 'wrap',
-                                      }}
-                                    >
-                                      <strong>{stop.placeTitle || stop.placeId}</strong>
-                                      <Badge>{activityBadge}</Badge>
-                                      <Badge>
-                                        <Clock3 size={12} aria-hidden="true" /> {stopArriveVn} →{' '}
-                                        {stopDepartVn}
-                                      </Badge>
-                                    </div>
+                                <div className="itinerary-stop-row">
+                                  <div className="itinerary-stop-main">
+                                    <span className="stop-number">#{stop.sequenceNo}</span>
+                                    <div className="stop-info">
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          flexWrap: 'wrap',
+                                        }}
+                                      >
+                                        <strong className="stop-title">{stop.placeTitle || stop.placeId}</strong>
+                                        <Badge>{activityBadge}</Badge>
+                                        <Badge>
+                                          <Clock3 size={12} aria-hidden="true" /> {stopArriveVn} →{' '}
+                                          {stopDepartVn}
+                                        </Badge>
+                                      </div>
 
-                                    <p className="muted" style={{ marginTop: '4px' }}>
-                                      Khung giờ: <strong>{stopArriveVn}</strong> →{' '}
-                                      <strong>{stopDepartVn}</strong> · Chi phí dự tính:{' '}
-                                      <strong>{formatVnd(String(stop.estimatedCostVnd))}</strong>
-                                      {stop.latitude != null && stop.longitude != null && (
-                                        <>
-                                          {' '}
-                                          ·{' '}
-                                          <a
-                                            href={`https://www.google.com/maps/search/?api=1&query=${stop.latitude},${stop.longitude}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          >
-                                            Tọa độ ({Number(stop.latitude).toFixed(4)},{' '}
-                                            {Number(stop.longitude).toFixed(4)})
-                                          </a>
-                                        </>
-                                      )}
-                                    </p>
-
-                                    {stop.note && (
-                                      <p style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>
-                                        <Utensils
-                                          size={13}
-                                          aria-hidden="true"
-                                          style={{
-                                            display: 'inline',
-                                            verticalAlign: 'middle',
-                                            marginRight: '4px',
-                                          }}
-                                        />
-                                        {stop.note}
+                                      <p className="muted" style={{ marginTop: '4px' }}>
+                                        Khung giờ: <strong>{stopArriveVn}</strong> →{' '}
+                                        <strong>{stopDepartVn}</strong> · Chi phí dự tính:{' '}
+                                        <strong>{formatVnd(String(stop.estimatedCostVnd))}</strong>
+                                        {stop.latitude != null && stop.longitude != null && (
+                                          <>
+                                            {' '}
+                                            ·{' '}
+                                            <a
+                                              href={`https://www.google.com/maps/search/?api=1&query=${stop.latitude},${stop.longitude}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                            >
+                                              Tọa độ ({Number(stop.latitude).toFixed(4)},{' '}
+                                              {Number(stop.longitude).toFixed(4)})
+                                            </a>
+                                          </>
+                                        )}
                                       </p>
-                                    )}
+
+                                      {stop.note && (
+                                        <p style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>
+                                          <Utensils
+                                            size={13}
+                                            aria-hidden="true"
+                                            style={{
+                                              display: 'inline',
+                                              verticalAlign: 'middle',
+                                              marginRight: '4px',
+                                            }}
+                                          />
+                                          {stop.note}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* Step 2 Customize Controls: Up / Down / Edit / Remove */}
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      gap: '4px',
-                                      alignItems: 'center',
-                                      flexWrap: 'wrap',
-                                    }}
-                                  >
+                                  <div className="itinerary-stop-actions">
                                     <Button
                                       variant="ghost"
+                                      className="stop-action-btn"
                                       disabled={sIdx === 0}
                                       aria-label={`Đưa điểm ${stop.placeTitle} lên`}
                                       title="Đổi lên trước"
@@ -1753,6 +1751,7 @@ export default function TripsPage() {
                                     </Button>
                                     <Button
                                       variant="ghost"
+                                      className="stop-action-btn"
                                       disabled={sIdx === day.stops.length - 1}
                                       aria-label={`Đưa điểm ${stop.placeTitle} xuống`}
                                       title="Đổi xuống sau"
@@ -1762,6 +1761,7 @@ export default function TripsPage() {
                                     </Button>
                                     <Button
                                       variant="ghost"
+                                      className="stop-action-btn"
                                       aria-label={`Chỉnh giờ điểm ${stop.placeTitle}`}
                                       title="Tùy chỉnh giờ đến/đi & ghi chú ăn/nghỉ"
                                       onClick={() => startEditingStop(dIdx, sIdx, stop)}
@@ -1770,6 +1770,7 @@ export default function TripsPage() {
                                     </Button>
                                     <Button
                                       variant="ghost"
+                                      className="stop-action-btn stop-delete-btn"
                                       aria-label={`Bỏ điểm ${stop.placeTitle}`}
                                       title="Xóa điểm dừng này"
                                       onClick={() => handleRemoveStop(dIdx, sIdx)}
@@ -1844,7 +1845,7 @@ export default function TripsPage() {
                                         onChange={(e) => setEditStopNote(e.target.value)}
                                       />
                                     </label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                       <Button
                                         variant="primary"
                                         onClick={() => saveEditedStop(dIdx, sIdx)}
@@ -2191,7 +2192,7 @@ export default function TripsPage() {
                           {day.stops.map((stop) => {
                             const leg = day.legs?.find((l) => l.toStopSequence === stop.sequenceNo);
                             return (
-                              <li key={stop.id || stop.sequenceNo} style={{ paddingBlock: '8px' }}>
+                              <li key={stop.id || stop.sequenceNo} style={{ paddingBlock: '8px', alignItems: 'flex-start' }}>
                                 <span className="stop-number">#{stop.sequenceNo}</span>
                                 <div className="stop-info">
                                   <strong>{stop.placeTitle || stop.placeId}</strong>
