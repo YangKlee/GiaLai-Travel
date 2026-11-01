@@ -3,7 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AdminPlacesManager } from './components/AdminPlacesManager';
 import { AdminEventsManager } from './components/AdminEventsManager';
-import type { AdminContentMeta, AdminEventItem, AdminPlaceItem } from '../explore/types/catalog';
+import { AdminWardsManager } from './components/AdminWardsManager';
+import type { AdminContentMeta, AdminEventItem, AdminPlaceItem, AdminWardItem } from '../explore/types/catalog';
 import * as adminService from '@/services/admin';
 
 const mockMeta: AdminContentMeta = {
@@ -209,5 +210,104 @@ describe('Admin Events CRUD & Banner Cloudflare R2 (AdminEventsManager)', () => 
       ).toBeInTheDocument();
     });
     expect(screen.queryByText('Lễ hội Hoa Dã Quỳ Chư Đang Ya')).not.toBeInTheDocument();
+  });
+});
+
+const mockWards: AdminWardItem[] = [
+  {
+    id: 'ward-1',
+    regionId: 'reg-1',
+    regionName: 'TP. Pleiku',
+    code: 'PLEIKU_HOITHUONG',
+    name: 'Phường Hội Thương',
+    status: 'ACTIVE',
+    createdAt: '2026-10-30T00:00:00.000Z',
+    updatedAt: '2026-10-30T00:00:00.000Z',
+  },
+  {
+    id: 'ward-2',
+    regionId: 'reg-1',
+    regionName: 'TP. Pleiku',
+    code: 'PLEIKU_BIENHO',
+    name: 'Xã Biển Hồ',
+    status: 'ACTIVE',
+    createdAt: '2026-10-30T00:00:00.000Z',
+    updatedAt: '2026-10-30T00:00:00.000Z',
+  },
+];
+
+describe('Admin Wards CRUD (AdminWardsManager)', () => {
+  it('hiển thị danh sách phường/xã và lọc theo từ khóa', async () => {
+    const user = userEvent.setup();
+    render(<AdminWardsManager initialWards={mockWards} meta={mockMeta} />);
+
+    expect(screen.getByText('Phường Hội Thương')).toBeInTheDocument();
+    expect(screen.getByText('Xã Biển Hồ')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText(/Tìm theo tên hoặc mã phường\/xã/i);
+    await user.type(searchInput, 'Biển Hồ');
+
+    expect(screen.queryByText('Phường Hội Thương')).not.toBeInTheDocument();
+    expect(screen.getByText('Xã Biển Hồ')).toBeInTheDocument();
+  });
+
+  it('mở modal tạo mới phường/xã và gửi payload thành công', async () => {
+    const user = userEvent.setup();
+    const newWard: AdminWardItem = {
+      id: 'ward-new',
+      regionId: 'reg-1',
+      regionName: 'TP. Pleiku',
+      code: 'PLEIKU_HOIPHU',
+      name: 'Phường Hội Phú',
+      status: 'ACTIVE',
+      createdAt: '2026-11-01T00:00:00.000Z',
+      updatedAt: '2026-11-01T00:00:00.000Z',
+    };
+
+    vi.spyOn(adminService, 'createAdminWard').mockResolvedValue(newWard);
+
+    render(<AdminWardsManager initialWards={mockWards} meta={mockMeta} />);
+
+    await user.click(screen.getByRole('button', { name: /Thêm phường \/ xã mới/i }));
+    expect(screen.getByText('Thêm Phường / Xã mới')).toBeInTheDocument();
+
+    await user.type(
+      screen.getByPlaceholderText(/Ví dụ: Phường Hội Thương/i),
+      'Phường Hội Phú',
+    );
+    await user.type(
+      screen.getByPlaceholderText(/Ví dụ: PLEIKU_HOITHUONG/i),
+      'PLEIKU_HOIPHU',
+    );
+
+    await user.click(screen.getByRole('button', { name: /Thêm mới/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Đã thêm phường\/xã "Phường Hội Phú" thành công!/i),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText('Phường Hội Phú')).toBeInTheDocument();
+  });
+
+  it('xóa phường/xã thành công khi xác nhận', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(adminService, 'deleteAdminWard').mockResolvedValue({
+      success: true,
+      message: 'Đã xóa phường/xã',
+    });
+
+    render(<AdminWardsManager initialWards={mockWards} meta={mockMeta} />);
+
+    const deleteButtons = screen.getAllByRole('button', { name: /Xóa/i });
+    await user.click(deleteButtons[0]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Đã xóa phường\/xã "Phường Hội Thương" thành công!/i),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Phường Hội Thương')).not.toBeInTheDocument();
   });
 });

@@ -89,7 +89,7 @@ export default function PlaceDetailPage() {
           <h1>{place.title}</h1>
           <p className="meta-line">
             <MapPin size={16} aria-hidden="true" />
-            {place.region.name}
+            {place.ward?.name ? `${place.ward.name}, ` : ''}{place.region.name}
           </p>
         </div>
         <Link className={buttonVariants({ variant: 'secondary' })} to={APP_PATHS.TRIPS}>
@@ -238,6 +238,15 @@ export default function PlaceDetailPage() {
                   Thời lượng ghé thăm
                 </dt>
                 <dd>{formatDuration(place.typicalDurationMinutes)}</dd>
+              </div>
+              <div>
+                <dt>
+                  <Sparkles size={16} aria-hidden="true" />
+                  Thời gian vàng để đến
+                </dt>
+                <dd style={{ fontWeight: place.bestTimeToVisit ? 600 : 400 }}>
+                  {place.bestTimeToVisit ? place.bestTimeToVisit : 'Chưa cập nhật'}
+                </dd>
               </div>
             </dl>
             <AddToTripButton dataset={dataset} place={place} />

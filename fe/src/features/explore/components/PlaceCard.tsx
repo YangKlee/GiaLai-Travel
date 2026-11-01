@@ -46,11 +46,16 @@ export function PlaceCard({ place, dataset }: { place: Place; dataset: Dataset }
         </h3>
         <p className="meta-line">
           <MapPin size={14} aria-hidden="true" />
-          {place.region.name}
+          {place.ward?.name ? `${place.ward.name}, ` : ''}{place.region.name}
           <span aria-hidden="true">·</span>
           <Clock3 size={14} aria-hidden="true" />
           {formatDuration(place.typicalDurationMinutes)}
         </p>
+        {place.bestTimeToVisit && (
+          <p style={{ fontSize: '0.8rem', color: '#0d766e', margin: '2px 0 6px', fontWeight: 500 }}>
+            ✨ {place.bestTimeToVisit}
+          </p>
+        )}
         <p className="place-description">{place.description}</p>
         <div className="place-card-bottom">
           <span className="price">{formatVnd(place.referencePriceVnd)}</span>

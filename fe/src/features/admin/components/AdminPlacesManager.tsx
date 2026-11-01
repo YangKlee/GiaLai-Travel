@@ -34,6 +34,7 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [wardFilter, setWardFilter] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlace, setEditingPlace] = useState<AdminPlaceItem | null>(null);
@@ -43,10 +44,12 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState<Category>('NATURE');
   const [formRegionId, setFormRegionId] = useState(meta.regions[0]?.id ?? '');
+  const [formWardId, setFormWardId] = useState('');
   const [formLat, setFormLat] = useState('13.9833');
   const [formLon, setFormLon] = useState('108.0000');
   const [formPrice, setFormPrice] = useState('');
   const [formDuration, setFormDuration] = useState('90');
+  const [formBestTimeToVisit, setFormBestTimeToVisit] = useState('');
   const [formBannerUrl, setFormBannerUrl] = useState('');
   const [formBannerMode, setFormBannerMode] = useState<'URL' | 'UPLOAD'>('URL');
   const [formSource, setFormSource] = useState('https://gialai.gov.vn/diem-den');
@@ -67,10 +70,12 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
     setFormDescription('');
     setFormCategory('NATURE');
     setFormRegionId(meta.regions[0]?.id ?? '');
+    setFormWardId('');
     setFormLat('13.9833');
     setFormLon('108.0000');
     setFormPrice('50000');
     setFormDuration('90');
+    setFormBestTimeToVisit('');
     setFormBannerUrl('');
     setFormBannerMode('URL');
     setFormSource('https://gialai.gov.vn/diem-den');
@@ -84,10 +89,12 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
     setFormDescription(place.description);
     setFormCategory(place.category);
     setFormRegionId(place.regionId);
+    setFormWardId(place.wardId || '');
     setFormLat(String(place.latitude));
     setFormLon(String(place.longitude));
     setFormPrice(place.referencePriceVnd ?? '');
     setFormDuration(place.typicalDurationMinutes ? String(place.typicalDurationMinutes) : '90');
+    setFormBestTimeToVisit(place.bestTimeToVisit || '');
     setFormBannerUrl(place.bannerUrl || place.imageUrl || '');
     setFormBannerMode('URL');
     setFormSource(place.sourceReference || 'https://gialai.gov.vn/diem-den');
@@ -136,10 +143,12 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
       description: formDescription.trim(),
       category: formCategory,
       regionId: formRegionId,
+      wardId: formWardId || null,
       latitude: Number(formLat),
       longitude: Number(formLon),
       referencePriceVnd: formPrice.trim() ? formPrice.trim() : null,
       typicalDurationMinutes: formDuration.trim() ? Number(formDuration.trim()) : null,
+      bestTimeToVisit: formBestTimeToVisit.trim() || null,
       bannerUrl: formBannerUrl.trim() || null,
       imageUrl: formBannerUrl.trim() || null,
       sourceReference: formSource.trim() || null,
@@ -209,6 +218,7 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
     }
     if (categoryFilter && p.category !== categoryFilter) return false;
     if (regionFilter && p.regionId !== regionFilter) return false;
+    if (wardFilter && p.wardId !== wardFilter) return false;
     return true;
   });
 
@@ -306,7 +316,10 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
 
         <select
           value={regionFilter}
-          onChange={(e) => setRegionFilter(e.target.value)}
+          onChange={(e) => {
+            setRegionFilter(e.target.value);
+            setWardFilter('');
+          }}
           style={{
             padding: '8px 12px',
             borderRadius: '8px',
@@ -314,7 +327,7 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
             fontSize: '0.9rem',
           }}
         >
-          <option value="">Tất cả khu vực</option>
+          <option value="">Tất cả vùng / huyện</option>
           {meta.regions.map((reg) => (
             <option key={reg.id} value={reg.id}>
               {reg.name}
@@ -322,13 +335,36 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
           ))}
         </select>
 
-        {(searchQuery || categoryFilter || regionFilter) && (
+        {meta.wards && meta.wards.length > 0 && (
+          <select
+            value={wardFilter}
+            onChange={(e) => setWardFilter(e.target.value)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border-subtle)',
+              fontSize: '0.9rem',
+            }}
+          >
+            <option value="">Tất cả phường / xã</option>
+            {meta.wards
+              .filter((w) => !regionFilter || w.regionId === regionFilter)
+              .map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+          </select>
+        )}
+
+        {(searchQuery || categoryFilter || regionFilter || wardFilter) && (
           <Button
             variant="ghost"
             onClick={() => {
               setSearchQuery('');
               setCategoryFilter('');
               setRegionFilter('');
+              setWardFilter('');
             }}
           >
             Xóa lọc
@@ -411,7 +447,7 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                         color: '#333',
                       }}
                     >
-                      {place.regionName}
+                      {place.wardName ? `${place.wardName}, ` : ''}{place.regionName}
                     </span>
                   </div>
                 </div>
@@ -450,6 +486,9 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                     </div>
                     <div>
                       ⏱️ Thời lượng: <strong>{formatDuration(place.typicalDurationMinutes)}</strong>
+                    </div>
+                    <div>
+                      ✨ Thời gian vàng: <strong>{place.bestTimeToVisit || 'Chưa cập nhật'}</strong>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <MapPin size={13} />
@@ -606,11 +645,14 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="place-reg">Vùng / Huyện</label>
+                  <label htmlFor="place-reg">Vùng / Huyện *</label>
                   <select
                     id="place-reg"
                     value={formRegionId}
-                    onChange={(e) => setFormRegionId(e.target.value)}
+                    onChange={(e) => {
+                      setFormRegionId(e.target.value);
+                      setFormWardId('');
+                    }}
                   >
                     {meta.regions.map((reg) => (
                       <option key={reg.id} value={reg.id}>
@@ -618,6 +660,37 @@ export function AdminPlacesManager({ initialPlaces, meta }: Props) {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-field">
+                  <label htmlFor="place-ward">Phường / Xã (theo sáp nhập mới nhất)</label>
+                  <select
+                    id="place-ward"
+                    value={formWardId}
+                    onChange={(e) => setFormWardId(e.target.value)}
+                  >
+                    <option value="">-- Chọn phường / xã (Tùy chọn) --</option>
+                    {(meta.wards || [])
+                      .filter((w) => !formRegionId || w.regionId === formRegionId)
+                      .map((ward) => (
+                        <option key={ward.id} value={ward.id}>
+                          {ward.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="place-best-time">✨ Thời gian vàng để đến</label>
+                  <input
+                    id="place-best-time"
+                    type="text"
+                    value={formBestTimeToVisit}
+                    onChange={(e) => setFormBestTimeToVisit(e.target.value)}
+                    placeholder="VD: 06:00 - 08:30 (Bình minh), Tháng 10 - Tháng 12"
+                  />
                 </div>
               </div>
 

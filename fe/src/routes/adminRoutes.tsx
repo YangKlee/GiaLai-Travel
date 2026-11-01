@@ -11,11 +11,13 @@ import {
   adminIssuesLoader,
   adminPlacesLoader,
   adminUsersLoader,
+  adminWardsLoader,
   requireAdmin,
 } from './adminLoaders';
 
 const AdminContentPage = lazy(() => import('@/features/admin/pages/AdminContentPage'));
 const AdminPlacesPage = lazy(() => import('@/features/admin/pages/AdminPlacesPage'));
+const AdminWardsPage = lazy(() => import('@/features/admin/pages/AdminWardsPage'));
 const AdminEventsPage = lazy(() => import('@/features/admin/pages/AdminEventsPage'));
 const AdminBookingsPage = lazy(() => import('@/features/admin/pages/AdminBookingsPage'));
 const AdminIssuesPage = lazy(() => import('@/features/admin/pages/AdminIssuesPage'));
@@ -55,6 +57,16 @@ export const adminRoutes: RouteObject[] = [
         element: (
           <RouteSuspense>
             <AdminPlacesPage />
+          </RouteSuspense>
+        ),
+      },
+      {
+        path: ROUTE_SEGMENTS.ADMIN_WARDS,
+        loader: adminWardsLoader,
+        errorElement,
+        element: (
+          <RouteSuspense>
+            <AdminWardsPage />
           </RouteSuspense>
         ),
       },

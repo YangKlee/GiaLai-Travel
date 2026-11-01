@@ -3,7 +3,12 @@ import type { LoaderFunctionArgs } from 'react-router-dom';
 import { APP_PATHS } from '@/constants/path';
 import { bootstrapAuth } from '@/services/auth';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getAdminContentMeta, listAdminEvents, listAdminPlaces } from '@/services/admin';
+import {
+  getAdminContentMeta,
+  listAdminEvents,
+  listAdminPlaces,
+  listAdminWards,
+} from '@/services/admin';
 import { listAdminBookings } from '@/services/bookings';
 import { listAdminAuditLogs, listAdminIssues } from '@/services/operations';
 import { listAdminUsers } from '@/services/adminUsers';
@@ -24,6 +29,15 @@ export async function adminPlacesLoader({ request }: LoaderFunctionArgs) {
     listAdminPlaces({ pageSize: 100 }, request.signal),
   ]);
   return { meta, data: places.data };
+}
+
+export async function adminWardsLoader({ request }: LoaderFunctionArgs) {
+  await requireAdmin();
+  const [meta, wards] = await Promise.all([
+    getAdminContentMeta(request.signal),
+    listAdminWards({ pageSize: 200 }, request.signal),
+  ]);
+  return { meta, data: wards.data };
 }
 
 export async function adminEventsLoader({ request }: LoaderFunctionArgs) {

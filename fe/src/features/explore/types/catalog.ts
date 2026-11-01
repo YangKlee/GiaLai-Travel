@@ -11,16 +11,30 @@ export interface Region {
   name: string;
 }
 
+export interface Ward {
+  id: string;
+  regionId: string;
+  regionName?: string;
+  code: string;
+  name: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Place {
   id: string;
   title: string;
   description: string;
   category: Category;
   region: Region;
+  ward?: { id: string; name: string } | null;
+  wardId?: string | null;
   latitude: number | null;
   longitude: number | null;
   referencePriceVnd: string | null;
   typicalDurationMinutes: number | null;
+  bestTimeToVisit?: string | null;
   sourceReference: string | null;
   bannerUrl?: string | null;
   imageUrl?: string | null;
@@ -192,6 +206,7 @@ export interface AdminContentItem {
 
 export interface AdminContentMeta {
   regions: Array<{ id: string; name: string; code: string }>;
+  wards?: Ward[];
   partners: Array<{ id: string; contentId: string; status: string; title: string }>;
   places: Array<{
     id: string;
@@ -234,15 +249,29 @@ export interface AdminPlaceItem {
   category: Category;
   regionId: string;
   regionName: string;
+  wardId?: string | null;
+  wardName?: string | null;
   latitude: number;
   longitude: number;
   referencePriceVnd: string | null;
   typicalDurationMinutes: number | null;
+  bestTimeToVisit?: string | null;
   bannerUrl: string | null;
   imageUrl: string | null;
   sourceReference: string | null;
   visibility: ContentVisibility;
   openingHours: OpeningHour[];
+  updatedAt: string;
+}
+
+export interface AdminWardItem {
+  id: string;
+  regionId: string;
+  regionName: string;
+  code: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
   updatedAt: string;
 }
 

@@ -6,6 +6,7 @@ import type {
   AdminMediaAsset,
   AdminPlaceItem,
   AdminR2UploadResult,
+  AdminWardItem,
   Category,
   ContentKind,
   ContentVisibility,
@@ -126,10 +127,12 @@ export interface CreateAdminPlaceInput {
   description: string;
   category: Category;
   regionId: string;
+  wardId?: string | null;
   latitude: number;
   longitude: number;
   referencePriceVnd?: string | number | null;
   typicalDurationMinutes?: number | null;
+  bestTimeToVisit?: string | null;
   bannerUrl?: string | null;
   imageUrl?: string | null;
   sourceReference?: string | null;
@@ -195,6 +198,67 @@ export async function updateAdminPlace(
 export async function deleteAdminPlace(id: string): Promise<{ success: boolean; message: string }> {
   const res = await del<{ data: { success: boolean; message: string } }>(
     `/api/v1/admin/places/${encodeURIComponent(id)}`,
+  );
+  return res.data;
+}
+
+export async function listAdminWards(
+  params?: { q?: string; regionId?: string; status?: string; page?: number; pageSize?: number },
+  signal?: AbortSignal,
+): Promise<{
+  data: AdminWardItem[];
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+}> {
+  const query = new URLSearchParams();
+  if (params?.q) query.set('q', params.q);
+  if (params?.regionId) query.set('regionId', params.regionId);
+  if (params?.status) query.set('status', params.status);
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.pageSize) query.set('pageSize', String(params.pageSize));
+  const qs = query.toString() ? `?${query.toString()}` : '';
+  return get(`/api/v1/admin/wards${qs}`, signal);
+}
+
+export async function getAdminWard(id: string, signal?: AbortSignal): Promise<AdminWardItem> {
+  const res = await get<{ data: AdminWardItem }>(
+    `/api/v1/admin/wards/${encodeURIComponent(id)}`,
+    signal,
+  );
+  return res.data;
+}
+
+export async function createAdminWard(input: {
+  regionId: string;
+  code: string;
+  name: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+}): Promise<AdminWardItem> {
+  const res = await post<{ data: AdminWardItem }, typeof input>(
+    '/api/v1/admin/wards',
+    input,
+  );
+  return res.data;
+}
+
+export async function updateAdminWard(
+  id: string,
+  input: Partial<{
+    regionId: string;
+    code: string;
+    name: string;
+    status: 'ACTIVE' | 'INACTIVE';
+  }>,
+): Promise<AdminWardItem> {
+  const res = await put<{ data: AdminWardItem }, typeof input>(
+    `/api/v1/admin/wards/${encodeURIComponent(id)}`,
+    input,
+  );
+  return res.data;
+}
+
+export async function deleteAdminWard(id: string): Promise<{ success: boolean; message: string }> {
+  const res = await del<{ data: { success: boolean; message: string } }>(
+    `/api/v1/admin/wards/${encodeURIComponent(id)}`,
   );
   return res.data;
 }
