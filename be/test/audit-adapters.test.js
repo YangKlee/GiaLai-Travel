@@ -115,6 +115,7 @@ test('AI adapter builds rich prompt and calls OpenAI / Gemini APIs or falls back
       longitude: 108.0002,
       referencePriceVnd: '20000',
       typicalDurationMinutes: 90,
+      bestTimeToVisit: '05:30 - 08:30 (Săn mây, đón bình minh)',
       openingHours: [{ weekday: 0, opensAt: '07:00:00', closesAt: '18:00:00' }],
     },
   ];
@@ -198,10 +199,16 @@ test('AI adapter builds rich prompt and calls OpenAI / Gemini APIs or falls back
 
   assert.ok(geminiCalledUrl.includes('gemini-2.0-flash:generateContent'));
   assert.ok(geminiSentBody.contents[0].parts[0].text.includes('7h-7h30 ăn sáng'));
+  assert.ok(geminiSentBody.contents[0].parts[0].text.includes('THỜI GIAN VÀNG'));
+  assert.ok(geminiSentBody.contents[0].parts[0].text.includes('05:30 - 08:30 (Săn mây, đón bình minh)'));
   assert.equal(geminiResult.provider, 'google-gemini');
   assert.equal(geminiResult.days.length, 1);
   assert.equal(geminiResult.days[0].stops.length, 2);
   assert.equal(geminiResult.days[0].stops[0].activityType, 'BREAKFAST');
+  assert.equal(
+    geminiResult.days[0].stops[1].bestTimeToVisit,
+    '05:30 - 08:30 (Săn mây, đón bình minh)',
+  );
   assert.ok(geminiResult.days[0].googleMapsDayRouteUrl.includes('https://www.google.com/maps/dir/'));
   assert.ok(geminiResult.days[0].legs[1].googleMapsDirectionsUrl.includes('https://www.google.com/maps/dir/'));
 
@@ -264,4 +271,28 @@ test('AI adapter builds rich prompt and calls OpenAI / Gemini APIs or falls back
   assert.ok(openAiCalledUrl.endsWith('/chat/completions'));
   assert.equal(openAiResult.provider, 'openai');
   assert.equal(openAiResult.days[0].stops[0].placeTitle, 'Biển Hồ');
+  assert.equal(
+    openAiResult.days[0].stops[0].bestTimeToVisit,
+    '05:30 - 08:30 (Săn mây, đón bình minh)',
+  );
+
+  // 3. Test local prompt-engine fallback
+  const localAdapter = createAiAdapter({ mode: 'prompt-engine' });
+  const localResult = await localAdapter.generateItineraryProposal({
+    startDate: '2026-11-01',
+    daysCount: 1,
+    partySize: 2,
+    totalBudgetVnd: '2000000',
+    origin: { latitude: 13.9833, longitude: 108.0, label: 'Pleiku' },
+    transportMode: 'MOTORBIKE',
+    preferences: { categories: ['NATURE'] },
+    places: samplePlaces,
+    events: [],
+  });
+  assert.equal(localResult.provider, 'gialai-ai-planner');
+  assert.equal(
+    localResult.days[0].stops[0].bestTimeToVisit,
+    '05:30 - 08:30 (Săn mây, đón bình minh)',
+  );
+  assert.ok(localResult.days[0].stops[0].note.includes('Thời gian vàng'));
 });

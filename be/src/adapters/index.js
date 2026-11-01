@@ -213,6 +213,7 @@ export function buildItineraryPrompt({
     lat: p.latitude,
     lon: p.longitude,
     durationMinutes: p.typicalDurationMinutes || 90,
+    bestTimeToVisit: p.bestTimeToVisit || null,
   }));
   const eventsSnippet = events.map((e) => ({
     id: e.id,
@@ -250,11 +251,19 @@ ${JSON.stringify(eventsSnippet)}
 Yêu cầu bắt buộc:
 1. Múi giờ tại Gia Lai là GMT+7 (UTC+7). Trường "arrivesAt" và "departsAt" trả về chuỗi ISO 8601 UTC (YYYY-MM-DDTHH:mm:ss.000Z) được quy đổi chính xác từ giờ Việt Nam (Ví dụ: 07:00 sáng giờ VN = 00:00:00.000Z; 07:30 sáng giờ VN = 00:30:00.000Z; 08:00 sáng giờ VN = 01:00:00.000Z; 11:30 trưa giờ VN = 04:30:00.000Z; 18:00 tối giờ VN = 11:00:00.000Z).
 2. Lịch trình mỗi ngày phải thực tế, liền mạch theo thời gian: có ăn sáng (VD 07:00-07:30), thời gian xuất phát di chuyển thực tế giữa các điểm (VD 07:30-08:00 di chuyển), tham quan buổi sáng, ăn trưa & nghỉ trưa, tham quan buổi chiều, ăn tối & nghỉ đêm.
-3. Với mỗi điểm dừng (stop):
+3. TỐI ƯU HÓA THEO "THỜI GIAN VÀNG" (bestTimeToVisit):
+   - Trong danh sách các địa điểm CSDL Gia Lai, mỗi địa điểm có thông tin "bestTimeToVisit" ghi rõ khoảng thời gian đẹp nhất trong ngày hoặc trong năm (Ví dụ: "05:30 - 07:30 (Săn mây, ngắm bình minh)", "16:30 - 18:00 (Ngắm hoàng hôn rực rỡ)", "Buổi sáng 07:00 - 09:30 (Khí hậu mát mẻ)", "Buổi tối 18:30 - 21:30 (Chợ đêm, ẩm thực, dạo mát)").
+   - AI BẮT BUỘC PHẢI DỰA VÀO "bestTimeToVisit" ĐỂ XẾP KHUNG GIỜ GHÉ THĂM ("arrivesAt" - "departsAt") TRÙNG KHỚP HOẶC TỐI ƯU NHẤT:
+     + Địa điểm có thời gian vàng bình minh / săn mây / sáng sớm (Biển Hồ, Chư Đang Ya, Hàng thông trăm tuổi...): xếp vào khung giờ sáng sớm (05:30 - 08:30 sáng).
+     + Địa điểm có thời gian vàng hoàng hôn / chiều tà (Đập Tân Sơn, Hồ Ayun Hạ, Đồi thông...): xếp vào khung giờ cuối buổi chiều (16:00 - 18:00 chiều).
+     + Địa điểm có thời gian vàng buổi tối / chợ đêm (Quảng trường Đại Đoàn Kết, Chợ đêm Pleiku...): xếp vào buổi tối (sau 18:30 tối).
+     + Các điểm văn hóa, bảo tàng, chùa chiền hoặc quán cà phê nghỉ chân: xếp xen kẽ giữa trưa hoặc đầu giờ chiều để tránh nắng gắt.
+   - Trong trường "note" của mỗi điểm dừng (stop), ghi rõ lý do xếp giờ và nhấn mạnh thời gian vàng (Ví dụ: "✨ Thời gian vàng: 05:30 - 07:30 · Đến lúc 06:00 để săn mây và đón bình minh tuyệt đẹp trên mặt hồ").
+4. Với mỗi điểm dừng (stop):
    - Nếu là địa điểm tham quan có trong Danh sách CSDL: điền đúng "placeId" từ Danh sách CSDL.
    - Nếu là địa điểm ăn sáng / ăn trưa / ăn tối / cà phê / khách sạn lưu trú thực tế tại Gia Lai (như Phở khô Ngọc Sơn, Gà nướng cơm lam, Cà phê Pleiku, Khách sạn/Homestay...): ghi rõ tên địa điểm thực tế vào "placeTitle", tọa độ thực tế vào "latitude" và "longitude", và gán "placeId" bằng ID của địa điểm CSDL gần đó nhất.
    - Cung cấp "distanceMeters" (khoảng cách mét từ điểm trước đó), "durationSeconds" (thời gian di chuyển thực tế tính bằng giây từ điểm trước đó), "transportCostVnd" (chi phí di chuyển chặng đó) và "estimatedCostVnd" (chi phí ăn uống/vé tại điểm dừng cho cả đoàn).
-4. Trả về DUY NHẤT một đối tượng JSON hợp lệ theo đúng cấu trúc sau:
+5. Trả về DUY NHẤT một đối tượng JSON hợp lệ theo đúng cấu trúc sau:
 {
   "summary": "Tóm tắt lộ trình chi tiết do AI thiết kế",
   "days": [
@@ -277,7 +286,8 @@ Yêu cầu bắt buộc:
           "distanceMeters": 1500,
           "durationSeconds": 300,
           "transportCostVnd": 10000,
-          "note": "Mô tả hoạt động chi tiết và giờ xuất phát đi điểm tiếp theo"
+          "bestTimeToVisit": "Thời gian vàng của địa điểm nếu có",
+          "note": "✨ Thời gian vàng: ... · Mô tả hoạt động chi tiết"
         }
       ]
     }
@@ -410,6 +420,7 @@ export function normalizeAiProposalSchedule({
         arrivesAt,
         departsAt,
         estimatedCostVnd,
+        bestTimeToVisit: rawStop.bestTimeToVisit || dbPlace?.bestTimeToVisit || null,
         note: rawStop.note || null,
       });
 
@@ -598,11 +609,40 @@ export function generatePromptEngineProposal({
     return bMatch - aMatch;
   });
 
+  function getTimeSlotAffinity(p) {
+    const text = (p.bestTimeToVisit || '').toLowerCase();
+    if (
+      text.includes('sáng') ||
+      text.includes('bình minh') ||
+      text.includes('mây') ||
+      text.includes('05:') ||
+      text.includes('06:') ||
+      text.includes('07:') ||
+      text.includes('08:')
+    ) {
+      return 'MORNING';
+    }
+    if (
+      text.includes('hoàng hôn') ||
+      text.includes('tối') ||
+      text.includes('đêm') ||
+      text.includes('chợ đêm') ||
+      text.includes('16:30') ||
+      text.includes('17:') ||
+      text.includes('18:') ||
+      text.includes('19:') ||
+      text.includes('20:')
+    ) {
+      return 'EVENING';
+    }
+    return 'MIDDAY';
+  }
+
   const stopsPerDay =
     preferences?.pace === 'RELAXED' ? 2 : preferences?.pace === 'FAST' ? 4 : 3;
   const days = [];
   const usedRevisionIds = [];
-  let placeIndex = 0;
+  const pickedPlaceIds = new Set();
 
   const baseDate = new Date(`${startDate}T00:00:00.000Z`);
 
@@ -618,8 +658,18 @@ export function generatePromptEngineProposal({
 
     for (let s = 1; s <= stopsPerDay; s++) {
       if (sortedPlaces.length === 0) break;
-      const place = sortedPlaces[placeIndex % sortedPlaces.length];
-      placeIndex++;
+
+      const targetAffinity = s === 1 ? 'MORNING' : s === stopsPerDay ? 'EVENING' : 'MIDDAY';
+      let place = sortedPlaces.find(
+        (p) => !pickedPlaceIds.has(p.id) && getTimeSlotAffinity(p) === targetAffinity,
+      );
+      if (!place) {
+        place = sortedPlaces.find((p) => !pickedPlaceIds.has(p.id));
+      }
+      if (!place) {
+        place = sortedPlaces[(dayNo * stopsPerDay + s) % sortedPlaces.length];
+      }
+      pickedPlaceIds.add(place.id);
 
       if (place.revisionId && !usedRevisionIds.includes(place.revisionId)) {
         usedRevisionIds.push(place.revisionId);
@@ -652,6 +702,10 @@ export function generatePromptEngineProposal({
       const unitPrice = Number(place.referencePriceVnd || 0);
       const ticketCost = unitPrice * partySize;
 
+      const stopNote = place.bestTimeToVisit
+        ? `Tham quan ${place.title} · ✨ Thời gian vàng: ${place.bestTimeToVisit}`
+        : `Tham quan ${place.title}`;
+
       dayStops.push({
         placeId: place.id,
         contentRevisionId: place.revisionId,
@@ -663,7 +717,8 @@ export function generatePromptEngineProposal({
         arrivesAt,
         departsAt,
         estimatedCostVnd: ticketCost,
-        note: `Tham quan ${place.title}`,
+        bestTimeToVisit: place.bestTimeToVisit || null,
+        note: stopNote,
       });
 
       dayLegs.push({

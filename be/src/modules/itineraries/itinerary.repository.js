@@ -424,6 +424,7 @@ export function createItineraryRepository(database) {
                 activityType: stop.activityType || null,
                 latitude: stop.latitude ?? null,
                 longitude: stop.longitude ?? null,
+                bestTimeToVisit: stop.bestTimeToVisit || null,
               },
               note: stop.note || null,
             },

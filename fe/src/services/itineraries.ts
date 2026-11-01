@@ -39,6 +39,7 @@ export interface ItineraryStop {
   arrivesAt: string;
   departsAt: string;
   estimatedCostVnd: number;
+  bestTimeToVisit?: string | null;
   note?: string | null;
 }
 

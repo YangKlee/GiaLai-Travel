@@ -257,6 +257,7 @@ export function validateProposalSchedule({
         arrivesAt: stop.arrivesAt,
         departsAt: stop.departsAt,
         estimatedCostVnd: Number(stopTotalCost),
+        bestTimeToVisit: stop.bestTimeToVisit || place.bestTimeToVisit || place.best_time_to_visit || null,
         note: stop.note || null,
       });
 

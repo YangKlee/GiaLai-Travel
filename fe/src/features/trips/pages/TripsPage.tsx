@@ -868,6 +868,11 @@ export default function TripsPage() {
                           {formatDuration(place.typicalDurationMinutes)} ·{' '}
                           {formatVnd(place.referencePriceVnd)}
                         </p>
+                        {place.bestTimeToVisit && (
+                          <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#b45309' }}>
+                            ✨ Thời gian vàng: <strong>{place.bestTimeToVisit}</strong>
+                          </p>
+                        )}
                       </div>
                       <div className="stop-actions">
                         <Button
@@ -1129,6 +1134,36 @@ export default function TripsPage() {
                     value={dietaryNotes}
                     onChange={(e) => setDietaryNotes(e.target.value)}
                   />
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      className="preference-chip"
+                      style={{ fontSize: '0.8rem', padding: '4px 10px' }}
+                      onClick={() =>
+                        setDietaryNotes((prev) =>
+                          prev
+                            ? `${prev}. Ưu tiên xếp đúng thời gian vàng để ngắm bình minh và hoàng hôn đẹp nhất.`
+                            : 'Ưu tiên xếp các điểm tham quan theo đúng thời gian vàng (săn mây, ngắm bình minh và hoàng hôn).',
+                        )
+                      }
+                    >
+                      ✨ Tối ưu theo thời gian vàng (bình minh / hoàng hôn)
+                    </button>
+                    <button
+                      type="button"
+                      className="preference-chip"
+                      style={{ fontSize: '0.8rem', padding: '4px 10px' }}
+                      onClick={() =>
+                        setDietaryNotes((prev) =>
+                          prev
+                            ? `${prev}. Ăn sáng đặc sản lúc 07:00, xuất phát lúc 07:30.`
+                            : '07:00 ăn sáng đặc sản Pleiku, 07:30 xuất phát tham quan.',
+                        )
+                      }
+                    >
+                      🍜 Ăn sáng 07:00, xuất phát 07:30
+                    </button>
+                  </div>
                 </div>
 
                 {/* Optional Pre-selected Places ("Hoặc chọn các địa điểm trước, xong AI đưa ra lộ trình") */}
@@ -1698,6 +1733,24 @@ export default function TripsPage() {
                                           <Clock3 size={12} aria-hidden="true" /> {stopArriveVn} →{' '}
                                           {stopDepartVn}
                                         </Badge>
+                                        {stop.bestTimeToVisit && (
+                                          <span
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px',
+                                              padding: '2px 8px',
+                                              borderRadius: '12px',
+                                              fontSize: '0.78rem',
+                                              background: '#fef3c7',
+                                              color: '#92400e',
+                                              fontWeight: 600,
+                                              border: '1px solid #fde68a',
+                                            }}
+                                          >
+                                            ✨ Thời gian vàng: {stop.bestTimeToVisit}
+                                          </span>
+                                        )}
                                       </div>
 
                                       <p className="muted" style={{ marginTop: '4px' }}>
@@ -2195,7 +2248,27 @@ export default function TripsPage() {
                               <li key={stop.id || stop.sequenceNo} style={{ paddingBlock: '8px', alignItems: 'flex-start' }}>
                                 <span className="stop-number">#{stop.sequenceNo}</span>
                                 <div className="stop-info">
-                                  <strong>{stop.placeTitle || stop.placeId}</strong>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <strong>{stop.placeTitle || stop.placeId}</strong>
+                                    {stop.bestTimeToVisit && (
+                                      <span
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          padding: '1px 7px',
+                                          borderRadius: '10px',
+                                          fontSize: '0.75rem',
+                                          background: '#fef3c7',
+                                          color: '#92400e',
+                                          fontWeight: 600,
+                                          border: '1px solid #fde68a',
+                                        }}
+                                      >
+                                        ✨ Thời gian vàng: {stop.bestTimeToVisit}
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="muted">
                                     {formatVnTime(stop.arrivesAt)} → {formatVnTime(stop.departsAt)}{' '}
                                     · Chi phí: {formatVnd(String(stop.estimatedCostVnd))}
