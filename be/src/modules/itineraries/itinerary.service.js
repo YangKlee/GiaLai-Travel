@@ -30,6 +30,8 @@ function mapPlaceRow(p) {
     longitude: Number(plain.longitude),
     referencePriceVnd: plain.reference_price_vnd ? String(plain.reference_price_vnd) : '0',
     typicalDurationMinutes: plain.typical_duration_minutes ?? 90,
+    bestTimeToVisit: plain.best_time_to_visit ?? null,
+    wardId: plain.ward_id ?? null,
     openingHours: plain.place_opening_hours ?? [],
   };
 }
@@ -115,6 +117,7 @@ function formatItineraryDetail(itinerary, legs = []) {
             arrivesAt: serializeUtc(s.arrives_at),
             departsAt: serializeUtc(s.departs_at),
             estimatedCostVnd: Number(s.estimated_cost_vnd),
+            bestTimeToVisit: meta.bestTimeToVisit || s.place?.best_time_to_visit || null,
             note: s.note ?? null,
           };
         });

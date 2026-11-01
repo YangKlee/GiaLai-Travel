@@ -19,3 +19,4 @@ ALTER TABLE places
     ADD COLUMN ward_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER region_id,
     ADD COLUMN best_time_to_visit VARCHAR(255) NULL AFTER typical_duration_minutes,
     ADD CONSTRAINT fk_places_ward FOREIGN KEY (ward_id) REFERENCES wards(id) ON DELETE SET NULL;
+

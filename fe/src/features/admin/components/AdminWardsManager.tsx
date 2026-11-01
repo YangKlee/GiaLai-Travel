@@ -616,3 +616,4 @@ export function AdminWardsManager({ initialWards, meta }: Props) {
     </div>
   );
 }
+
