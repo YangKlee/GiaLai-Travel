@@ -5,6 +5,8 @@ import {
   adminEventCreateSchema,
   adminPlaceCreateSchema,
   adminUploadSchema,
+  adminWardCreateSchema,
+  adminWardUpdateSchema,
 } from '../src/modules/content/content.schema.js';
 
 test('createR2Storage: handles local fallback and file validations', async () => {
@@ -63,10 +65,25 @@ test('admin schemas: validate place and event inputs correctly', () => {
     longitude: 108.01,
     referencePriceVnd: '10000',
     typicalDurationMinutes: 120,
+    bestTimeToVisit: '06:00 - 08:30 (Bình minh mờ sương)',
+    wardId: '50000000-0000-4000-8000-000000000015',
     bannerUrl: 'https://cdn.example.com/bien-ho.jpg',
   };
   const parsedPlace = adminPlaceCreateSchema.safeParse(validPlace);
   assert.ok(parsedPlace.success);
+
+  // Valid ward schema
+  const validWard = {
+    regionId: '11111111-1111-4111-8111-111111111111',
+    code: 'PLEIKU_HOALU',
+    name: 'Phường Hoa Lư',
+    status: 'ACTIVE',
+  };
+  const parsedWard = adminWardCreateSchema.safeParse(validWard);
+  assert.ok(parsedWard.success);
+
+  const parsedWardUpdate = adminWardUpdateSchema.safeParse({ name: 'Phường Hoa Lư mới' });
+  assert.ok(parsedWardUpdate.success);
 
   // Valid event with pasted banner link
   const validEventUrl = {

@@ -13,7 +13,7 @@ test('Sequelize uses scaffold models, UTC, exact money and isolated model classe
     assert.equal(first.sequelize.options.timezone, '+00:00');
     assert.equal(first.sequelize.options.logging, false);
     assert.equal(first.sequelize.options.retry.max, 0);
-    assert.equal(Object.keys(first.models).length, 59);
+    assert.equal(Object.keys(first.models).length, 60);
     assert.equal(first.models.Users.sequelize, first.sequelize);
     assert.equal(second.models.Users.sequelize, second.sequelize);
     assert.notEqual(first.models.Users, second.models.Users);

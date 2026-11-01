@@ -1972,6 +1972,11 @@ components:
             - integer
             - "null"
           minimum: 1
+        bestTimeToVisit:
+          type:
+            - string
+            - "null"
+          description: Thoi gian ly tuong / thoi diem vang de den tham quan
         sourceReference:
           type:
             - string

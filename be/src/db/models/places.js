@@ -26,6 +26,14 @@ export default class Places extends Model {
         key: 'id'
       }
     },
+    ward_id: {
+      type: DataTypes.CHAR(36),
+      allowNull: true,
+      references: {
+        model: 'wards',
+        key: 'id'
+      }
+    },
     category: {
       type: DataTypes.ENUM('NATURE','CULTURE','FOOD','STAY','ADVENTURE','OTHER'),
       allowNull: false
@@ -44,6 +52,10 @@ export default class Places extends Model {
     },
     typical_duration_minutes: {
       type: DataTypes.SMALLINT.UNSIGNED,
+      allowNull: true
+    },
+    best_time_to_visit: {
+      type: DataTypes.STRING(255),
       allowNull: true
     },
     updated_at: {

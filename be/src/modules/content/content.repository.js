@@ -18,6 +18,7 @@ export function createContentRepository(database) {
     ServiceSlots,
     Services,
     ItineraryStops,
+    Wards,
   } = database.models;
 
   function safeParse(value) {
@@ -48,6 +49,15 @@ export function createContentRepository(database) {
         where: { phase: 1 },
         order: [['name', 'ASC']],
       }),
+    listWards: (query = {}) => {
+      const where = {};
+      if (query.regionId) where.region_id = query.regionId;
+      if (query.status) where.status = query.status;
+      return Wards.findAll({
+        where,
+        order: [['name', 'ASC']],
+      });
+    },
     listContents: async (query) => {
       const whereClause = {};
       if (query.kind) whereClause.kind = query.kind;
@@ -427,6 +437,7 @@ export function createContentRepository(database) {
             ],
           },
           { association: Places.associations.region, required: false },
+          { association: Places.associations.ward, required: false },
           { association: Places.associations.place_opening_hours, required: false },
         ],
         order: [['updated_at', 'DESC'], ['id', 'ASC']],
@@ -446,10 +457,13 @@ export function createContentRepository(database) {
           category: plain.category,
           regionId: plain.region_id,
           regionName: plain.region?.name || 'Gia Lai',
+          wardId: plain.ward_id || null,
+          wardName: plain.ward?.name || null,
           latitude: Number(plain.latitude),
           longitude: Number(plain.longitude),
           referencePriceVnd: plain.reference_price_vnd ? String(plain.reference_price_vnd) : null,
           typicalDurationMinutes: plain.typical_duration_minutes,
+          bestTimeToVisit: plain.best_time_to_visit || null,
           bannerUrl: payload.bannerUrl || null,
           imageUrl: payload.imageUrl || payload.bannerUrl || null,
           sourceReference: rev.source_reference || null,
@@ -499,6 +513,7 @@ export function createContentRepository(database) {
             ],
           },
           { association: Places.associations.region, required: false },
+          { association: Places.associations.ward, required: false },
           { association: Places.associations.place_opening_hours, required: false },
         ],
         transaction,
@@ -517,10 +532,13 @@ export function createContentRepository(database) {
         category: plain.category,
         regionId: plain.region_id,
         regionName: plain.region?.name || 'Gia Lai',
+        wardId: plain.ward_id || null,
+        wardName: plain.ward?.name || null,
         latitude: Number(plain.latitude),
         longitude: Number(plain.longitude),
         referencePriceVnd: plain.reference_price_vnd ? String(plain.reference_price_vnd) : null,
         typicalDurationMinutes: plain.typical_duration_minutes,
+        bestTimeToVisit: plain.best_time_to_visit || null,
         bannerUrl: payload.bannerUrl || null,
         imageUrl: payload.imageUrl || payload.bannerUrl || null,
         sourceReference: rev.source_reference || null,
@@ -704,6 +722,73 @@ export function createContentRepository(database) {
         visibility: content.visibility || 'PUBLIC',
         updatedAt: serializeUtc(plain.synced_at || rev.created_at || new Date()),
       };
+    },
+
+    listAdminWards: async ({ regionId, status, q, page = 1, pageSize = 50 } = {}) => {
+      const where = {};
+      if (regionId) where.region_id = regionId;
+      if (status) where.status = status;
+      if (q) {
+        where[Op.or] = [
+          { name: { [Op.like]: `%${q}%` } },
+          { code: { [Op.like]: `%${q}%` } },
+        ];
+      }
+      const total = await Wards.count({ where });
+      const rows = await Wards.findAll({
+        where,
+        include: [{ association: Wards.associations.region, attributes: ['id', 'name', 'code'] }],
+        order: [['name', 'ASC']],
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      });
+      return {
+        rows: rows.map((w) => ({
+          id: w.id,
+          regionId: w.region_id,
+          regionName: w.region?.name || '',
+          code: w.code,
+          name: w.name,
+          status: w.status,
+          createdAt: serializeUtc(w.created_at),
+          updatedAt: serializeUtc(w.updated_at),
+        })),
+        total,
+      };
+    },
+
+    getAdminWardById: async (id, transaction) => {
+      const w = await Wards.findByPk(id, {
+        include: [{ association: Wards.associations.region, attributes: ['id', 'name', 'code'] }],
+        transaction,
+      });
+      if (!w) return null;
+      return {
+        id: w.id,
+        regionId: w.region_id,
+        regionName: w.region?.name || '',
+        code: w.code,
+        name: w.name,
+        status: w.status,
+        createdAt: serializeUtc(w.created_at),
+        updatedAt: serializeUtc(w.updated_at),
+      };
+    },
+
+    createAdminWard: (values, transaction) => Wards.create(values, { transaction }),
+
+    updateAdminWard: async (id, values, transaction) => {
+      const w = await Wards.findByPk(id, { transaction });
+      if (!w) return null;
+      await w.update(values, { transaction });
+      return w;
+    },
+
+    deleteAdminWard: async (id, transaction) => {
+      const w = await Wards.findByPk(id, { transaction });
+      if (!w) return false;
+      await w.destroy({ transaction });
+      return true;
     },
   };
 }

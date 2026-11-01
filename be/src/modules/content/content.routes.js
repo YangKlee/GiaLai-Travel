@@ -6,6 +6,9 @@ import {
   adminPlaceCreateSchema,
   adminPlaceUpdateSchema,
   adminUploadSchema,
+  adminWardCreateSchema,
+  adminWardQuerySchema,
+  adminWardUpdateSchema,
   contentCreateSchema,
   contentParamsSchema,
   contentQuerySchema,
@@ -174,6 +177,40 @@ export function createContentRouter({ database, authService, clock }) {
 
   router.delete('/places/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
     res.json(await contentService.deleteAdminPlace(req.auth, req.validated.params.id, req.id));
+  });
+
+  router.get('/wards', validate(adminWardQuerySchema, 'query'), async (req, res) => {
+    res.json(await contentService.listAdminWards(req.auth, req.validated.query));
+  });
+
+  router.get('/wards/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.getAdminWard(req.auth, req.validated.params.id));
+  });
+
+  router.post('/wards', validate(adminWardCreateSchema), async (req, res) => {
+    res
+      .status(201)
+      .json(await contentService.createAdminWard(req.auth, req.validated.body, req.id));
+  });
+
+  router.put(
+    '/wards/:id',
+    validate(contentParamsSchema, 'params'),
+    validate(adminWardUpdateSchema),
+    async (req, res) => {
+      res.json(
+        await contentService.updateAdminWard(
+          req.auth,
+          req.validated.params.id,
+          req.validated.body,
+          req.id,
+        ),
+      );
+    },
+  );
+
+  router.delete('/wards/:id', validate(contentParamsSchema, 'params'), async (req, res) => {
+    res.json(await contentService.deleteAdminWard(req.auth, req.validated.params.id, req.id));
   });
 
   router.get('/events', async (req, res) => {

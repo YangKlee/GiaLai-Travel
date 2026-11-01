@@ -6,10 +6,12 @@ import { effectiveEventStatus } from '../../shared/event-status.js';
 const placeAttributes = [
   'id',
   'category',
+  'ward_id',
   'latitude',
   'longitude',
   'reference_price_vnd',
   'typical_duration_minutes',
+  'best_time_to_visit',
   'updated_at',
 ];
 
@@ -59,6 +61,11 @@ function includePublishedPlace(models) {
       attributes: ['id', 'name'],
       where: { phase: { [Op.in]: [1, 2] } },
     },
+    {
+      association: models.Places.associations.ward,
+      required: false,
+      attributes: ['id', 'name'],
+    },
     includePublishedContent(models, 'PLACE'),
   ];
 }
@@ -77,11 +84,14 @@ function serializePlace(instance) {
     description: translation.body,
     category: row.category,
     region: { id: row.region.id, name: row.region.name },
+    ward: row.ward ? { id: row.ward.id, name: row.ward.name } : null,
+    wardId: row.ward_id || null,
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     referencePriceVnd:
       row.reference_price_vnd === null ? null : String(row.reference_price_vnd),
     typicalDurationMinutes: row.typical_duration_minutes,
+    bestTimeToVisit: row.best_time_to_visit || null,
     sourceReference: revision.source_reference,
     bannerUrl: payload.bannerUrl || null,
     imageUrl: payload.imageUrl || payload.bannerUrl || null,

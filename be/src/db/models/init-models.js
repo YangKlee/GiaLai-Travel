@@ -60,6 +60,7 @@ import _Services from  "./services.js";
 import _UserRegionScopes from  "./user_region_scopes.js";
 import _UserRoles from  "./user_roles.js";
 import _Users from  "./users.js";
+import _Wards from  "./wards.js";
 
 export default function initModels(sequelize) {
   const AdCampaigns = initializeModel(_AdCampaigns, sequelize, DataTypes);
@@ -121,6 +122,7 @@ export default function initModels(sequelize) {
   const UserRegionScopes = initializeModel(_UserRegionScopes, sequelize, DataTypes);
   const UserRoles = initializeModel(_UserRoles, sequelize, DataTypes);
   const Users = initializeModel(_Users, sequelize, DataTypes);
+  const Wards = initializeModel(_Wards, sequelize, DataTypes);
 
   AiRequests.belongsToMany(ContentRevisions, { as: 'content_revision_id_content_revisions', through: AiRequestSources, foreignKey: "ai_request_id", otherKey: "content_revision_id" });
   ContentRevisions.belongsToMany(AiRequests, { as: 'ai_request_id_ai_requests', through: AiRequestSources, foreignKey: "content_revision_id", otherKey: "ai_request_id" });
@@ -280,6 +282,10 @@ export default function initModels(sequelize) {
   Regions.hasMany(OfflinePackages, { as: "offline_packages", foreignKey: "region_id"});
   Places.belongsTo(Regions, { as: "region", foreignKey: "region_id"});
   Regions.hasMany(Places, { as: "places", foreignKey: "region_id"});
+  Places.belongsTo(Wards, { as: "ward", foreignKey: "ward_id"});
+  Wards.hasMany(Places, { as: "places", foreignKey: "ward_id"});
+  Wards.belongsTo(Regions, { as: "region", foreignKey: "region_id"});
+  Regions.hasMany(Wards, { as: "wards", foreignKey: "region_id"});
   Regions.belongsTo(Regions, { as: "parent", foreignKey: "parent_id"});
   Regions.hasMany(Regions, { as: "regions", foreignKey: "parent_id"});
   UserRegionScopes.belongsTo(Regions, { as: "region", foreignKey: "region_id"});
@@ -425,5 +431,6 @@ export default function initModels(sequelize) {
     UserRegionScopes,
     UserRoles,
     Users,
+    Wards,
   };
 }

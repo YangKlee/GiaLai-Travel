@@ -251,6 +251,7 @@ const placeBaseSchema = z.object({
   description: z.string().trim().min(2, 'Mô tả tối thiểu 2 ký tự.').max(50000),
   category: z.enum(['NATURE', 'CULTURE', 'FOOD', 'STAY', 'ADVENTURE', 'OTHER']),
   regionId: guidSchema,
+  wardId: guidSchema.nullish(),
   latitude: z.coerce.number().min(-90).max(90),
   longitude: z.coerce.number().min(-180).max(180),
   referencePriceVnd: z
@@ -259,6 +260,7 @@ const placeBaseSchema = z.object({
   typicalDurationMinutes: z
     .union([z.coerce.number().int().min(1).max(1440), z.null()])
     .optional(),
+  bestTimeToVisit: z.string().trim().max(255).nullish(),
   bannerUrl: z.string().max(2000).nullish(),
   imageUrl: z.string().max(2000).nullish(),
   sourceReference: z.string().trim().max(1000).nullish(),
@@ -267,6 +269,32 @@ const placeBaseSchema = z.object({
 
 export const adminPlaceCreateSchema = placeBaseSchema.strict();
 export const adminPlaceUpdateSchema = placeBaseSchema.partial();
+
+export const adminWardCreateSchema = z
+  .object({
+    regionId: guidSchema,
+    code: z.string().trim().min(2).max(50),
+    name: z.string().trim().min(2, 'Tên phường/xã tối thiểu 2 ký tự.').max(150),
+    status: z.enum(['ACTIVE', 'INACTIVE']).default('ACTIVE'),
+  })
+  .strict();
+
+export const adminWardUpdateSchema = z
+  .object({
+    regionId: guidSchema.optional(),
+    code: z.string().trim().min(2).max(50).optional(),
+    name: z.string().trim().min(2).max(150).optional(),
+    status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  })
+  .strict();
+
+export const adminWardQuerySchema = z.object({
+  regionId: guidSchema.optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  q: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(50),
+});
 
 const eventBaseSchema = z.object({
   title: z.string().trim().min(2, 'Tiêu đề tối thiểu 2 ký tự.').max(255),

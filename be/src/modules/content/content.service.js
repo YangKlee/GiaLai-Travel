@@ -170,8 +170,9 @@ export function createContentService(database, { clock, r2Storage } = {}) {
     listMeta: (actor) =>
       safe(async () => {
         requireAdmin(actor);
-        const [regions, partners, places, mediaAssets] = await Promise.all([
+        const [regions, wards, partners, places, mediaAssets] = await Promise.all([
           repository.listRegions(),
+          repository.listWards({ status: 'ACTIVE' }),
           repository.findPartners(),
           repository.findPlaces(),
           repository.listMediaAssets(),
@@ -179,6 +180,13 @@ export function createContentService(database, { clock, r2Storage } = {}) {
         return {
           data: {
             regions: regions.map((r) => ({ id: r.id, name: r.name, code: r.code })),
+            wards: wards.map((w) => ({
+              id: w.id,
+              regionId: w.region_id,
+              name: w.name,
+              code: w.code,
+              status: w.status,
+            })),
             partners: partners.map((p) => {
               const plain = p.get({ plain: true });
               const rev = plain.content?.published_revision;
@@ -622,6 +630,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
         const {
           Places,
           Regions,
+          Wards,
           ContentItems,
           ContentRevisions,
           ContentTranslations,
@@ -629,6 +638,11 @@ export function createContentService(database, { clock, r2Storage } = {}) {
         } = database.models;
         const region = await Regions.findByPk(input.regionId);
         if (!region) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
+
+        if (input.wardId) {
+          const ward = await Wards.findByPk(input.wardId);
+          if (!ward) throw new AppError(422, 'INVALID_WARD', 'Phường / xã không tồn tại.');
+        }
 
         return database.transaction(async (transaction) => {
           const contentId = randomUUID();
@@ -650,6 +664,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
 
           const payload = {
             regionId: input.regionId,
+            wardId: input.wardId || null,
             category: input.category,
             latitude: Number(input.latitude),
             longitude: Number(input.longitude),
@@ -657,6 +672,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
             typicalDurationMinutes: input.typicalDurationMinutes
               ? Number(input.typicalDurationMinutes)
               : null,
+            bestTimeToVisit: input.bestTimeToVisit || null,
             bannerUrl: input.bannerUrl || null,
             imageUrl: input.imageUrl || input.bannerUrl || null,
             openingHours: input.openingHours || [],
@@ -693,6 +709,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
               id: placeId,
               content_id: contentId,
               region_id: input.regionId,
+              ward_id: input.wardId || null,
               category: input.category,
               latitude: input.latitude,
               longitude: input.longitude,
@@ -702,6 +719,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
               typical_duration_minutes: input.typicalDurationMinutes
                 ? Number(input.typicalDurationMinutes)
                 : null,
+              best_time_to_visit: input.bestTimeToVisit || null,
               updated_at: now,
             },
             { transaction },
@@ -742,6 +760,7 @@ export function createContentService(database, { clock, r2Storage } = {}) {
         const {
           Places,
           Regions,
+          Wards,
           ContentItems,
           ContentRevisions,
           ContentTranslations,
@@ -756,6 +775,18 @@ export function createContentService(database, { clock, r2Storage } = {}) {
             const region = await Regions.findByPk(input.regionId, { transaction });
             if (!region) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
             place.region_id = input.regionId;
+          }
+          if (input.wardId !== undefined) {
+            if (input.wardId) {
+              const ward = await Wards.findByPk(input.wardId, { transaction });
+              if (!ward) throw new AppError(422, 'INVALID_WARD', 'Phường / xã không tồn tại.');
+              place.ward_id = input.wardId;
+            } else {
+              place.ward_id = null;
+            }
+          }
+          if (input.bestTimeToVisit !== undefined) {
+            place.best_time_to_visit = input.bestTimeToVisit || null;
           }
           if (input.category) place.category = input.category;
           if (input.latitude !== undefined) place.latitude = input.latitude;
@@ -792,11 +823,13 @@ export function createContentService(database, { clock, r2Storage } = {}) {
               const newPayload = {
                 ...oldPayload,
                 regionId: place.region_id,
+                wardId: place.ward_id,
                 category: place.category,
                 latitude: Number(place.latitude),
                 longitude: Number(place.longitude),
                 referencePriceVnd: place.reference_price_vnd,
                 typicalDurationMinutes: place.typical_duration_minutes,
+                bestTimeToVisit: place.best_time_to_visit,
                 bannerUrl:
                   input.bannerUrl !== undefined
                     ? input.bannerUrl || null
@@ -1194,6 +1227,136 @@ export function createContentService(database, { clock, r2Storage } = {}) {
           });
 
           return { data: { id, success: true, message: 'Đã xóa sự kiện thành công.' } };
+        });
+      }),
+
+    listAdminWards: (actor, query) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { rows, total } = await repository.listAdminWards(query);
+        return {
+          data: rows,
+          meta: paginationMeta(query, total),
+        };
+      }),
+
+    getAdminWard: (actor, id) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const ward = await repository.getAdminWardById(id);
+        if (!ward) throw new AppError(404, 'WARD_NOT_FOUND', 'Không tìm thấy phường / xã.');
+        return { data: ward };
+      }),
+
+    createAdminWard: (actor, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { Regions, Wards } = database.models;
+        const region = await Regions.findByPk(input.regionId);
+        if (!region) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
+
+        const existing = await Wards.findOne({ where: { code: input.code } });
+        if (existing) throw new AppError(409, 'WARD_CODE_EXISTS', 'Mã phường / xã đã tồn tại.');
+
+        const id = randomUUID();
+        const now = resolveNow(clock);
+        return database.transaction(async (transaction) => {
+          await repository.createAdminWard(
+            {
+              id,
+              region_id: input.regionId,
+              code: input.code,
+              name: input.name,
+              status: input.status || 'ACTIVE',
+              created_at: now,
+              updated_at: now,
+            },
+            transaction,
+          );
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'CONTENT_PUBLISH',
+            targetType: 'WARD',
+            targetId: id,
+            requestId,
+            metadata: { code: input.code, name: input.name, regionId: input.regionId },
+          });
+
+          const created = await repository.getAdminWardById(id, transaction);
+          return { data: created };
+        });
+      }),
+
+    updateAdminWard: (actor, id, input, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { Regions, Wards } = database.models;
+        const now = resolveNow(clock);
+
+        return database.transaction(async (transaction) => {
+          const ward = await Wards.findByPk(id, { transaction });
+          if (!ward) throw new AppError(404, 'WARD_NOT_FOUND', 'Không tìm thấy phường / xã.');
+
+          if (input.regionId) {
+            const reg = await Regions.findByPk(input.regionId, { transaction });
+            if (!reg) throw new AppError(422, 'INVALID_REGION', 'Vùng địa lý không tồn tại.');
+            ward.region_id = input.regionId;
+          }
+          if (input.code && input.code !== ward.code) {
+            const dup = await Wards.findOne({ where: { code: input.code }, transaction });
+            if (dup) throw new AppError(409, 'WARD_CODE_EXISTS', 'Mã phường / xã đã tồn tại.');
+            ward.code = input.code;
+          }
+          if (input.name) ward.name = input.name;
+          if (input.status) ward.status = input.status;
+          ward.updated_at = now;
+          await ward.save({ transaction });
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'CONTENT_REVISION_EDIT',
+            targetType: 'WARD',
+            targetId: id,
+            requestId,
+            metadata: { wardId: id, name: ward.name },
+          });
+
+          const updated = await repository.getAdminWardById(id, transaction);
+          return { data: updated };
+        });
+      }),
+
+    deleteAdminWard: (actor, id, requestId) =>
+      safe(async () => {
+        requireAdmin(actor);
+        const { Places, Wards } = database.models;
+
+        return database.transaction(async (transaction) => {
+          const ward = await Wards.findByPk(id, { transaction });
+          if (!ward) throw new AppError(404, 'WARD_NOT_FOUND', 'Không tìm thấy phường / xã.');
+
+          const placeCount = await Places.count({ where: { ward_id: id }, transaction });
+          if (placeCount > 0) {
+            throw new AppError(
+              409,
+              'WARD_HAS_PLACES',
+              `Không thể xóa phường / xã vì đang có ${placeCount} địa điểm thuộc phường này.`,
+            );
+          }
+
+          await ward.destroy({ transaction });
+
+          await appendAudit(database, transaction, {
+            actorId: actor.user.id,
+            action: 'CONTENT_UNPUBLISH',
+            targetType: 'WARD',
+            targetId: id,
+            requestId,
+            metadata: { wardId: id },
+          });
+
+          return { data: { id, success: true, message: 'Đã xóa phường / xã thành công.' } };
         });
       }),
   };

@@ -56,6 +56,20 @@ CREATE TABLE regions (
     CONSTRAINT ck_regions_guid CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Phuong / xa thuoc quan huyen / thi xa / thanh pho (theo Nghi quyet sap nhap moi nhat).
+CREATE TABLE wards (
+    id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+    region_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE CASCADE,
+    KEY ix_wards_region (region_id),
+    CONSTRAINT ck_wards_guid CHECK (id REGEXP '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- Pham vi vung duoc cap cho tai khoan B2G.
 CREATE TABLE user_region_scopes (
     user_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
@@ -224,14 +238,17 @@ CREATE TABLE places (
     id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
     content_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
     region_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    ward_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NULL,
     category ENUM('NATURE','CULTURE','FOOD','STAY','ADVENTURE','OTHER') NOT NULL,
     latitude DECIMAL(9,6) NOT NULL,
     longitude DECIMAL(10,6) NOT NULL,
     reference_price_vnd BIGINT UNSIGNED NULL,
     typical_duration_minutes SMALLINT UNSIGNED NULL,
+    best_time_to_visit VARCHAR(255) NULL,
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     FOREIGN KEY (content_id) REFERENCES content_items(id),
     FOREIGN KEY (region_id) REFERENCES regions(id),
+    FOREIGN KEY (ward_id) REFERENCES wards(id) ON DELETE SET NULL,
     KEY ix_place_region_category (region_id, category),
     CONSTRAINT ck_place_lat CHECK (latitude BETWEEN -90 AND 90),
     CONSTRAINT ck_place_lon CHECK (longitude BETWEEN -180 AND 180),
